@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import "LoginPage.dart";
-import "RegisterPage.dart";
+
+import "login_page.dart";
+import "register_page.dart";
 
 void main() => runApp(const MyApp());
 
@@ -12,12 +11,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const appTitle = 'Zest';
     return MaterialApp(
-      title: appTitle,
+      themeMode: ThemeMode.dark,
       home: Scaffold(
-        appBar: AppBar(title: const Text(appTitle)),
         body: const MyCustomForm(),
+        backgroundColor: Color.fromARGB(255, 58, 58, 58)
       ),
     );
   }
@@ -32,18 +30,33 @@ class MyCustomForm extends HookWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+
+        SizedBox(height: MediaQuery.of(context).size.height * 0.10),
+        
         Center(
-          child: FilledButton(
+          child: Image.asset(
+            'assets/icon/Zest_logo.png',
+            width: 200,
+            height: 200,
+          ),
+        ),
+
+        SizedBox(height: MediaQuery.of(context).size.height * 0.10),
+
+        Center(
+          child: ElevatedButton(
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => RegisterPage()),
               );
             },
-            child: const Text("Még nincs fiókod? Regisztráció"),
-            style: FilledButton.styleFrom(backgroundColor: Colors.lightGreen[600])
+            style: ElevatedButton.styleFrom(backgroundColor: Color.fromARGB(255, 85, 173, 78), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))),
+            child: const Text("Még nincs fiókod? Regisztráció", style: TextStyle(fontSize: 18, color: Colors.white), textAlign: TextAlign.center),
           ),
         ),
+
+        SizedBox(height: MediaQuery.of(context).size.height * 0.01),
 
         Center(
           child: FilledButton(
@@ -53,8 +66,8 @@ class MyCustomForm extends HookWidget {
                 MaterialPageRoute(builder: (context) => LoginPage()),
               );
             },
-            child: const Text("Már van fiókod? Bejelentkezés"),
-            style: FilledButton.styleFrom(backgroundColor: Colors.lightGreen[600])
+            style: FilledButton.styleFrom(backgroundColor: Color.fromARGB(255, 85, 173, 78), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))),
+            child: const Text("Már van fiókod? Bejelentkezés", style: TextStyle(fontSize: 18, color: Colors.white), textAlign: TextAlign.center),
           ),
         )
       ],

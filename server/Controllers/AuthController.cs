@@ -10,7 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Zest.Api.DTOs;
-using Zest.Api.Helpers; 
+using Zest.Api.Helpers;
 
 namespace ZestApi.Controllers
 
@@ -58,16 +58,21 @@ namespace ZestApi.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName || u.Email == dto.UserName);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user?.PasswordHash))
                 return Unauthorized("Invalid credentials");
 
-            var accessToken = GenerateJwtToken(user);
+            var accessToken = GenerateJwtToken(user!);
             var refreshToken = GenerateRefreshToken();
 
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
-                _config.GetValue<int>("Jwt:RefreshTokenExpirationDays"));
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                Token = refreshToken,
+                UserId = user!.Id,
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
+                    _config.GetValue<int>("Jwt:RefreshTokenExpirationDays"))
+            });
+
             await _context.SaveChangesAsync();
 
             return Ok(new
@@ -80,17 +85,26 @@ namespace ZestApi.Controllers
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+            var token = _context.RefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
 
-            if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            var user = await _context.Users.FindAsync(token?.UserId);
+
+            if (token == null || user == null || token?.RefreshTokenExpiryTime <= DateTime.UtcNow)
                 return Unauthorized("Invalid or expired refresh token");
 
             var newAccessToken = GenerateJwtToken(user);
             var newRefreshToken = GenerateRefreshToken();
 
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
-                _config.GetValue<int>("Jwt:RefreshTokenExpirationDays"));
+            _context.RefreshTokens.Add(new RefreshToken
+            {
+                Token = newRefreshToken,
+                UserId = user.Id,
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
+                    _config.GetValue<int>("Jwt:RefreshTokenExpirationDays"))
+            });
+
+            _context.RefreshTokens.Remove(token!);
+            
             await _context.SaveChangesAsync();
 
             return Ok(new
@@ -120,12 +134,12 @@ namespace ZestApi.Controllers
         private string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? ""));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -145,13 +159,12 @@ namespace ZestApi.Controllers
 
     public class RegisterRequest
     {
-        public string Email { get; set; }
-        public string Password { get; set; }
-
-        public string UserName { get; set; }
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string UserName { get; set; } = "";
     }
     
-        public class LoginRequest
+    public class LoginRequest
     {
         public string Email { get; set; } = "";
         public string Password { get; set; } = "";
