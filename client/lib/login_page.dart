@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'home_page.dart';
+import 'pages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -122,19 +122,21 @@ class _LoginPageState extends State<LoginPage> {
 
                 if (response.statusCode == 200) {
                   final json = jsonDecode(response.body);
+                  print(json);
                   final token = json['token'];
                   final refreshToken = json['refreshToken'];
+                  String username = json['username'];
 
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setString('jwt_token', token);
                   await prefs.setString('refresh_token', refreshToken);
-
+                  await prefs.setString('username', username);
 
                   print('Token mentve: $token');
                   if (context.mounted) {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => HomePage(username: _userNameController.text)),
+                      MaterialPageRoute(builder: (context) => Pages()),
                     );
                   }
                 } else {

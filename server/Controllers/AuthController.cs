@@ -78,7 +78,8 @@ namespace ZestApi.Controllers
             return Ok(new
             {
                 token = accessToken,
-                refreshToken = refreshToken
+                refreshToken = refreshToken,
+                username = user.UserName
             });
         }
 

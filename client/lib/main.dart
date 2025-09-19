@@ -12,7 +12,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      themeMode: ThemeMode.dark,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: Color.fromARGB(255, 58, 58, 58)
+      ),
       home: Scaffold(
         body: const MyCustomForm(),
         backgroundColor: Color.fromARGB(255, 58, 58, 58)
