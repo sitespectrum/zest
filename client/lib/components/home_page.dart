@@ -13,7 +13,7 @@ class HomePage extends StatelessWidget {
         PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Container(
-            margin: const EdgeInsets.all(4),
+            margin: const EdgeInsets.all(6),
             child: AppBar(
               title: const Text(
                 appTitle,
@@ -29,13 +29,12 @@ class HomePage extends StatelessWidget {
           ),
         ),
 
-        // Kalóriadeficit
         Stack(
           children: [
             Container(
               width: double.infinity,
               height: MediaQuery.of(context).size.height * 0.30,
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color.fromARGB(255, 72, 72, 72),
@@ -57,13 +56,12 @@ class HomePage extends StatelessWidget {
           ],
         ),
 
-        // Legutóbbi edzés
         Stack(
           children: [
             Container(
               width: double.infinity,
               height: MediaQuery.of(context).size.height * 0.18,
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color.fromARGB(255, 72, 72, 72),
@@ -85,7 +83,6 @@ class HomePage extends StatelessWidget {
           ],
         ),
 
-        // Legutóbbi étkezés
         Stack(
           children: [
             Container(

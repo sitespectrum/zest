@@ -18,23 +18,22 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      body: Column(
+      body: SingleChildScrollView(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          SizedBox(height: MediaQuery.of(context).size.height * 0.10),
 
-        SizedBox(height: MediaQuery.of(context).size.height * 0.10),
-        
-        Center(
-          child: Image.asset(
-            'assets/icon/Zest_logo.png',
-            width: 200,
-            height: 200,
+          Center(
+            child: Image.asset(
+              'assets/icon/Zest_logo.png',
+              width: 200,
+              height: 200,
+            ),
           ),
-        ),
 
-        SizedBox(height: MediaQuery.of(context).size.height * 0.10),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.10),
 
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 25, vertical: 16),
@@ -45,24 +44,22 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 fillColor: Color.fromARGB(255, 72, 72, 72),
                 labelText: 'Felhasználónév / Email',
-                labelStyle: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                labelStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Colors.grey,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: Colors.grey, width: 2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: Colors.grey,
-                  width: 1,
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
               ),
             ),
           ),
@@ -77,24 +74,22 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 fillColor: Color.fromARGB(255, 72, 72, 72),
                 labelText: "Jelszó",
-                labelStyle: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                labelStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Colors.grey,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: Colors.grey, width: 2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: Colors.grey,
-                  width: 1,
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
               ),
             ),
           ),
@@ -109,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                 final password = _passwordController.text;
 
                 final response = await http.post(
-                  Uri.parse('http://10.0.2.2:5031/api/auth/login'),
+                  Uri.parse('http://10.221.107.110:5031/api/auth/login'),
                   headers: <String, String>{
                     'Content-Type': 'application/json; charset=UTF-8',
                   },
@@ -143,13 +138,23 @@ class _LoginPageState extends State<LoginPage> {
                   print('Login failed: ${response.statusCode}');
                 }
               },
-              style: FilledButton.styleFrom(backgroundColor: Color.fromARGB(255, 85, 173, 78), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))),
-              child: const Text("Bejelentkezés", style: TextStyle(fontSize: 18, color: Colors.white), textAlign: TextAlign.center),
+              style: FilledButton.styleFrom(
+                backgroundColor: Color.fromARGB(255, 85, 173, 78),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                ),
+              ),
+              child: const Text(
+                "Bejelentkezés",
+                style: TextStyle(fontSize: 18, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
             ),
-          )
+          ),
         ],
       ),
-      backgroundColor: Color.fromARGB(255, 58, 58, 58)
+      ),
+      backgroundColor: Color.fromARGB(255, 58, 58, 58),
     );
   }
 }
