@@ -41,9 +41,9 @@ class HomePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            const Positioned(
-              top: 0,
-              left: 24,
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.005,
+              left: MediaQuery.of(context).size.width * 0.09,
               child: Text(
                 "Kalóriadeficit",
                 style: TextStyle(
@@ -68,9 +68,9 @@ class HomePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            const Positioned(
-              top: 0,
-              left: 24,
+            Positioned(
+            top: MediaQuery.of(context).size.height * 0.005,
+            left: MediaQuery.of(context).size.width * 0.09,
               child: Text(
                 "Legutóbbi edzés",
                 style: TextStyle(
@@ -95,9 +95,9 @@ class HomePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            const Positioned(
+            Positioned(
               top: 0,
-              left: 24,
+              left: MediaQuery.of(context).size.width * 0.09,
               child: Text(
                 "Legutóbbi étkezés",
                 style: TextStyle(

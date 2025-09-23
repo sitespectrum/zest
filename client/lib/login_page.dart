@@ -135,7 +135,12 @@ class _LoginPageState extends State<LoginPage> {
                     );
                   }
                 } else {
-                  print('Login failed: ${response.statusCode}');
+                  showDialog(
+                    context: context, builder: (_) => AlertDialog(
+                      title: const Text("Hiba"),
+                      content: const Text("Hibás email vagy jelszó!"),
+                    )
+                  );
                 }
               },
               style: FilledButton.styleFrom(

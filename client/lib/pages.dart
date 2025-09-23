@@ -2,6 +2,8 @@ import 'package:client/components/workout_page.dart';
 import 'package:client/components/home_page.dart';
 import 'package:client/components/health_page.dart';
 import 'package:client/components/profile_page.dart';
+import 'package:client/components/custom_workout_page.dart';
+import 'package:client/components/custom_meal_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_popup/flutter_popup.dart';
@@ -20,7 +22,6 @@ class _PagesState extends State<Pages> {
     final List<Widget> _pages = [
     HomePage(),
     WorkoutPage(),
-    SizedBox.shrink(),
     HealthPage(),
     ProfilePage(),
   ];
@@ -48,37 +49,29 @@ class _PagesState extends State<Pages> {
       ),
       
       bottomNavigationBar: NavigationBar(
-        indicatorColor: Color.fromRGBO(78, 156, 71, 1),
-        backgroundColor: Color.from(alpha: 1, red: 0.333, green: 0.678, blue: 0.306),
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (int index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home),
-          label: 'Home',
+      backgroundColor: Color.fromARGB(255, 85, 173, 78),
+      indicatorColor: Color.fromARGB(255, 78, 156, 71),
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+      destinations: [
+        Padding(
+          padding: EdgeInsets.only(right: 20),
+          child: NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
         ),
-        NavigationDestination(
-          icon: Icon(Icons.fitness_center),
-          label: 'Workout',
+        Padding(
+          padding: EdgeInsets.only(right: 30),
+          child: NavigationDestination(icon: Icon(Icons.fitness_center), label: 'Workout'),
         ),
-        NavigationDestination(
-          icon: SizedBox.shrink(),
-          label: ''
+        Padding(
+          padding: EdgeInsets.only(left: 30),
+          child: NavigationDestination(icon: Icon(Icons.favorite), label: 'Health'),
         ),
-        NavigationDestination(
-          icon: Icon(Icons.favorite),
-          label: 'Health',
+        Padding(
+          padding: EdgeInsets.only(left: 20),
+          child: NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ),
-        NavigationDestination(
-          icon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-        ],
-      ),
+      ],
+    ),
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -99,9 +92,9 @@ class _PagesState extends State<Pages> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Positioned(
-                      top: -15,
-                      left: 20,
+                    Positioned(
+                      top: -MediaQuery.of(context).size.height * 0.02,
+                      left: MediaQuery.of(context).size.width * 0.03,
                       child: Text(
                         "Új létrehozása",
                         style: TextStyle(
@@ -121,7 +114,7 @@ class _PagesState extends State<Pages> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const WorkoutPage()),
+                                MaterialPageRoute(builder: (context) => const CWorkoutPage()),
                               );
                             },
                             child: Container(
@@ -166,7 +159,7 @@ class _PagesState extends State<Pages> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const HealthPage()),
+                                MaterialPageRoute(builder: (context) => const CMealPage()),
                               );
                             },
                             child: Container(

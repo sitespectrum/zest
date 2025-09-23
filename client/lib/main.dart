@@ -14,7 +14,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: Color.fromARGB(255, 58, 58, 58)
+        scaffoldBackgroundColor: Color.fromARGB(255, 58, 58, 58),
+        fontFamily: 'Geist',
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color.fromARGB(255, 58, 58, 58),
+          surfaceTintColor: Colors.transparent,
+        ),
       ),
       home: Scaffold(
         body: const MyCustomForm(),

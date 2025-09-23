@@ -27,18 +27,28 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final appTitle = 'Üdv, $username!';
 
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: Container(
-          margin: const EdgeInsets.all(4),
-          child: AppBar(
-              title: Text(appTitle, style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            margin: const EdgeInsets.all(6),
+            child: AppBar(
+              title: Text(
+                appTitle,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               automaticallyImplyLeading: false,
               backgroundColor: Color.fromARGB(255, 58, 58, 58),
             ),
           ),
         ),
+      ],
     );
   }
 }
