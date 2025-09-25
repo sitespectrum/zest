@@ -56,19 +56,19 @@ class _PagesState extends State<Pages> {
       destinations: [
         Padding(
           padding: EdgeInsets.only(right: 20),
-          child: NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          child: NavigationDestination(icon: Icon(Icons.home), label: 'Főoldal'),
         ),
         Padding(
           padding: EdgeInsets.only(right: 30),
-          child: NavigationDestination(icon: Icon(Icons.fitness_center), label: 'Workout'),
+          child: NavigationDestination(icon: Icon(Icons.fitness_center), label: 'Edzés'),
         ),
         Padding(
           padding: EdgeInsets.only(left: 30),
-          child: NavigationDestination(icon: Icon(Icons.favorite), label: 'Health'),
+          child: NavigationDestination(icon: Icon(Icons.favorite), label: 'Egészség'),
         ),
         Padding(
           padding: EdgeInsets.only(left: 20),
-          child: NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+          child: NavigationDestination(icon: Icon(Icons.person), label: 'Profil'),
         ),
       ],
     ),

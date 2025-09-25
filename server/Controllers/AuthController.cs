@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.Text;
 using Zest.Api.DTOs;
 using Zest.Api.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ZestApi.Controllers;
 
@@ -122,13 +123,6 @@ public class AuthController : ControllerBase
         }
     }
 
-
-    private bool IsValidEmail(string email)
-    {
-        var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-        return emailRegex.IsMatch(email);
-    }
-
     private string GenerateJwtToken(User user)
     {
         var jwtSettings = _config.GetSection("Jwt");
@@ -152,6 +146,11 @@ public class AuthController : ControllerBase
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    private bool IsValidEmail(string email)
+    {
+        var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+        return emailRegex.IsMatch(email);
+    }
 
 }
 
