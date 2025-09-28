@@ -49,8 +49,37 @@ public class AuthController : ControllerBase
 
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync();
+        Console.WriteLine($"New user ID: {user.Id}");
 
-        return Ok(new { Message = "Sikeres regisztráció!" });
+        return Ok(new { Message = "Sikeres regisztráció!", UserId = user.Id });
+    }
+
+    [HttpPost("details")]
+    public async Task<IActionResult> Details([FromBody] DetailsRequest request)
+    {
+        if (!request.Height.HasValue || !request.Weight.HasValue || !request.Birth.HasValue || string.IsNullOrWhiteSpace(request.Gender) || string.IsNullOrWhiteSpace(request.Goal))
+            return BadRequest("Az adatok kitöltése kötelező!");
+
+        var user = await _dbContext.Users.FindAsync(request.UserId);
+        if (user == null)
+            return NotFound("Felhasználó nem található.");
+
+        if (!Enum.TryParse<Gender>(request.Gender, out var genderEnum))
+            return BadRequest("Érvénytelen nem!");
+
+        if (!Enum.TryParse<Goal>(request.Goal, out var goalEnum))
+            return BadRequest("Érvénytelen nem!");
+
+        user.Height = request.Height.Value;
+        user.Weight = request.Weight.Value;
+        user.Birth = request.Birth.Value;
+        user.Gender = genderEnum;
+        user.Goal = goalEnum;
+
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new { Message = "Sikeres regisztráció!" });
     }
 
     [HttpPost("login")]
@@ -159,6 +188,16 @@ public class RegisterRequest
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
     public string UserName { get; set; } = "";
+}
+
+public class DetailsRequest
+{
+    public int? UserId { get; set; }
+    public int? Height { get; set; }
+    public int? Weight { get; set; }
+    public DateTime? Birth { get; set; }
+    public string? Gender { get; set; }
+    public string? Goal { get; set; }
 }
 
 public class LoginRequest

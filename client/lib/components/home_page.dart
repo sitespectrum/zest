@@ -88,7 +88,7 @@ class HomePage extends StatelessWidget {
             Container(
               width: double.infinity,
               height: MediaQuery.of(context).size.height * 0.18,
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color.fromARGB(255, 72, 72, 72),

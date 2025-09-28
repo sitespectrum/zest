@@ -19,7 +19,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
   void initState() {
     super.initState();
     _loadUser();
-    initializeDateFormatting('hu_HU', null);
+    initializeDateFormatting('hu_HU');
   }
 
   Future<void> _loadUser() async {

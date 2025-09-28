@@ -30,15 +30,11 @@ class _CMealPageState extends State<CMealPage> {
                     ),
                   ),
                   backgroundColor: const Color.fromARGB(255, 58, 58, 58),
-                  iconTheme: const IconThemeData(
-                    color: Colors.white,
-                  ),
+                  iconTheme: const IconThemeData(color: Colors.white),
                 ),
               ),
             ),
-            Container(
-              
-            ),
+            Container(),
           ],
         ),
       ),
@@ -81,7 +77,7 @@ class _CMealPageState extends State<CMealPage> {
                 ),
               ),
               child: const Text(
-                'Mentés',
+                'Kezdés',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,

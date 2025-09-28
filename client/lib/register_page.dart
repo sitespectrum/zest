@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'components/details_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -125,7 +127,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () async {
                   print("szia");
                   final response = await http.post(
-                    Uri.parse("http://10.221.107.110:5031/api/auth/register"),
+                    Uri.parse("http://192.168.1.5:5031/api/auth/register"),
                     headers: {"Content-Type": "application/json"},
                     body: jsonEncode({
                       "username": userNameController.text,
@@ -133,15 +135,20 @@ class _RegisterPageState extends State<RegisterPage> {
                       "password": passwordController.text,
                     }),
                   );
+                  if (response.statusCode == 200 || response.statusCode == 201) {
+                    final data = jsonDecode(response.body);
+                    final userId = data['UserId'] is int
+                        ? data['UserId'] as int
+                        : int.parse(data['userId'].toString());
 
-                  if (response.statusCode == 200 ||
-                      response.statusCode == 201) {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setInt('userId', userId);
+
                     if (context.mounted) {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text("Siker"),
-                          content: const Text("Sikeres regisztráció"),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailsPage(userId: userId),
                         ),
                       );
                     }
