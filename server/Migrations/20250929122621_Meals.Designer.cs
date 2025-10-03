@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Zest.Api.Data;
 
@@ -10,65 +11,14 @@ using Zest.Api.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    partial class ZestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250929122621_Meals")]
+    partial class Meals
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
-
-            modelBuilder.Entity("UserMeal", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("EatenAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("FoodId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FoodId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserMeals");
-                });
-
-            modelBuilder.Entity("Zest.Api.Models.Meals", b =>
-                {
-                    b.Property<int>("FoodId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Calories")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("Carbs")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("Fat")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Piece")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("Proteins")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("FoodId");
-
-                    b.ToTable("Meals");
-                });
 
             modelBuilder.Entity("Zest.Api.Models.RefreshToken", b =>
                 {
@@ -156,30 +106,6 @@ namespace server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Workouts");
-                });
-
-            modelBuilder.Entity("UserMeal", b =>
-                {
-                    b.HasOne("Zest.Api.Models.Meals", "Meal")
-                        .WithMany()
-                        .HasForeignKey("FoodId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Zest.Api.Models.User", "User")
-                        .WithMany("UserMeals")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Meal");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Zest.Api.Models.User", b =>
-                {
-                    b.Navigation("UserMeals");
                 });
 #pragma warning restore 612, 618
         }

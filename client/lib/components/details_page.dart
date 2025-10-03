@@ -19,7 +19,7 @@ class _DetailsPageState extends State<DetailsPage> {
   final TextEditingController gendercontroller = TextEditingController();
   final TextEditingController goalcontroller = TextEditingController();
   DateTime? selectedBirth;
-  int _selectedIndex = 0;
+  int _selectedIndex = 3;
 
   final List _goals = ["Tömegelés", "Szintentartás", "Fogyás"];
 
@@ -82,7 +82,7 @@ class _DetailsPageState extends State<DetailsPage> {
     }
 
     final response = await http.post(
-      Uri.parse("http://192.168.1.5:5031/api/auth/details"),
+      Uri.parse("http://10.169.236.110:5031/api/auth/details"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "userId": widget.userId,

@@ -10,6 +10,8 @@ public class ZestDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Workout> Workouts { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<Meals> Meals { get; set; }
+    public DbSet<UserMeal> UserMeals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,5 +25,16 @@ public class ZestDbContext : DbContext
             .HasConversion(
                 v => v.ToString(),
                 v => Enum.Parse<Goal>(v));
+
+        modelBuilder.Entity<UserMeal>()
+            .HasOne(um => um.User)
+            .WithMany(u => u.UserMeals)
+            .HasForeignKey(um => um.UserId);
+
+        modelBuilder.Entity<UserMeal>()
+            .HasOne(um => um.Meal)
+            .WithMany()
+            .HasForeignKey(um => um.FoodId);
+
     }
 }

@@ -27,4 +27,5 @@ public class User
     public DateTime Birth { get; set; }
     public Gender Gender { get; set; }
     public Goal Goal { get; set; }
+    public ICollection<UserMeal> UserMeals { get; set; } = new List<UserMeal>();
 }

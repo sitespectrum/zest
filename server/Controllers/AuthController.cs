@@ -21,11 +21,13 @@ public class AuthController : ControllerBase
 {
     private readonly ZestDbContext _dbContext;
     private readonly IConfiguration _config;
+    private readonly IMealService _mealService;
 
-    public AuthController(ZestDbContext dbContext, IConfiguration config)
+    public AuthController(ZestDbContext dbContext, IConfiguration config, IMealService mealService)
     {
         _dbContext = dbContext;
         _config = config;
+        _mealService = mealService;
     }
 
     [HttpPost("register")]
