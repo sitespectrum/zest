@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'add_meal_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:client/models/meal.dart';
+import 'dart:async';
+import 'package:client/pages.dart';
 
 class CMealPage extends StatefulWidget {
   const CMealPage({super.key});
@@ -8,8 +14,87 @@ class CMealPage extends StatefulWidget {
   State<CMealPage> createState() => _CMealPageState();
 }
 
+class UserMealDto {
+  final String mealName;
+  final String foodId;
+  final DateTime eatenAt;
+
+  UserMealDto({
+    required this.mealName,
+    required this.foodId,
+    required this.eatenAt,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      "mealName": mealName,
+      "foodId": foodId,
+      "eatenAt": eatenAt.toIso8601String(),
+    };
+  }
+}
+
+final mealtypecontroller = TextEditingController();
+
+Future<void> saveUserMeals(
+  List<MealDto> meals,
+  String mealName,
+  int userId,
+) async {
+  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
+  final totalProtein = meals.fold<double>(
+    0.0,
+    (sum, meal) => sum + meal.protein,
+  );
+  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+  final uri = Uri.parse("http://10.169.236.110:5031/api/Meals/addGroup");
+
+  final dto = {
+    "MealName": mealName,
+    "UserId": userId,
+    "EatenAt": DateTime.now().toIso8601String(),
+    "Meals": meals.map((m) => m.toJson()).toList(),
+    "TotalCalories": totalCalories,
+    "TotalProtein": totalProtein,
+    "TotalCarbs": totalCarbs,
+    "TotalFat": totalFat,
+  };
+
+  final response = await http.post(
+    uri,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    },
+    body: jsonEncode(dto),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception(
+      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+    );
+  }
+}
+
 class _CMealPageState extends State<CMealPage> {
-  List<Meal> userMeals = [];
+  List<MealDto> userMeals = [];
+  int mealindex = 4;
+  final List _mealtypes = ["Reggeli", "Ebéd", "Vacsora", "Egyéb"];
+  int get userCaloriesSum =>
+      userMeals.fold<int>(0, (sum, meal) => sum + meal.calories);
+  double get userProteinsSum =>
+      userMeals.fold<double>(0.0, (sum, meal) => sum + meal.protein);
+  double get userCarbsSum =>
+      userMeals.fold<double>(0, (sum, meal) => sum + meal.carbs);
+  double get userFatSum =>
+      userMeals.fold<double>(0, (sum, meal) => sum + meal.fat);
+  Timer? _debounce;
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +127,167 @@ class _CMealPageState extends State<CMealPage> {
                   ),
                 ),
               ),
+              Center(
+                child: Container(
+                  margin: EdgeInsets.all(20),
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Stack(
+                            children: [
+                              FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 0;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                                child: Text("Reggeli"),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: mealindex == 0
+                                      ? const Color.fromARGB(255, 85, 173, 78)
+                                      : const Color.fromARGB(255, 45, 45, 45),
+                                  fixedSize: Size(
+                                    MediaQuery.of(context).size.width * 0.41,
+                                    MediaQuery.of(context).size.height * 0.07,
+                                  ),
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(11),
+                                    side: const BorderSide(
+                                      color: Colors.white24,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(width: 20),
+
+                          Stack(
+                            children: [
+                              FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 1;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                                child: Text("Ebéd"),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: mealindex == 1
+                                      ? const Color.fromARGB(255, 85, 173, 78)
+                                      : const Color.fromARGB(255, 45, 45, 45),
+                                  fixedSize: Size(
+                                    MediaQuery.of(context).size.width * 0.41,
+                                    MediaQuery.of(context).size.height * 0.07,
+                                  ),
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(11),
+                                    side: const BorderSide(
+                                      color: Colors.white24,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 20),
+
+                      Row(
+                        children: [
+                          Stack(
+                            children: [
+                              FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 2;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                                child: Text("Vacsora"),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: mealindex == 2
+                                      ? const Color.fromARGB(255, 85, 173, 78)
+                                      : const Color.fromARGB(255, 45, 45, 45),
+                                  fixedSize: Size(
+                                    MediaQuery.of(context).size.width * 0.41,
+                                    MediaQuery.of(context).size.height * 0.07,
+                                  ),
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(11),
+                                    side: const BorderSide(
+                                      color: Colors.white24,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(width: 20),
+
+                          Stack(
+                            children: [
+                              FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 3;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                                child: Text("Egyéb"),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: mealindex == 3
+                                      ? const Color.fromARGB(255, 85, 173, 78)
+                                      : const Color.fromARGB(255, 45, 45, 45),
+                                  fixedSize: Size(
+                                    MediaQuery.of(context).size.width * 0.41,
+                                    MediaQuery.of(context).size.height * 0.07,
+                                  ),
+                                  elevation: 8,
+                                  shadowColor: Colors.black.withOpacity(0.8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(11),
+                                    side: const BorderSide(
+                                      color: Colors.white24,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               Container(
                 child: userMeals.isEmpty
-                    ? Column(
-                        children: [
-                          if (userMeals.isEmpty)
+                    ? Center(
+                        child: Column(
+                          children: [
                             const Padding(
                               padding: EdgeInsets.all(20),
                               child: Text(
@@ -57,7 +298,8 @@ class _CMealPageState extends State<CMealPage> {
                                 ),
                               ),
                             ),
-                        ],
+                          ],
+                        ),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
@@ -65,11 +307,12 @@ class _CMealPageState extends State<CMealPage> {
                         itemCount: userMeals.length,
                         itemBuilder: (context, index) {
                           final meal = userMeals[index];
-                          final cleanName = stripHtmlTags(meal.name);
-
+                          final cleanName = stripHtmlTags(
+                            meal.name ?? "Ismeretlen étel",
+                          );
                           return Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
+                              horizontal: 20,
                               vertical: 6,
                             ),
                             child: InkWell(
@@ -106,7 +349,7 @@ class _CMealPageState extends State<CMealPage> {
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              '${meal.cal}',
+                                              '${meal.calories} kcal',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                               ),
@@ -122,7 +365,7 @@ class _CMealPageState extends State<CMealPage> {
                                           ),
                                           Expanded(
                                             child: Text(
-                                              '${meal.carbo} g szénhidrát',
+                                              '${meal.carbs} g szénhidrát',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                               ),
@@ -147,6 +390,115 @@ class _CMealPageState extends State<CMealPage> {
                         },
                       ),
               ),
+
+              SizedBox(height: 20),
+
+              Container(
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 45, 45, 45),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Stack(
+                                children: [
+                                  Text(
+                                    'Kalória: ${userCaloriesSum} kcal',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          Row(
+                            children: [
+                              Stack(
+                                children: [
+                                  Text(
+                                    'Fehérje: ${userProteinsSum} g',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          Row(
+                            children: [
+                              Stack(
+                                children: [
+                                  Text(
+                                    'Szénhidrát: ${userCarbsSum} g',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          Row(
+                            children: [
+                              Stack(
+                                children: [
+                                  Text(
+                                    'Zsír: ${userFatSum} g',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      top: MediaQuery.of(context).size.height * 0.006,
+                      left: MediaQuery.of(context).size.width * 0.09,
+                      child: Text(
+                        "Összegzés",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -157,7 +509,7 @@ class _CMealPageState extends State<CMealPage> {
             children: [
               FilledButton(
                 onPressed: () async {
-                  final result = await Navigator.push<List<Meal>>(
+                  final result = await Navigator.push<List<MealDto>>(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AddMealPage(),
@@ -166,7 +518,7 @@ class _CMealPageState extends State<CMealPage> {
 
                   if (result != null) {
                     setState(() {
-                      userMeals = result;
+                      userMeals.addAll(result);
                     });
                   }
                 },
@@ -189,8 +541,42 @@ class _CMealPageState extends State<CMealPage> {
                   ),
                 ),
               ),
+
               FilledButton(
-                onPressed: () {},
+                onPressed: () async {
+                  try {
+                    final prefs = await SharedPreferences.getInstance();
+                    final userId = prefs.getInt('userId');
+                    if (userId == null)
+                      throw Exception("Nincs userId a gépen.");
+
+                    await saveUserMeals(
+                      userMeals,
+                      _mealtypes[mealindex],
+                      userId,
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Sikeresen mentve!"),
+                        showCloseIcon: true,
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text("Hiba: $e")));
+                  }
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 1000), () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Pages()),
+                      (route) => false,
+                    );
+                  });
+                },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 85, 173, 78),
                   fixedSize: Size(

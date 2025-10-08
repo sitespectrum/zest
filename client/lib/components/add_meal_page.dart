@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:client/models/meal.dart';
+import 'dart:async';
 
 class AddMealPage extends StatefulWidget {
   const AddMealPage({super.key});
@@ -15,56 +17,25 @@ String stripHtmlTags(String htmlText) {
   return htmlText.replaceAll(exp, '');
 }
 
-class Meal {
-  final String id;
-  final String foodId;
-  final String name;
-  final String piece;
-  final String cal;
-  final String protein;
-  final String carbo;
-  final String fat;
-
-  Meal({
-    required this.id,
-    required this.foodId,
-    required this.name,
-    required this.piece,
-    required this.cal,
-    required this.protein,
-    required this.carbo,
-    required this.fat,
-  });
-
-  factory Meal.fromJson(Map<String, dynamic> json) {
-    return Meal(
-      id: json["id"] ?? "",
-      foodId: json["food_id"] ?? "",
-      name: json["name"] ?? "",
-      piece: json["piece"] ?? "",
-      cal: json["cal"] ?? "",
-      protein: json["protein"] ?? "",
-      carbo: json["carbo"] ?? "",
-      fat: json["fat"] ?? "",
-    );
-  }
-}
-
 class _AddMealPageState extends State<AddMealPage> {
   final TextEditingController _controller = TextEditingController();
-  List<Meal> searchResults = [];
+  List<MealDto> searchResults = [];
   bool isLoading = false;
+  Timer? _debounce;
 
-  List<Meal> userMeals = [];
+  List<MealDto> userMeals = [];
 
-  void addMeal(Meal meal) {
+  void addMeal(MealDto meal) {
     setState(() {
       userMeals.add(meal);
     });
-    final cleanName = stripHtmlTags(meal.name);
+    final cleanName = stripHtmlTags(meal.name ?? "Ismeretlen étel");
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${cleanName} hozzáadva a listádhoz!')),
+      SnackBar(
+        content: Text('${cleanName} hozzáadva a listádhoz!'),
+        showCloseIcon: true,
+      ),
     );
   }
 
@@ -141,7 +112,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
       final results = items
           .whereType<Map<String, dynamic>>()
-          .map((e) => Meal.fromJson(e))
+          .map((e) => MealDto.fromJson(e))
           .toList();
 
       setState(() {
@@ -181,7 +152,16 @@ class _AddMealPageState extends State<AddMealPage> {
                             height: 48,
                             child: TextField(
                               controller: _controller,
-                              onChanged: _searchMeals,
+                              onChanged: (value) {
+                                if (_debounce?.isActive ?? false)
+                                  _debounce!.cancel();
+                                _debounce = Timer(
+                                  const Duration(milliseconds: 600),
+                                  () {
+                                    _searchMeals(value);
+                                  },
+                                );
+                              },
                               cursorColor: Colors.white,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -280,7 +260,9 @@ class _AddMealPageState extends State<AddMealPage> {
                       itemCount: searchResults.length,
                       itemBuilder: (context, index) {
                         final meal = searchResults[index];
-                        final cleanName = stripHtmlTags(meal.name);
+                        final cleanName = stripHtmlTags(
+                          meal.name ?? "Ismeretlen étel",
+                        );
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(
@@ -323,7 +305,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            '${meal.cal}',
+                                            '${meal.calories} kcal',
                                             style: const TextStyle(
                                               color: Colors.white70,
                                             ),
@@ -339,7 +321,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                         ),
                                         Expanded(
                                           child: Text(
-                                            '${meal.carbo} g szénhidrát',
+                                            '${meal.carbs} g szénhidrát',
                                             style: const TextStyle(
                                               color: Colors.white70,
                                             ),

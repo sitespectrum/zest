@@ -9,12 +9,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final savedUsername = prefs.getString('username');
-  runApp(MyApp(initialUsername: savedUsername));
+  runApp(Myapp(initialUsername: savedUsername));
 }
 
-class MyApp extends StatelessWidget {
+class Myapp extends StatelessWidget {
   final String? initialUsername;
-  const MyApp({super.key, this.initialUsername});
+  const Myapp({super.key, this.initialUsername});
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +28,13 @@ class MyApp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
         ),
       ),
-      home: initialUsername != null ? Pages() : Scaffold(body: MyCustomForm()),
+      home: initialUsername != null ? Pages() : Scaffold(body: MainPage()),
     );
   }
 }
 
-class MyCustomForm extends HookWidget {
-  const MyCustomForm({super.key});
+class MainPage extends HookWidget {
+  const MainPage({super.key});
 
   @override
   Widget build(BuildContext context) {

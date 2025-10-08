@@ -36,5 +36,15 @@ public class ZestDbContext : DbContext
             .WithMany()
             .HasForeignKey(um => um.FoodId);
 
+        modelBuilder.Entity<UserMeal>()
+            .Property(um => um.MealName)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<UserMeal>()
+            .HasOne(um => um.Meal)
+            .WithMany()
+            .HasForeignKey(um => um.FoodId)
+            .HasPrincipalKey(m => m.FoodId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

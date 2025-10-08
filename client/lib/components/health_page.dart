@@ -60,8 +60,16 @@ class _HealthPageState extends State<HealthPage> {
               margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 72, 72, 72),
+                color: const Color.fromARGB(255, 45, 45, 45),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: TableCalendar(
                 locale: 'hu_HU',
@@ -127,8 +135,16 @@ class _HealthPageState extends State<HealthPage> {
               margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 72, 72, 72),
+                color: const Color.fromARGB(255, 45, 45, 45),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
             ),
             Positioned(

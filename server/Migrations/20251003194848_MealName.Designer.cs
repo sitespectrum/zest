@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Zest.Api.Data;
 
@@ -10,9 +11,11 @@ using Zest.Api.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    partial class ZestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251003194848_MealName")]
+    partial class MealName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -26,24 +29,12 @@ namespace server.Migrations
                     b.Property<DateTime>("EatenAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FoodId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("FoodId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("MealName")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<double>("TotalCalories")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("TotalCarbs")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("TotalFat")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("TotalProtein")
-                        .HasColumnType("REAL");
 
                     b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
@@ -59,17 +50,18 @@ namespace server.Migrations
 
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
                 {
-                    b.Property<string>("FoodId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("FoodId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Calories")
                         .HasColumnType("INTEGER");
 
-                    b.Property<double>("Carbs")
-                        .HasColumnType("REAL");
+                    b.Property<bool>("Carbs")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<double>("Fat")
-                        .HasColumnType("REAL");
+                    b.Property<bool>("Fat")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
@@ -77,8 +69,8 @@ namespace server.Migrations
                     b.Property<string>("Piece")
                         .HasColumnType("TEXT");
 
-                    b.Property<double>("Proteins")
-                        .HasColumnType("REAL");
+                    b.Property<bool>("Proteins")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("FoodId");
 
@@ -178,7 +170,8 @@ namespace server.Migrations
                     b.HasOne("Zest.Api.Models.Meals", "Meal")
                         .WithMany()
                         .HasForeignKey("FoodId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Zest.Api.Models.User", "User")
                         .WithMany("UserMeals")
