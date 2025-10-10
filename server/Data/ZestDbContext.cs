@@ -32,19 +32,13 @@ public class ZestDbContext : DbContext
             .HasForeignKey(um => um.UserId);
 
         modelBuilder.Entity<UserMeal>()
-            .HasOne(um => um.Meal)
-            .WithMany()
-            .HasForeignKey(um => um.FoodId);
+            .HasMany(um => um.Meals)
+            .WithOne(m => m.UserMeal)
+            .HasForeignKey(m => m.UserMealId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<UserMeal>()
             .Property(um => um.MealName)
             .HasConversion<string>();
-
-        modelBuilder.Entity<UserMeal>()
-            .HasOne(um => um.Meal)
-            .WithMany()
-            .HasForeignKey(um => um.FoodId)
-            .HasPrincipalKey(m => m.FoodId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

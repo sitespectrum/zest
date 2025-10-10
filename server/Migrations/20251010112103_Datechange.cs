@@ -5,7 +5,7 @@
 namespace server.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateDateAgain : Migration
+    public partial class Datechange : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

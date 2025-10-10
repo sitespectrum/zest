@@ -67,7 +67,6 @@ public class MealsController : ControllerBase
             TotalFat = request.TotalFat
         };
 
-
         _context.UserMeals.Add(userMeal);
         await _context.SaveChangesAsync();
 
@@ -76,7 +75,7 @@ public class MealsController : ControllerBase
             var exists = await _context.Meals.AnyAsync(m => m.FoodId == mealDto.FoodId);
             if (!exists)
             {
-                var meal = new Meals
+                userMeal.Meals.Add(new Meals
                 {
                     FoodId = mealDto.FoodId,
                     Name = mealDto.Name,
@@ -84,14 +83,12 @@ public class MealsController : ControllerBase
                     Calories = mealDto.Calories,
                     Proteins = mealDto.Protein,
                     Carbs = mealDto.Carbs,
-                    Fat = mealDto.Fat,
-                };
-                _context.Meals.Add(meal);
+                    Fat = mealDto.Fat
+                });
             }
         }
 
         await _context.SaveChangesAsync();
-
         return Ok(new { Message = "Csoportos mentés sikeres", UserMealId = userMeal.Id });
     }
 
@@ -106,7 +103,9 @@ public class MealsController : ControllerBase
 
         var meals = await _context.UserMeals
             .Where(m => m.UserId == userId)
-            .Select(m => new 
+            .Include(m => m.Meals)
+            .OrderByDescending(m => m.EatenAt)
+            .Select(m => new
             {
                 m.Id,
                 MealName = m.MealName.ToString(),
@@ -114,13 +113,41 @@ public class MealsController : ControllerBase
                 m.TotalProtein,
                 m.TotalCarbs,
                 m.TotalFat,
-                m.EatenAt
+                m.EatenAt,
+                Meals = m.Meals.Select(mi => new
+                {
+                    mi.FoodId,
+                    mi.Name,
+                    mi.Calories,
+                    mi.Proteins,
+                    mi.Carbs,
+                    mi.Fat
+                }).ToList()
             })
             .ToListAsync();
 
         Console.WriteLine($"Talált {meals.Count} étkezést a UserId={userId}-hez");
 
         return Ok(meals);
+    }
+
+    [HttpGet("getTodayCalories")]
+    [Authorize]
+    public async Task<IActionResult> GetTodayCalories()
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized();
+
+        var userId = int.Parse(userIdClaim);
+
+        var utcToday = DateTime.UtcNow.Date;
+        var utcTomorrow = utcToday.AddDays(1);
+
+        var totalcalories = await _context.UserMeals
+            .Where(m => m.UserId == userId && m.EatenAt >= utcToday && m.EatenAt < utcTomorrow)
+            .SumAsync(t => t.TotalCalories);
+
+        return Ok(totalcalories);
     }
 
 }

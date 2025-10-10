@@ -357,7 +357,7 @@ class _CMealPageState extends State<CMealPage> {
                                           ),
                                           Expanded(
                                             child: Text(
-                                              '${meal.protein} g protein',
+                                              '${meal.protein.toStringAsFixed(3)} g protein',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                               ),
@@ -365,7 +365,7 @@ class _CMealPageState extends State<CMealPage> {
                                           ),
                                           Expanded(
                                             child: Text(
-                                              '${meal.carbs} g szénhidrát',
+                                              '${meal.carbs.toStringAsFixed(3)} g szénhidrát',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                               ),
@@ -373,13 +373,28 @@ class _CMealPageState extends State<CMealPage> {
                                           ),
                                           Expanded(
                                             child: Text(
-                                              '${meal.fat} g zsír',
+                                              '${meal.fat.toStringAsFixed(3)} g zsír',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                               ),
                                             ),
                                           ),
                                         ],
+                                      ),
+                                      Center(
+                                        child: TextButton(
+                                          onPressed: () => {
+                                            setState(() {
+                                              userMeals.remove(meal);
+                                            }),
+                                          },
+                                          child: const Text(
+                                            "Törlés",
+                                            style: TextStyle(
+                                              color: Colors.redAccent,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -436,7 +451,7 @@ class _CMealPageState extends State<CMealPage> {
                               Stack(
                                 children: [
                                   Text(
-                                    'Fehérje: ${userProteinsSum} g',
+                                    'Fehérje: ${userProteinsSum.toStringAsFixed(3)} g',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 20,
@@ -453,7 +468,7 @@ class _CMealPageState extends State<CMealPage> {
                               Stack(
                                 children: [
                                   Text(
-                                    'Szénhidrát: ${userCarbsSum} g',
+                                    'Szénhidrát: ${userCarbsSum.toStringAsFixed(3)} g',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 20,
@@ -470,7 +485,7 @@ class _CMealPageState extends State<CMealPage> {
                               Stack(
                                 children: [
                                   Text(
-                                    'Zsír: ${userFatSum} g',
+                                    'Zsír: ${userFatSum.toStringAsFixed(3)} g',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 20,
@@ -570,10 +585,9 @@ class _CMealPageState extends State<CMealPage> {
                   if (_debounce?.isActive ?? false) _debounce!.cancel();
                   _debounce = Timer(const Duration(milliseconds: 1000), () {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    Navigator.pushAndRemoveUntil(
+                    Navigator.push<List<MealDto>>(
                       context,
                       MaterialPageRoute(builder: (context) => const Pages()),
-                      (route) => false,
                     );
                   });
                 },

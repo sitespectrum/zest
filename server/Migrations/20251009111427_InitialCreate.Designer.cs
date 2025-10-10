@@ -11,8 +11,8 @@ using Zest.Api.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    [Migration("20251006195727_UserMealId")]
-    partial class UserMealId
+    [Migration("20251009111427_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -29,19 +29,26 @@ namespace server.Migrations
                     b.Property<DateTime>("EatenAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FoodId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("MealName")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("TotalCalories")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("TotalCarbs")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("TotalFat")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("TotalProtein")
+                        .HasColumnType("REAL");
 
                     b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("FoodId");
 
                     b.HasIndex("UserId");
 
@@ -63,6 +70,7 @@ namespace server.Migrations
                         .HasColumnType("REAL");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Piece")
@@ -75,6 +83,8 @@ namespace server.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("FoodId");
+
+                    b.HasIndex("UserMealId");
 
                     b.ToTable("Meals");
                 });
@@ -169,20 +179,29 @@ namespace server.Migrations
 
             modelBuilder.Entity("UserMeal", b =>
                 {
-                    b.HasOne("Zest.Api.Models.Meals", "Meal")
-                        .WithMany()
-                        .HasForeignKey("FoodId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Zest.Api.Models.User", "User")
                         .WithMany("UserMeals")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Meal");
-
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.Meals", b =>
+                {
+                    b.HasOne("UserMeal", "UserMeal")
+                        .WithMany("Meals")
+                        .HasForeignKey("UserMealId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserMeal");
+                });
+
+            modelBuilder.Entity("UserMeal", b =>
+                {
+                    b.Navigation("Meals");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.User", b =>

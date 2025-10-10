@@ -77,6 +77,7 @@ class UserMealDto {
   final double carbs;
   final double fat;
   final DateTime eatenAt;
+  final List<MealDto> meals;
 
   UserMealDto({
     required this.id,
@@ -86,6 +87,7 @@ class UserMealDto {
     required this.carbs,
     required this.fat,
     required this.eatenAt,
+    required this.meals,
   });
 
   static String _firstNonNull(Map<String, dynamic> json, List<String> keys) {
@@ -131,6 +133,9 @@ class UserMealDto {
       carbs: parseDouble(json['carbs'] ?? json['Carbs'] ?? json['totalCarbs']),
       fat: parseDouble(json['fat'] ?? json['Fat'] ?? json['totalFat']),
       eatenAt: DateTime.parse(json['eatenAt'] ?? json['EatenAt']),
+      meals: (json['meals'] as List<dynamic>? ?? [])
+          .map((e) => MealDto.fromJson(e))
+          .toList(),
     );
   }
 
@@ -143,6 +148,7 @@ class UserMealDto {
       "carbs": carbs,
       "fat": fat,
       "eatenAt": eatenAt.toIso8601String(),
+      "meals": meals,
     };
   }
 }
