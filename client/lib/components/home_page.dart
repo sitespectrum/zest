@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 Future<List<UserMealDto>> fetchUserMeals() async {
   final prefs = await SharedPreferences.getInstance();
@@ -28,7 +29,6 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   }
 }
 
-// Fetch today calories
 Future<double> fetchTodayCalories() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
@@ -94,6 +94,13 @@ class _HomePageState extends State<HomePage> {
             ? (meals..sort((a, b) => b.eatenAt.compareTo(a.eatenAt))).first
             : null;
 
+        String formattedDate = '';
+        if (lastMeal != null) {
+          formattedDate = DateFormat(
+            'yyyy-MM-dd HH:mm:ss',
+          ).format(lastMeal.eatenAt);
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -130,9 +137,9 @@ class _HomePageState extends State<HomePage> {
                     border: Border.all(color: Colors.white24),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color.fromARGB(255, 85, 173, 78),
-                        blurRadius: 8,
-                        offset: const Offset(0, 0),
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -228,9 +235,9 @@ class _HomePageState extends State<HomePage> {
                     border: Border.all(color: Colors.white24),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color.fromARGB(255, 85, 173, 78),
-                        blurRadius: 8,
-                        offset: const Offset(0, 0),
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -264,9 +271,9 @@ class _HomePageState extends State<HomePage> {
                           border: Border.all(color: Colors.white24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color.fromARGB(255, 85, 173, 78),
-                              blurRadius: 8,
-                              offset: const Offset(0, 0),
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
@@ -359,7 +366,7 @@ class _HomePageState extends State<HomePage> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    cleanName,
+                                                    "${cleanName} (${meal.quantity})",
                                                     style: const TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 16,
@@ -374,7 +381,7 @@ class _HomePageState extends State<HomePage> {
                                                     children: [
                                                       Expanded(
                                                         child: Text(
-                                                          '${meal.calories} kcal',
+                                                          '${meal.qCalories.toStringAsFixed(3)} kcal',
                                                           style:
                                                               const TextStyle(
                                                                 color: Colors
@@ -384,7 +391,7 @@ class _HomePageState extends State<HomePage> {
                                                       ),
                                                       Expanded(
                                                         child: Text(
-                                                          '${meal.protein} g protein',
+                                                          '${meal.qProtein.toStringAsFixed(3)} g protein',
                                                           style:
                                                               const TextStyle(
                                                                 color: Colors
@@ -398,7 +405,7 @@ class _HomePageState extends State<HomePage> {
                                                     children: [
                                                       Expanded(
                                                         child: Text(
-                                                          '${meal.carbs} g szénhidrát',
+                                                          '${meal.qCarbs.toStringAsFixed(3)} g szénhidrát',
                                                           style:
                                                               const TextStyle(
                                                                 color: Colors
@@ -408,7 +415,7 @@ class _HomePageState extends State<HomePage> {
                                                       ),
                                                       Expanded(
                                                         child: Text(
-                                                          '${meal.fat} g zsír',
+                                                          '${meal.qFat.toStringAsFixed(3)} g zsír',
                                                           style:
                                                               const TextStyle(
                                                                 color: Colors
@@ -469,9 +476,9 @@ class _HomePageState extends State<HomePage> {
                             border: Border.all(color: Colors.white24),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color.fromARGB(255, 85, 173, 78),
-                                blurRadius: 8,
-                                offset: const Offset(0, 0),
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
@@ -483,37 +490,39 @@ class _HomePageState extends State<HomePage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "${lastMeal.mealName}",
-                                    style: const TextStyle(
+                                    "${lastMeal.mealName} - ${formattedDate}",
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 20,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                          0.021,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    "Kalória: ${lastMeal.calories.toStringAsFixed(0)} kcal",
+                                    "Kalória: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
                                     ),
                                   ),
                                   Text(
-                                    "Fehérje: ${lastMeal.protein.toStringAsFixed(1)} g",
+                                    "Fehérje: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
                                     ),
                                   ),
                                   Text(
-                                    "Szénhidrát: ${lastMeal.carbs.toStringAsFixed(1)} g",
+                                    "Szénhidrát: ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
                                     ),
                                   ),
                                   Text(
-                                    "Zsír: ${lastMeal.fat.toStringAsFixed(1)} g",
+                                    "Zsír: ${lastMeal.totalFat.toStringAsFixed(1)} g",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,

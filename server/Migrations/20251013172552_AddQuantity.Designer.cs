@@ -11,8 +11,8 @@ using Zest.Api.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    [Migration("20251010112740_Datechangeagain")]
-    partial class Datechangeagain
+    [Migration("20251013172552_AddQuantity")]
+    partial class AddQuantity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -57,8 +57,9 @@ namespace server.Migrations
 
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
                 {
-                    b.Property<string>("FoodId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Calories")
                         .HasColumnType("INTEGER");
@@ -68,6 +69,10 @@ namespace server.Migrations
 
                     b.Property<double>("Fat")
                         .HasColumnType("REAL");
+
+                    b.Property<string>("FoodId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -79,10 +84,13 @@ namespace server.Migrations
                     b.Property<double>("Proteins")
                         .HasColumnType("REAL");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("UserMealId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("FoodId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserMealId");
 

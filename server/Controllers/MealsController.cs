@@ -61,34 +61,31 @@ public class MealsController : ControllerBase
             MealName = Enum.Parse<MealName>(request.MealName),
             UserId = request.UserId,
             EatenAt = request.EatenAt,
-            TotalCalories = request.TotalCalories,
-            TotalProtein = request.TotalProtein,
-            TotalCarbs = request.TotalCarbs,
-            TotalFat = request.TotalFat
+            TotalCalories = request.Meals.Sum(m => m.Calories * m.Quantity),
+            TotalProtein = request.Meals.Sum(m => m.Protein * m.Quantity),
+            TotalCarbs = request.Meals.Sum(m => m.Carbs * m.Quantity),
+            TotalFat = request.Meals.Sum(m => m.Fat * m.Quantity),
+            Meals = new List<Meals>()
         };
+
+        foreach (var mealDto in request.Meals)
+        {
+            userMeal.Meals.Add(new Meals
+            {
+                FoodId = mealDto.FoodId,
+                Name = mealDto.Name,
+                Piece = mealDto.Piece,
+                Calories = mealDto.Calories,
+                Proteins = mealDto.Protein,
+                Carbs = mealDto.Carbs,
+                Fat = mealDto.Fat,
+                Quantity = mealDto.Quantity
+            });
+        }
 
         _context.UserMeals.Add(userMeal);
         await _context.SaveChangesAsync();
 
-        foreach (var mealDto in request.Meals)
-        {
-            var exists = await _context.Meals.AnyAsync(m => m.FoodId == mealDto.FoodId);
-            if (!exists)
-            {
-                userMeal.Meals.Add(new Meals
-                {
-                    FoodId = mealDto.FoodId,
-                    Name = mealDto.Name,
-                    Piece = mealDto.Piece,
-                    Calories = mealDto.Calories,
-                    Proteins = mealDto.Protein,
-                    Carbs = mealDto.Carbs,
-                    Fat = mealDto.Fat
-                });
-            }
-        }
-
-        await _context.SaveChangesAsync();
         return Ok(new { Message = "Csoportos mentés sikeres", UserMealId = userMeal.Id });
     }
 
@@ -121,7 +118,14 @@ public class MealsController : ControllerBase
                     mi.Calories,
                     mi.Proteins,
                     mi.Carbs,
-                    mi.Fat
+                    mi.Fat,
+                    mi.Quantity,
+                    mi.Unit,
+                    mi.BaseWeight,
+                    CalculatedCalories = mi.Calories * mi.Quantity,
+                    CalculatedProtein = mi.Proteins * mi.Quantity,
+                    CalculatedCarbs = mi.Carbs * mi.Quantity,
+                    CalculatedFat = mi.Fat * mi.Quantity
                 }).ToList()
             })
             .ToListAsync();
@@ -150,6 +154,37 @@ public class MealsController : ControllerBase
         return Ok(totalcalories);
     }
 
+    [HttpGet("getTodayNutrients")]
+    [Authorize]
+    public async Task<IActionResult> GetTodayNutrients()
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized();
+
+        var userId = int.Parse(userIdClaim);
+
+        var utcToday = DateTime.UtcNow.Date;
+        var utcTomorrow = utcToday.AddDays(1);
+
+        var totalcalories = await _context.UserMeals
+            .Where(m => m.UserId == userId && m.EatenAt >= utcToday && m.EatenAt < utcTomorrow)
+            .SumAsync(t => t.TotalCalories);
+
+        var totalcarbs = await _context.UserMeals
+            .Where(m => m.UserId == userId && m.EatenAt >= utcToday && m.EatenAt < utcTomorrow)
+            .SumAsync(t => t.TotalCarbs);
+
+        var totalfat = await _context.UserMeals
+            .Where(m => m.UserId == userId && m.EatenAt >= utcToday && m.EatenAt < utcTomorrow)
+            .SumAsync(t => t.TotalFat);
+
+        var totalprotein = await _context.UserMeals
+            .Where(m => m.UserId == userId && m.EatenAt >= utcToday && m.EatenAt < utcTomorrow)
+            .SumAsync(t => t.TotalProtein);
+
+        return Ok(new { totalcalories, totalcarbs, totalfat, totalprotein });
+    }
+
 }
 
 public class UserMealDto
@@ -172,6 +207,9 @@ public class MealsDto
     public double Protein { get; set; }
     public double Carbs { get; set; }
     public double Fat { get; set; }
+    public int Quantity { get; set; }
+    public string? Unit { get; set; }
+    public double? BaseWeight { get; set; }
 }
 
 public class AddUserMealGroupRequest

@@ -23,7 +23,7 @@ public class UserMeal
     public double TotalCarbs { get; set; }
     public double TotalFat { get; set; }
 
-    public DateTime EatenAt { get; set; } = DateTime.UtcNow;
+    public DateTime EatenAt { get; set; } = DateTime.Today;
 
     public User? User { get; set; }
 

@@ -92,6 +92,8 @@ namespace server.Migrations
                 name: "Meals",
                 columns: table => new
                 {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
                     FoodId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Piece = table.Column<string>(type: "TEXT", nullable: true),
@@ -103,7 +105,7 @@ namespace server.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Meals", x => x.FoodId);
+                    table.PrimaryKey("PK_Meals", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Meals_UserMeals_UserMealId",
                         column: x => x.UserMealId,

@@ -87,13 +87,13 @@ class _CMealPageState extends State<CMealPage> {
   int mealindex = 4;
   final List _mealtypes = ["Reggeli", "Ebéd", "Vacsora", "Egyéb"];
   int get userCaloriesSum =>
-      userMeals.fold<int>(0, (sum, meal) => sum + meal.calories);
+      userMeals.fold<int>(0, (sum, meal) => sum + meal.qCalories);
   double get userProteinsSum =>
-      userMeals.fold<double>(0.0, (sum, meal) => sum + meal.protein);
+      userMeals.fold<double>(0.0, (sum, meal) => sum + meal.qProtein);
   double get userCarbsSum =>
-      userMeals.fold<double>(0, (sum, meal) => sum + meal.carbs);
+      userMeals.fold<double>(0, (sum, meal) => sum + meal.qCarbs);
   double get userFatSum =>
-      userMeals.fold<double>(0, (sum, meal) => sum + meal.fat);
+      userMeals.fold<double>(0, (sum, meal) => sum + meal.qFat);
   Timer? _debounce;
 
   @override
@@ -349,31 +349,7 @@ class _CMealPageState extends State<CMealPage> {
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              '${meal.calories} kcal',
-                                              style: const TextStyle(
-                                                color: Colors.white70,
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Text(
-                                              '${meal.protein.toStringAsFixed(3)} g protein',
-                                              style: const TextStyle(
-                                                color: Colors.white70,
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Text(
-                                              '${meal.carbs.toStringAsFixed(3)} g szénhidrát',
-                                              style: const TextStyle(
-                                                color: Colors.white70,
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Text(
-                                              '${meal.fat.toStringAsFixed(3)} g zsír',
+                                              '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | ${meal.quantity.toStringAsFixed(0)} darab | ${meal.baseWeight} ${meal.unit}',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                               ),
@@ -575,6 +551,7 @@ class _CMealPageState extends State<CMealPage> {
                       const SnackBar(
                         content: Text("Sikeresen mentve!"),
                         showCloseIcon: true,
+                        duration: Duration(seconds: 1),
                       ),
                     );
                   } catch (e) {
@@ -583,7 +560,7 @@ class _CMealPageState extends State<CMealPage> {
                     ).showSnackBar(SnackBar(content: Text("Hiba: $e")));
                   }
                   if (_debounce?.isActive ?? false) _debounce!.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 1000), () {
+                  _debounce = Timer(const Duration(milliseconds: 1500), () {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     Navigator.push<List<MealDto>>(
                       context,

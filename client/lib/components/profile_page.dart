@@ -65,8 +65,12 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  final caloriestypeController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
     final appTitle = username != null ? 'Üdv, $username!' : 'Üdv!';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -77,22 +81,77 @@ class _ProfilePageState extends State<ProfilePage> {
             child: AppBar(
               title: Text(
                 appTitle,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               automaticallyImplyLeading: false,
-              backgroundColor: Color.fromARGB(255, 58, 58, 58),
+              backgroundColor: const Color.fromARGB(255, 58, 58, 58),
             ),
           ),
         ),
 
-        Stack(
-          children: [
-            Center(
-              child: FilledButton(
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.41,
+                    height: MediaQuery.of(context).size.height * 0.085,
+                    padding: const EdgeInsets.fromLTRB(6, 4, 10, 5),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 72, 72, 72),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      cursorColor: Colors.white,
+                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                      controller: caloriestypeController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(
+                            color: Colors.transparent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(
+                            color: Colors.transparent,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  Positioned(
+                    top: -MediaQuery.of(context).size.height * 0.018,
+                    left: MediaQuery.of(context).size.width * 0.025,
+                    child: const Text(
+                      "Új kalóriacél",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              FilledButton(
                 onPressed: loggedIn ? _logout : _login,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 85, 173, 78),
@@ -106,15 +165,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: Text(
                   loggedIn ? "Kijelentkezés" : "Bejelentkezés",
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
