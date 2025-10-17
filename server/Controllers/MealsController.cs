@@ -81,6 +81,7 @@ public class MealsController : ControllerBase
             using var client = new HttpClient();
 
             var uri = new UriBuilder("https://kaloriabazis.hu/food.php");
+            Console.WriteLine($"[DEBUG] Hívott URL: {uri}");
             var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
             query["show"] = "getmenew";
             query["id"] = foodId;

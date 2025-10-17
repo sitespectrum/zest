@@ -54,7 +54,9 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
-      final uri = Uri.parse('https://zest-g4ua.onrender.com/api/get-units?foodId=$foodId');
+      final uri = Uri.parse(
+        'https://zest-g4ua.onrender.com/api/meals/get-units?foodId=$foodId',
+      );
       final response = await http.get(uri);
 
       print("STATUS: ${response.statusCode}");
@@ -79,7 +81,9 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
-      final uri = Uri.parse('https://zest-g4ua.onrender.com/api/get-by-barcode?code=$code');
+      final uri = Uri.parse(
+        'https://zest-g4ua.onrender.com/api/meals/get-by-barcode?code=$code',
+      );
       final response = await http.get(uri);
 
       print("STATUS: ${response.statusCode}");
@@ -355,6 +359,7 @@ class _AddMealPageState extends State<AddMealPage> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () async {
+                              print("id: ${meal.foodId}");
                               final units = await _fetchUnit(meal.foodId);
                               if (units.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
