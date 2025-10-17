@@ -12,6 +12,7 @@ RUN dotnet publish -c Release -o /app
 
 
 RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
 
 RUN dotnet ef database update
 
