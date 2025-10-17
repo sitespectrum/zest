@@ -10,20 +10,22 @@ RUN dotnet restore server.csproj
 COPY . .
 RUN dotnet publish -c Release -o /app
 
+
+RUN dotnet tool install --global dotnet-ef
+
+RUN dotnet ef database update
+
 # Build the runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /app .
+COPY --from=build /src/zest.db /app/zest.db
 
 # Configure the container to listen on all interfaces
 ENV ASPNETCORE_URLS=http://0.0.0.0:10000
 
 # Expose the port the app runs on
 EXPOSE 10000
-
-RUN dotnet tool install --global dotnet-ef
-
-RUN dotnet ef database update
 
 # Start the application
 ENTRYPOINT ["dotnet", "server.dll"] 
