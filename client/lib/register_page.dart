@@ -127,7 +127,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () async {
                   print("szia");
                   final response = await http.post(
-                    Uri.parse("http://10.169.236.110:5031/api/auth/register"),
+                    Uri.parse(
+                      "https://zest-g4ua.onrender.com/api/auth/register",
+                    ),
                     headers: {"Content-Type": "application/json"},
                     body: jsonEncode({
                       "username": userNameController.text,

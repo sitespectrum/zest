@@ -82,7 +82,7 @@ class _DetailsPageState extends State<DetailsPage> {
     }
 
     final response = await http.post(
-      Uri.parse("http://10.169.236.110:5031/api/auth/details"),
+      Uri.parse("https://zest-g4ua.onrender.com/api/auth/details"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "userId": widget.userId,

@@ -53,7 +53,7 @@ Future<void> saveUserMeals(
 
   if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
-  final uri = Uri.parse("http://10.169.236.110:5031/api/Meals/addGroup");
+  final uri = Uri.parse("https://zest-g4ua.onrender.com/api/Meals/addGroup");
 
   final dto = {
     "MealName": mealName,

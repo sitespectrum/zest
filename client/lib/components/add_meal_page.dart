@@ -54,16 +54,8 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
-      final uri = Uri.https('kaloriabazis.hu', '/food.php', {
-        'show': 'getmenew',
-        'id': foodId,
-        'food_id_special': '0',
-        'food_id_directly': '1',
-      });
-
-      final headers = {'Cookie': 'myPHP83SESSID=bQa99fWhh5WMDMP8SJIwEZg24r;'};
-
-      final response = await http.get(uri, headers: headers);
+      final uri = Uri.parse('https://zest-g4ua.onrender.com/api/get-units?foodId=$foodId');
+      final response = await http.get(uri);
 
       print("STATUS: ${response.statusCode}");
       print("BODY: ${response.body}");
@@ -71,13 +63,12 @@ class _AddMealPageState extends State<AddMealPage> {
       if (response.statusCode != 200) throw Exception('HTTP hiba');
 
       final data = jsonDecode(response.body);
-
-      if (data['getme'] == null) {
-        print("Nincs 'getme' a válaszban!");
+      if (data is! List) {
+        print("Nem lista típus!");
         return [];
       }
 
-      final units = List<Map<String, dynamic>>.from(data['getme']);
+      final units = List<Map<String, dynamic>>.from(data);
       print("Units: $units");
       return units;
     } catch (e, st) {
@@ -88,14 +79,8 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
-      final uri = Uri.https('kaloriabazis.hu', '/barcode_ajax.php', {
-        'show': 'get_food_info_from_bcode',
-        'bcode': code,
-      });
-
-      final headers = {'Cookie': 'myPHP83SESSID=bQa99fWhh5WMDMP8SJIwEZg24r;'};
-
-      final response = await http.get(uri, headers: headers);
+      final uri = Uri.parse('https://zest-g4ua.onrender.com/api/get-by-barcode?code=$code');
+      final response = await http.get(uri);
 
       print("STATUS: ${response.statusCode}");
       print("BODY: ${response.body}");
@@ -103,7 +88,7 @@ class _AddMealPageState extends State<AddMealPage> {
       if (response.statusCode != 200) throw Exception('HTTP hiba');
 
       final data = jsonDecode(response.body);
-      if (data['food_data'] == null) return [];
+      if (data is! Map || data['food_data'] == null) return [];
 
       final foodData = data['food_data'];
       final meal = MealDto(
@@ -136,23 +121,12 @@ class _AddMealPageState extends State<AddMealPage> {
     setState(() => isLoading = true);
 
     try {
-      final uri = Uri.https('kaloriabazis.hu', '/getfood.php', {
-        'q': q,
-        'p': '1',
-        's': '1000',
-        'expropsearch_id': '0',
-        'expropsearch_inc': '0',
-        'all_public_food': '0',
-      });
-
-      final headers = {'Cookie': 'myPHP83SESSID=bQa99fWhh5WMDMP8SJIwEZg24r;'};
-      final response = await http.get(uri, headers: headers);
+      final uri = Uri.parse('https://zest-g4ua.onrender.com/api/meals/search?q=$q');
+      final response = await http.get(uri);
 
       if (response.statusCode != 200) {
         print('HTTP error: ${response.statusCode}');
-        setState(() {
-          searchResults = [];
-        });
+        setState(() => searchResults = []);
         return;
       }
 
@@ -162,12 +136,7 @@ class _AddMealPageState extends State<AddMealPage> {
       try {
         decoded = jsonDecode(body);
       } catch (e) {
-        print('Nem JSON a válasz: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Nincs találat vagy hiba történt.')),
-          );
-        }
+        print('Nem JSON válasz: $e');
         setState(() => searchResults = []);
         return;
       }
@@ -182,11 +151,7 @@ class _AddMealPageState extends State<AddMealPage> {
           items = decoded['results'];
         } else if (decoded['data'] is List) {
           items = decoded['data'];
-        } else {
-          items = [];
         }
-      } else {
-        items = [];
       }
 
       final results = items
@@ -194,9 +159,7 @@ class _AddMealPageState extends State<AddMealPage> {
           .map((e) => MealDto.fromJson(e))
           .toList();
 
-      setState(() {
-        searchResults = results;
-      });
+      setState(() => searchResults = results);
     } catch (e, st) {
       print('Keresés hiba: $e\n$st');
       setState(() => searchResults = []);

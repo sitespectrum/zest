@@ -104,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                   final password = _passwordController.text;
 
                   final response = await http.post(
-                    Uri.parse('http://10.169.236.110:5031/api/auth/login'),
+                    Uri.parse('https://zest-g4ua.onrender.com/api/auth/login'),
                     headers: <String, String>{
                       'Content-Type': 'application/json; charset=UTF-8',
                     },

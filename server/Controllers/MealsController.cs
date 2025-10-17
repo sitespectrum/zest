@@ -26,23 +26,124 @@ public class MealsController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> Search(string q)
+    public async Task<IActionResult> Search([FromQuery] string q)
     {
         if (string.IsNullOrWhiteSpace(q))
             return Ok(new List<object>());
 
-        using var client = new HttpClient();
-        var response = await client.GetAsync($"https://kaloriabazis.hu/getfood.php?q={q}");
-        var content = await response.Content.ReadAsStringAsync();
+        try
+        {
+            using var client = new HttpClient();
+
+            var uri = new UriBuilder("https://kaloriabazis.hu/getfood.php");
+            var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+            query["q"] = q;
+            query["p"] = "1";
+            query["s"] = "1000";
+            query["expropsearch_id"] = "0";
+            query["expropsearch_inc"] = "0";
+            query["all_public_food"] = "0";
+            uri.Query = query.ToString();
+
+            var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
+            request.Headers.Add("Cookie", "myPHP83SESSID=bQa99fWhh5WMDMP8SJIwEZg24r;");
+
+            var response = await client.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
+
+            try
+            {
+                var parsed = System.Text.Json.JsonSerializer.Deserialize<object>(content);
+                return Ok(parsed);
+            }
+            catch
+            {
+                return Ok(new List<object>());
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Szerver hiba: {ex.Message}");
+        }
+    }
+
+    [HttpGet("get-units")]
+    public async Task<IActionResult> GetUnits([FromQuery] string foodId)
+    {
+        if (string.IsNullOrWhiteSpace(foodId))
+            return BadRequest("foodId kötelező.");
 
         try
         {
+            using var client = new HttpClient();
+
+            var uri = new UriBuilder("https://kaloriabazis.hu/food.php");
+            var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+            query["show"] = "getmenew";
+            query["id"] = foodId;
+            query["food_id_special"] = "0";
+            query["food_id_directly"] = "1";
+            uri.Query = query.ToString();
+
+            var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
+            request.Headers.Add("Cookie", "myPHP83SESSID=bQa99fWhh5WMDMP8SJIwEZg24r;");
+
+            var response = await client.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
+
+            var data = System.Text.Json.JsonDocument.Parse(content);
+
+            if (!data.RootElement.TryGetProperty("getme", out var getmeElement))
+                return Ok(new List<object>());
+
+            var json = System.Text.Json.JsonSerializer.Serialize(getmeElement);
+            var list = System.Text.Json.JsonSerializer.Deserialize<List<object>>(json);
+
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Szerver hiba: {ex.Message}");
+        }
+    }
+
+    [HttpGet("get-by-barcode")]
+    public async Task<IActionResult> GetByBarcode([FromQuery] string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return BadRequest("code kötelező.");
+
+        try
+        {
+            using var client = new HttpClient();
+
+            var uri = new UriBuilder("https://kaloriabazis.hu/barcode_ajax.php");
+            var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+            query["show"] = "get_food_info_from_bcode";
+            query["bcode"] = code;
+            uri.Query = query.ToString();
+
+            var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
+            request.Headers.Add("Cookie", "myPHP83SESSID=bQa99fWhh5WMDMP8SJIwEZg24r;");
+
+            var response = await client.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
+
             var parsed = System.Text.Json.JsonSerializer.Deserialize<object>(content);
             return Ok(parsed);
         }
-        catch
+        catch (Exception ex)
         {
-            return Ok(new List<object>());
+            return StatusCode(500, $"Szerver hiba: {ex.Message}");
         }
     }
 

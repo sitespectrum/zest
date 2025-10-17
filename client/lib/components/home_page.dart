@@ -14,7 +14,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("http://10.169.236.110:5031/api/Meals/getUserMeals"),
+    Uri.parse("https://zest-g4ua.onrender.com/api/Meals/getUserMeals"),
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -35,7 +35,7 @@ Future<double> fetchTodayCalories() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("http://10.169.236.110:5031/api/Meals/getTodayCalories"),
+    Uri.parse("https://zest-g4ua.onrender.com/api/Meals/getTodayCalories"),
     headers: {"Authorization": "Bearer $token"},
   );
 
