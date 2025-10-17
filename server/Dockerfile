@@ -21,5 +21,9 @@ ENV ASPNETCORE_URLS=http://0.0.0.0:10000
 # Expose the port the app runs on
 EXPOSE 10000
 
+RUN dotnet too install --global dotnet-ef
+
+RUN dotnet ef database update
+
 # Start the application
 ENTRYPOINT ["dotnet", "server.dll"] 
