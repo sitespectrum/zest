@@ -6,6 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
+import '../constants.dart' as constants;
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -14,6 +15,9 @@ class HealthPage extends StatefulWidget {
   State<HealthPage> createState() => _HealthPageState();
 }
 
+String l = constants.localroute;
+String s = constants.serverroute;
+
 Future<List<UserMealDto>> fetchUserMeals() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
@@ -21,7 +25,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("https://zest-g4ua.onrender.com/api/Meals/getUserMeals"),
+    Uri.parse("$s/api/meals/getUserMeals"),
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -42,7 +46,7 @@ Future<Map<String, double>> fetchTodayNutrients() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("https://zest-g4ua.onrender.com/api/Meals/getTodayNutrients"),
+    Uri.parse("$s/api/Meals/getTodayNutrients"),
     headers: {"Authorization": "Bearer $token"},
   );
   print("szia, ${response.body}");

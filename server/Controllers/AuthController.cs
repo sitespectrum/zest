@@ -56,10 +56,34 @@ public class AuthController : ControllerBase
         return Ok(new { Message = "Sikeres regisztráció!", UserId = user.Id });
     }
 
+    [HttpGet("getUser")]
+    public async Task<IActionResult> GetUser()
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized("Nincs token.");
+
+        var userId = int.Parse(userIdClaim);
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null) return NotFound("Felhasználó nem található.");
+
+        return Ok(new
+        {
+            user.Id,
+            user.UserName,
+            user.Height,
+            user.Weight,
+            user.Birth,
+            user.Gender,
+            user.Goal,
+            user.Activity,
+            user.CalorieGoal
+        });
+    }
+
     [HttpPost("details")]
     public async Task<IActionResult> Details([FromBody] DetailsRequest request)
     {
-        if (!request.Height.HasValue || !request.Weight.HasValue || !request.Birth.HasValue || string.IsNullOrWhiteSpace(request.Gender) || string.IsNullOrWhiteSpace(request.Goal))
+        if (!request.Height.HasValue || !request.Weight.HasValue || !request.Birth.HasValue || string.IsNullOrWhiteSpace(request.Gender) || string.IsNullOrWhiteSpace(request.Goal) || string.IsNullOrWhiteSpace(request.Activity))
             return BadRequest("Az adatok kitöltése kötelező!");
 
         var user = await _dbContext.Users.FindAsync(request.UserId);
@@ -72,11 +96,16 @@ public class AuthController : ControllerBase
         if (!Enum.TryParse<Goal>(request.Goal, out var goalEnum))
             return BadRequest("Érvénytelen nem!");
 
+        if (!Enum.TryParse<Activity>(request.Activity, out var activityEnum))
+            return BadRequest("Érvénytelen aktivitás!");
+
         user.Height = request.Height.Value;
         user.Weight = request.Weight.Value;
         user.Birth = request.Birth.Value;
         user.Gender = genderEnum;
         user.Goal = goalEnum;
+        user.Activity = activityEnum;
+        user.CalorieGoal = request.CalorieGoal;
 
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
@@ -161,7 +190,8 @@ public class AuthController : ControllerBase
         {
             new Claim("id", user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(ClaimTypes.Email, user.Email)
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
@@ -207,6 +237,8 @@ public class DetailsRequest
     public DateTime? Birth { get; set; }
     public string? Gender { get; set; }
     public string? Goal { get; set; }
+    public string? Activity { get; set; }
+    public double CalorieGoal { get; set; }
 }
 
 public class LoginRequest

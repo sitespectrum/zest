@@ -6,6 +6,29 @@ import '../models/meal.dart';
 import 'add_meal_page.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../constants.dart' as constants;
+
+String l = constants.localroute;
+String s = constants.serverroute;
+
+Future<double> fetchCalorieGoal() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception("Nincs token");
+
+  final response = await http.get(
+    Uri.parse("$s/api/auth/getUser"),
+    headers: {"Authorization": "Bearer $token"},
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    final goal = data['calorieGoal'] ?? data['CalorieGoal'];
+    return (goal as num).toDouble();
+  } else {
+    throw Exception("Nem sikerült lekérni a cél kalóriát: ${response.body}");
+  }
+}
 
 Future<List<UserMealDto>> fetchUserMeals() async {
   final prefs = await SharedPreferences.getInstance();
@@ -14,7 +37,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("https://zest-g4ua.onrender.com/api/meals/getUserMeals"),
+    Uri.parse("$s/api/meals/getUserMeals"),
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -35,7 +58,7 @@ Future<double> fetchTodayCalories() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("https://zest-g4ua.onrender.com/api/meals/getTodayCalories"),
+    Uri.parse("$s/api/meals/getTodayCalories"),
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -58,6 +81,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late Future<List<UserMealDto>> _futureMeals;
   late Future<double> _todaycalories;
+  late Future<double> _calorieGoal;
 
   @override
   void didChangeDependencies() {
@@ -65,6 +89,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _futureMeals = fetchUserMeals();
       _todaycalories = fetchTodayCalories();
+      _calorieGoal = fetchCalorieGoal();
     });
   }
 
@@ -143,22 +168,17 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  child: FutureBuilder<double>(
-                    future: _todaycalories,
+                  child: FutureBuilder<List<double>>(
+                    future: Future.wait([_todaycalories, _calorieGoal]),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            "Hiba: ${snapshot.error}",
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        );
+                        return Center(child: Text("Hiba: ${snapshot.error}"));
                       }
 
-                      final calories = snapshot.data ?? 0.0;
-                      const targetCalories = 3000.0;
+                      final calories = snapshot.data?[0] ?? 0.0;
+                      final targetCalories = snapshot.data?[1] ?? 3000.0;
                       final percentage = (calories / targetCalories) * 100;
 
                       return Stack(
@@ -183,10 +203,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 PieChartSectionData(
                                   color: Colors.grey.shade800,
-                                  value: (targetCalories - calories).clamp(
-                                    0,
-                                    targetCalories,
-                                  ),
+                                  value: (targetCalories - calories).clamp(0, targetCalories),
                                   title: '',
                                   radius: 25,
                                 ),
@@ -194,7 +211,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           Text(
-                            "${calories.toStringAsFixed(0)} / 3000 kcal",
+                            "${calories.toStringAsFixed(0)} / ${targetCalories.toStringAsFixed(0)} kcal",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,

@@ -95,38 +95,29 @@ public class MealsController : ControllerBase
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
 
-            // Debug
-            Console.WriteLine("==== Külső API válasz ====");
-            Console.WriteLine(content);
-
             if (!response.IsSuccessStatusCode)
                 return StatusCode((int)response.StatusCode, new { error = "Hiba a külső API-nál." });
 
-            // Ha HTML jön, akkor azt ne próbáljuk JSON-nak
             if (content.TrimStart().StartsWith("<"))
             {
                 return StatusCode(500, new { error = "A külső API nem JSON-t adott vissza (valószínűleg lejárt a session cookie)." });
             }
 
-            // Biztonságos JSON parse
             using var jsonDoc = System.Text.Json.JsonDocument.Parse(content);
             var root = jsonDoc.RootElement;
 
-            // Ha benne van a getme, azt küldjük vissza
             if (root.TryGetProperty("getme", out var getmeElement))
             {
                 var list = System.Text.Json.JsonSerializer.Deserialize<List<object>>(getmeElement.GetRawText());
                 return Ok(list);
             }
 
-            // Ha nincs getme, de lista
             if (root.ValueKind == System.Text.Json.JsonValueKind.Array)
             {
                 var list = System.Text.Json.JsonSerializer.Deserialize<List<object>>(root.GetRawText());
                 return Ok(list);
             }
 
-            // Ha valami más JSON jön (pl. dict)
             return Ok(new { raw = root });
         }
         catch (Exception ex)

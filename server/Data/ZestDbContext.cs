@@ -26,6 +26,12 @@ public class ZestDbContext : DbContext
                 v => v.ToString(),
                 v => Enum.Parse<Goal>(v));
 
+        modelBuilder.Entity<User>()
+            .Property(u => u.Activity)
+            .HasConversion(
+                v => v.ToString(),
+                v => Enum.Parse<Activity>(v));
+
         modelBuilder.Entity<UserMeal>()
             .HasOne(um => um.User)
             .WithMany(u => u.UserMeals)

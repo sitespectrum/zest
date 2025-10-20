@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../constants.dart' as constants;
 
 class DetailsPage extends StatefulWidget {
   const DetailsPage({super.key, required this.userId});
@@ -18,10 +19,23 @@ class _DetailsPageState extends State<DetailsPage> {
   final TextEditingController birthcontroller = TextEditingController();
   final TextEditingController gendercontroller = TextEditingController();
   final TextEditingController goalcontroller = TextEditingController();
+  final TextEditingController activitycontroller = TextEditingController();
   DateTime? selectedBirth;
-  int _selectedIndex = 3;
+  String l = constants.localroute;
+  String s = constants.serverroute;
+  int _gselectedIndex = 3;
+  int _aselectedIndex = 5;
+  double multiplier = 1;
+  int IncreaseOrDecreaseCalories = 0;
 
   final List _goals = ["Tömegelés", "Szintentartás", "Fogyás"];
+
+  final List _activity = [
+    "Enyhén_aktív",
+    "Közepesen_aktív",
+    "Nagyon_aktív",
+    "Extrém_aktív",
+  ];
 
   @override
   Future<void> _selectDate() async {
@@ -50,8 +64,21 @@ class _DetailsPageState extends State<DetailsPage> {
       setState(() {
         selectedBirth = picked;
         birthcontroller.text = DateFormat('yyyy.MM.dd').format(picked);
+        final age = _calcAge(picked);
       });
     }
+  }
+
+  int _calcAge(DateTime birthDate) {
+    final today = DateTime.now();
+    int age = today.year - birthDate.year;
+
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month && today.day < birthDate.day)) {
+      age--;
+    }
+
+    return age;
   }
 
   Future<void> submitDetails() async {
@@ -66,6 +93,7 @@ class _DetailsPageState extends State<DetailsPage> {
     final weight = int.tryParse(weightcontroller.text);
     final gender = gendercontroller.text;
     final goal = goalcontroller.text;
+    final activity = activitycontroller.text;
 
     if (height == null || weight == null || gender.isEmpty || goal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,6 +101,11 @@ class _DetailsPageState extends State<DetailsPage> {
       );
       return;
     }
+
+    final age = _calcAge(selectedBirth!);
+
+    double BMR = 10 * weight + 6.25 * height - 5 * age + 5;
+    double calorieGoal = BMR * multiplier + IncreaseOrDecreaseCalories;
 
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,7 +115,7 @@ class _DetailsPageState extends State<DetailsPage> {
     }
 
     final response = await http.post(
-      Uri.parse("https://zest-g4ua.onrender.com/api/auth/details"),
+      Uri.parse("$l/api/auth/details"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "userId": widget.userId,
@@ -91,6 +124,8 @@ class _DetailsPageState extends State<DetailsPage> {
         "birth": selectedBirth!.toIso8601String(),
         "gender": gender,
         "goal": goal,
+        "activity": activity,
+        "calorieGoal": calorieGoal,
       }),
     );
 
@@ -442,8 +477,9 @@ class _DetailsPageState extends State<DetailsPage> {
                         GestureDetector(
                           onTap: () {
                             setState(() {
-                              _selectedIndex = 0;
-                              goalcontroller.text = _goals[_selectedIndex];
+                              _gselectedIndex = 0;
+                              goalcontroller.text = _goals[_gselectedIndex];
+                              IncreaseOrDecreaseCalories = 500;
                             });
                           },
                           child: Container(
@@ -451,7 +487,7 @@ class _DetailsPageState extends State<DetailsPage> {
                             height: MediaQuery.of(context).size.height * 0.1,
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
-                              color: _selectedIndex == 0
+                              color: _gselectedIndex == 0
                                   ? Color.fromARGB(255, 85, 173, 78)
                                   : Color.fromARGB(255, 58, 58, 58),
                               borderRadius: BorderRadius.circular(12),
@@ -481,8 +517,8 @@ class _DetailsPageState extends State<DetailsPage> {
                         GestureDetector(
                           onTap: () {
                             setState(() {
-                              _selectedIndex = 1;
-                              goalcontroller.text = _goals[_selectedIndex];
+                              _gselectedIndex = 1;
+                              goalcontroller.text = _goals[_gselectedIndex];
                               print(goalcontroller.text);
                             });
                           },
@@ -491,7 +527,7 @@ class _DetailsPageState extends State<DetailsPage> {
                             height: MediaQuery.of(context).size.height * 0.1,
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
-                              color: _selectedIndex == 1
+                              color: _gselectedIndex == 1
                                   ? Color.fromARGB(255, 85, 173, 78)
                                   : Color.fromARGB(255, 58, 58, 58),
                               borderRadius: BorderRadius.circular(12),
@@ -521,8 +557,9 @@ class _DetailsPageState extends State<DetailsPage> {
                         GestureDetector(
                           onTap: () {
                             setState(() {
-                              _selectedIndex = 2;
-                              goalcontroller.text = _goals[_selectedIndex];
+                              _gselectedIndex = 2;
+                              goalcontroller.text = _goals[_gselectedIndex];
+                              IncreaseOrDecreaseCalories = -500;
                             });
                           },
                           child: Container(
@@ -530,7 +567,7 @@ class _DetailsPageState extends State<DetailsPage> {
                             height: MediaQuery.of(context).size.height * 0.1,
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
-                              color: _selectedIndex == 2
+                              color: _gselectedIndex == 2
                                   ? Color.fromARGB(255, 85, 173, 78)
                                   : Color.fromARGB(255, 58, 58, 58),
                               borderRadius: BorderRadius.circular(12),
@@ -563,6 +600,205 @@ class _DetailsPageState extends State<DetailsPage> {
                   left: MediaQuery.of(context).size.width * 0.08,
                   child: Text(
                     "Célok",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 72, 72, 72),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 15, 8, 15),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _aselectedIndex = 0;
+                              activitycontroller.text =
+                                  _activity[_aselectedIndex];
+                              print(activitycontroller.text);
+                              multiplier = 1.375;
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: _aselectedIndex == 0
+                                  ? Color.fromARGB(255, 85, 173, 78)
+                                  : Color.fromARGB(255, 58, 58, 58),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Center(
+                                  child: Text(
+                                    "Enyhén aktív",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                          0.035,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _aselectedIndex = 1;
+                              activitycontroller.text =
+                                  _activity[_aselectedIndex];
+                              print(activitycontroller.text);
+                              multiplier = 1.55;
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: _aselectedIndex == 1
+                                  ? Color.fromARGB(255, 85, 173, 78)
+                                  : Color.fromARGB(255, 58, 58, 58),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Center(
+                                  child: Text(
+                                    "Közepesen aktív",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                          0.035,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _aselectedIndex = 2;
+                              activitycontroller.text =
+                                  _activity[_aselectedIndex];
+                              print(activitycontroller.text);
+                              multiplier = 1.725;
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: _aselectedIndex == 2
+                                  ? Color.fromARGB(255, 85, 173, 78)
+                                  : Color.fromARGB(255, 58, 58, 58),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Center(
+                                  child: Text(
+                                    "Nagyon aktív",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                          0.035,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _aselectedIndex = 3;
+                              activitycontroller.text =
+                                  _activity[_aselectedIndex];
+                              print(activitycontroller.text);
+                              multiplier = 1.9;
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: _aselectedIndex == 3
+                                  ? Color.fromARGB(255, 85, 173, 78)
+                                  : Color.fromARGB(255, 58, 58, 58),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Center(
+                                  child: Text(
+                                    "Extrém aktív",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                          0.035,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: MediaQuery.of(context).size.height * 0.007,
+                  left: MediaQuery.of(context).size.width * 0.08,
+                  child: Text(
+                    "Aktivitás",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,

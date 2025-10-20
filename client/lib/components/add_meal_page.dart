@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:client/models/meal.dart';
 import 'dart:async';
-import 'package:html/parser.dart' as html;
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
-import 'package:flutter/material.dart';
+import '../constants.dart' as constants;
 
 class AddMealPage extends StatefulWidget {
   const AddMealPage({super.key});
@@ -24,6 +23,8 @@ class _AddMealPageState extends State<AddMealPage> {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController quantitycontroller = TextEditingController();
   final barcodeController = TextEditingController();
+  String l = constants.localroute;
+  String s = constants.serverroute;
   List<MealDto> searchResults = [];
   bool isLoading = false;
   Timer? _debounce;
@@ -55,7 +56,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
       final uri = Uri.parse(
-        'https://zest-g4ua.onrender.com/api/meals/get-units?foodId=$foodId',
+        '$s/api/meals/get-units?foodId=$foodId',
       );
       final response = await http.get(uri);
 
@@ -82,7 +83,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
       final uri = Uri.parse(
-        'https://zest-g4ua.onrender.com/api/meals/get-by-barcode?code=$code',
+        '$s/api/meals/get-by-barcode?code=$code',
       );
       final response = await http.get(uri);
 
@@ -125,7 +126,7 @@ class _AddMealPageState extends State<AddMealPage> {
     setState(() => isLoading = true);
 
     try {
-      final uri = Uri.parse('https://zest-g4ua.onrender.com/api/meals/search?q=$q');
+      final uri = Uri.parse('$s/api/meals/search?q=$q');
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {

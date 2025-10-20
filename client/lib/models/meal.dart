@@ -1,3 +1,41 @@
+class UserDto {
+  final int id;
+  final String userName;
+  final int height;
+  final int weight;
+  final DateTime birth;
+  final String gender;
+  final String goal;
+  final String activity;
+  final double calorieGoal;
+
+  UserDto({
+    required this.id,
+    required this.userName,
+    required this.height,
+    required this.weight,
+    required this.birth,
+    required this.gender,
+    required this.goal,
+    required this.activity,
+    required this.calorieGoal,
+  });
+
+  factory UserDto.fromJson(Map<String, dynamic> json) {
+    return UserDto(
+      id: json['id'] ?? 0,
+      userName: json['userName'] ?? '',
+      height: json['height'] ?? 0,
+      weight: json['weight'] ?? 0,
+      birth: DateTime.parse(json['birth']),
+      gender: json['gender'] ?? '',
+      goal: json['goal'] ?? '',
+      activity: json['activity'] ?? '',
+      calorieGoal: (json['calorieGoal'] ?? 0).toDouble(),
+    );
+  }
+}
+
 class MealDto {
   final String foodId;
   final String name;
@@ -59,7 +97,7 @@ class MealDto {
 
     int calories = int.tryParse(_cleanNumberString(calRaw)) ?? 0;
     double protein = double.tryParse(_cleanNumberString(protRaw)) ?? 0.0;
-    double carbs = double.tryParse(_cleanNumberString(carbsRaw)) ?? 0.0;  
+    double carbs = double.tryParse(_cleanNumberString(carbsRaw)) ?? 0.0;
     double fat = double.tryParse(_cleanNumberString(fatRaw)) ?? 0.0;
     int quantity = int.tryParse(quantityRaw) ?? 1;
 

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 
 namespace Zest.Api.Models;
 
@@ -15,6 +16,14 @@ public enum Goal
     Fogyás
 }
 
+public enum Activity
+{
+    Enyhén_aktív,
+    Közepesen_aktív,
+    Nagyon_aktív,
+    Extrém_aktív
+}
+
 public class User
 {
     [Key]
@@ -27,5 +36,7 @@ public class User
     public DateTime Birth { get; set; }
     public Gender Gender { get; set; }
     public Goal Goal { get; set; }
+    public Activity Activity { get; set; }
+    public double CalorieGoal { get; set; }
     public ICollection<UserMeal> UserMeals { get; set; } = new List<UserMeal>();
 }
