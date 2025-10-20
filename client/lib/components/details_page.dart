@@ -115,7 +115,7 @@ class _DetailsPageState extends State<DetailsPage> {
     }
 
     final response = await http.post(
-      Uri.parse("$l/api/auth/details"),
+      Uri.parse("$s/api/auth/details"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "userId": widget.userId,
