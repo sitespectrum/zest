@@ -126,7 +126,7 @@ class _DetailsPageState extends State<DetailsPage> {
         "goal": goal,
         "activity": activity,
         "calorieGoal": calorieGoal,
-      }), 
+      }),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {

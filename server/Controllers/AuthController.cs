@@ -80,6 +80,29 @@ public class AuthController : ControllerBase
         });
     }
 
+    [HttpPut("updateCalorieGoal")]
+    public async Task<IActionResult> UpdateCalorieGoal([FromBody] UpdateCalorieGoalRequest request)
+    {
+        if (request.CalorieGoal <= 0)
+            return BadRequest("A cél kalóriának pozitív számnak kell lennie!");
+
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized("Nincs token.");
+
+        var userId = int.Parse(userIdClaim);
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null) return NotFound("Felhasználó nem található.");
+
+        if (user == null)
+            return NotFound("Felhasználó nem található.");
+
+        user.CalorieGoal = request.CalorieGoal;
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new { message = "Kalóriacél frissítve!", newGoal = user.CalorieGoal });
+    }
+
     [HttpPost("details")]
     public async Task<IActionResult> Details([FromBody] DetailsRequest request)
     {
@@ -246,3 +269,8 @@ public class LoginRequest
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
 }
+
+    public class UpdateCalorieGoalRequest
+    {
+        public double CalorieGoal { get; set; }
+    }

@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:client/constants.dart' as constants;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:client/login_page.dart';
 import 'package:client/main.dart';
@@ -13,12 +16,18 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String? username;
   bool loggedIn = false;
+  String l = constants.localroute;
+  String s = constants.serverroute;
+  final caloriestypeController = TextEditingController();
+  late Future<double> calorieGoal;
+
 
   @override
   void initState() {
     super.initState();
     _loadUser();
     _checkLoginStatus();
+    calorieGoal = fetchCalorieGoal();
   }
 
   Future<void> _checkLoginStatus() async {
@@ -27,6 +36,69 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       loggedIn = username != null && username.isNotEmpty;
     });
+  }
+
+  Future<double> fetchCalorieGoal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) throw Exception("Nincs token");
+
+    final response = await http.get(
+      Uri.parse("$s/api/auth/getUser"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['calorieGoal'] as num).toDouble();
+    } else {
+      throw Exception("Nem sikerült lekérni a cél kalóriát: ${response.body}");
+    }
+  }
+
+  Future<void> updateCalorieGoal(double newGoal) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    if (token == null) throw Exception("Nincs token");
+
+    final response = await http.put(
+      Uri.parse("$s/api/auth/updateCalorieGoal"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"calorieGoal": newGoal}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Nem sikerült frissíteni a kalóriacélt: ${response.body}");
+    }
+  }
+
+  void _saveNewGoal() async {
+    final newCalories = double.tryParse(caloriestypeController.text);
+
+    if (newCalories == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Adj meg egy érvényes számot!")),
+      );
+      return;
+    }
+
+    try {
+      await updateCalorieGoal(newCalories);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Kalóriacél frissítve!")),
+      );
+      setState(() {
+        calorieGoal = fetchCalorieGoal();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Hiba történt: $e")),
+      );
+    }
   }
 
   Future<void> _logout() async {
@@ -40,20 +112,19 @@ class _ProfilePageState extends State<ProfilePage> {
       username = null;
     });
 
-    if (context.mounted) {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MainPage()),
+    );
   }
 
   void _login() {
     if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const MainPage()),
-        (route) => false,
       );
     }
-
     _checkLoginStatus();
     _loadUser();
   }
@@ -64,8 +135,6 @@ class _ProfilePageState extends State<ProfilePage> {
       username = prefs.getString("username");
     });
   }
-
-  final caloriestypeController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +216,30 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 20),
+
+              FilledButton(
+                onPressed: _saveNewGoal,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width * 0.50,
+                    MediaQuery.of(context).size.height * 0.07,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                ),
+                child: Text(
+                  "Mentés",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
 
               const SizedBox(height: 20),
