@@ -56,7 +56,7 @@ Future<void> saveUserMeals(
 
   if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
-  final uri = Uri.parse("$s/sapi/Meals/addGroup"); // s || l
+  final uri = Uri.parse("$s/api/Meals/addGroup"); // s || l
 
   final dto = {
     "MealName": mealName,
