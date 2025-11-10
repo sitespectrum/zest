@@ -270,7 +270,7 @@ public class LoginRequest
     public string Password { get; set; } = "";
 }
 
-    public class UpdateCalorieGoalRequest
-    {
-        public double CalorieGoal { get; set; }
-    }
+public class UpdateCalorieGoalRequest
+{
+    public double CalorieGoal { get; set; }
+}

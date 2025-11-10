@@ -25,7 +25,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$s/api/meals/getUserMeals"),
+    Uri.parse("$s/api/meals/getUserMeals"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -46,7 +46,7 @@ Future<Map<String, double>> fetchTodayNutrients() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$s/api/Meals/getTodayNutrients"),
+    Uri.parse("$s/api/Meals/getTodayNutrients"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
   print("szia, ${response.body}");

@@ -107,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                   final password = _passwordController.text;
 
                   final response = await http.post(
-                    Uri.parse('$s/api/auth/login'),
+                    Uri.parse('$s/api/auth/login'), // s || l
                     headers: <String, String>{
                       'Content-Type': 'application/json; charset=UTF-8',
                     },

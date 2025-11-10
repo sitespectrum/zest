@@ -5,7 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:client/models/meal.dart';
 import 'dart:async';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart' as constants;
+import 'dart:math';
 
 class AddMealPage extends StatefulWidget {
   const AddMealPage({super.key});
@@ -27,6 +29,7 @@ class _AddMealPageState extends State<AddMealPage> {
   String s = constants.serverroute;
   List<MealDto> searchResults = [];
   bool isLoading = false;
+  bool anyResults = false;
   Timer? _debounce;
 
   List<MealDto> userMeals = [];
@@ -46,6 +49,14 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   final ScrollController _scrollController = ScrollController();
+  late Future<List<UserMealDto>> futureMeals;
+
+  @override
+  void initState() {
+    super.initState();
+    futureMeals = fetchUserMeals();
+    loadTopMeals();
+  }
 
   @override
   void dispose() {
@@ -56,7 +67,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
       final uri = Uri.parse(
-        '$s/api/meals/get-units?foodId=$foodId',
+        '$s/api/meals/get-units?foodId=$foodId', // s || l
       );
       final response = await http.get(uri);
 
@@ -83,7 +94,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
       final uri = Uri.parse(
-        '$s/api/meals/get-by-barcode?code=$code',
+        '$s/api/meals/get-by-barcode?code=$code', // s || l
       );
       final response = await http.get(uri);
 
@@ -116,6 +127,63 @@ class _AddMealPageState extends State<AddMealPage> {
     }
   }
 
+  Future<List<UserMealDto>> fetchUserMeals() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) throw Exception("Nincs token");
+
+    final response = await http.get(
+      Uri.parse("$s/api/meals/getUserMeals"), // s || l
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print("RESPONSE BODY: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      print('szia, $token');
+      return data.map((e) => UserMealDto.fromJson(e)).toList();
+    } else {
+      throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+    }
+  }
+
+  Future<void> loadTopMeals() async {
+    final meals = await fetchUserMeals();
+
+    final Map<String, int> foodCounts = {};
+
+    for (final userMeal in meals) {
+      for (final meal in userMeal.meals) {
+        foodCounts[meal.foodId] = (foodCounts[meal.foodId] ?? 0) + 1;
+      }
+    }
+
+    final sorted = foodCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final topIds = sorted
+        .take(min(10, sorted.length))
+        .map((e) => e.key)
+        .toList();
+
+    final List<MealDto> topMeals = [];
+
+    for (final userMeal in meals) {
+      for (final meal in userMeal.meals) {
+        if (topIds.contains(meal.foodId) &&
+            !topMeals.any((m) => m.foodId == meal.foodId)) {
+          topMeals.add(meal);
+        }
+      }
+    }
+
+    setState(() {
+      searchResults = topMeals;
+    });
+  }
+
   Future<void> _searchMeals(String query) async {
     final q = query.trim();
     if (q.isEmpty) {
@@ -123,10 +191,13 @@ class _AddMealPageState extends State<AddMealPage> {
       return;
     }
 
-    setState(() => isLoading = true);
+    setState(() {
+      anyResults = true;
+      isLoading = true;
+    });
 
     try {
-      final uri = Uri.parse('$s/api/meals/search?q=$q');
+      final uri = Uri.parse('$s/api/meals/search?q=$q'); // s || l
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {
@@ -175,516 +246,639 @@ class _AddMealPageState extends State<AddMealPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context, userMeals);
-        return false;
-      },
-      child: Scaffold(
-        body: SingleChildScrollView(
-          controller: _scrollController,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
-                child: AppBar(
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: SizedBox(
-                            height: 48,
-                            child: TextField(
-                              controller: _controller,
-                              onChanged: (value) {
-                                if (_debounce?.isActive ?? false)
-                                  _debounce!.cancel();
-                                _debounce = Timer(
-                                  const Duration(milliseconds: 600),
-                                  () {
-                                    _searchMeals(value);
+    return FutureBuilder<List<UserMealDto>>(
+      future: futureMeals,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Hiba: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('Nincs adat'));
+        }
+
+        final meals = snapshot.data!;
+        return WillPopScope(
+          onWillPop: () async {
+            Navigator.pop(context, userMeals);
+            return false;
+          },
+          child: Scaffold(
+            body: SingleChildScrollView(
+              controller: _scrollController,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
+                    child: AppBar(
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: SizedBox(
+                                height: 48,
+                                child: TextField(
+                                  controller: _controller,
+                                  onChanged: (value) {
+                                    if (_debounce?.isActive ?? false)
+                                      _debounce!.cancel();
+                                    _debounce = Timer(
+                                      const Duration(milliseconds: 600),
+                                      () {
+                                        _searchMeals(value);
+                                      },
+                                    );
                                   },
-                                );
-                              },
-                              cursorColor: Colors.white,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                              ),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: const Color.fromARGB(
-                                  255,
-                                  45,
-                                  45,
-                                  45,
-                                ),
-                                hintText: 'Keresés',
-                                hintStyle: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.white24,
-                                    width: 1,
+                                  cursorColor: Colors.white,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.white24,
-                                    width: 1,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color.fromARGB(
+                                      255,
+                                      45,
+                                      45,
+                                      45,
+                                    ),
+                                    hintText: 'Keresés',
+                                    hintStyle: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.white24,
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.white24,
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey,
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.grey,
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
 
-                      const SizedBox(width: 4),
+                          const SizedBox(width: 4),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 85, 173, 78),
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: IconButton(
-                          onPressed: () {
-                            Future.microtask(() async {
-                              bool _hasPopped = false;
-                              final scannedCode = await Navigator.of(context)
-                                  .push<String>(
-                                    MaterialPageRoute(
-                                      builder: (context) => AiBarcodeScanner(
-                                        onDetect: (capture) {
-                                          if (_hasPopped) return;
-                                          final code =
-                                              capture.barcodes.first.rawValue;
-                                          if (code != null) {
-                                            _hasPopped = true;
-                                            Navigator.of(context).pop(code);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  );
-
-                              if (scannedCode != null &&
-                                  scannedCode.isNotEmpty) {
-                                final results = await fetchMealsByBarcode(
-                                  scannedCode,
-                                );
-                                if (results.isNotEmpty) {
-                                  setState(() {
-                                    searchResults = results;
-                                  });
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Nem találtam ilyen vonalkódú ételt",
-                                      ),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                }
-                              }
-                            });
-                          },
-                          icon: const Icon(
-                            CupertinoIcons.barcode,
-                            size: 25,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 4),
-
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 200, 70, 70),
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            CupertinoIcons.add_circled,
-                            size: 25,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: const Color.fromARGB(255, 58, 58, 58),
-                  iconTheme: const IconThemeData(color: Colors.white),
-                ),
-              ),
-
-              isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: searchResults.length,
-                      itemBuilder: (context, index) {
-                        final meal = searchResults[index];
-                        final cleanName = stripHtmlTags(
-                          meal.name ?? "Ismeretlen étel",
-                        );
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () async {
-                              print("id: ${meal.foodId}");
-                              final units = await _fetchUnit(meal.foodId);
-                              if (units.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Nem található mértékegység ehhez az ételhez.",
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-
-                              String selectedUnit =
-                                  (units.first["Name"]?.toString() ?? '')
-                                      .replaceFirst("UNIT_", "");
-                              double baseWeight =
-                                  double.tryParse(
-                                    units.first["nWeight"]?.toString() ?? '1',
-                                  ) ??
-                                  1.0;
-                              double multiplier = baseWeight / 100;
-                              int cmultiplier = multiplier.toInt();
-
-                              final updatedMeal = await showDialog<MealDto>(
-                                context: context,
-                                builder: (context) {
-                                  return StatefulBuilder(
-                                    builder: (context, setState) {
-                                      return Center(
-                                        child: SingleChildScrollView(
-                                          child: Dialog(
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  35,
-                                                  35,
-                                                  35,
-                                                ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(16),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Text(
-                                                    "Válassz mennyiséget!",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  Container(
-                                                    width:
-                                                        MediaQuery.of(
-                                                          context,
-                                                        ).size.width *
-                                                        0.3,
-                                                    height:
-                                                        MediaQuery.of(
-                                                          context,
-                                                        ).size.height *
-                                                        0.06,
-                                                    padding:
-                                                        const EdgeInsets.fromLTRB(
-                                                          0,
-                                                          0,
-                                                          0,
-                                                          18,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          const Color.fromARGB(
-                                                            255,
-                                                            72,
-                                                            72,
-                                                            72,
-                                                          ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                    ),
-                                                    child: TextField(
-                                                      cursorColor: Colors.white,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 20,
-                                                      ),
-                                                      controller:
-                                                          quantitycontroller,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      decoration: InputDecoration(
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        focusedBorder: OutlineInputBorder(
-                                                          borderSide:
-                                                              const BorderSide(
-                                                                color: Colors
-                                                                    .transparent,
-                                                                width: 2,
-                                                              ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        enabledBorder: OutlineInputBorder(
-                                                          borderSide:
-                                                              const BorderSide(
-                                                                color: Colors
-                                                                    .transparent,
-                                                                width: 1,
-                                                              ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      keyboardType:
-                                                          TextInputType.number,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  Wrap(
-                                                    spacing: 8,
-                                                    runSpacing: 8,
-                                                    children: units.map((unit) {
-                                                      final name = unit["Name"]
-                                                          .replaceFirst(
-                                                            "UNIT_",
-                                                            "",
-                                                          );
-                                                      final weight =
-                                                          double.tryParse(
-                                                            unit["nWeight"],
-                                                          ) ??
-                                                          1.0;
-                                                      final isSelected =
-                                                          name == selectedUnit;
-
-                                                      return ChoiceChip(
-                                                        label: Text(
-                                                          "$name (${weight.toStringAsFixed(0)}g/ml)",
-                                                          style: TextStyle(
-                                                            color: isSelected
-                                                                ? Colors.black
-                                                                : Colors.white,
-                                                          ),
-                                                        ),
-                                                        selected: isSelected,
-                                                        selectedColor:
-                                                            Colors.white,
-                                                        backgroundColor:
-                                                            const Color.fromARGB(
-                                                              255,
-                                                              60,
-                                                              60,
-                                                              60,
-                                                            ),
-                                                        onSelected: (selected) {
-                                                          if (selected) {
-                                                            setState(() {
-                                                              selectedUnit =
-                                                                  name;
-                                                              baseWeight =
-                                                                  weight;
-                                                              multiplier =
-                                                                  baseWeight /
-                                                                  100;
-                                                            });
-                                                          }
-                                                        },
-                                                      );
-                                                    }).toList(),
-                                                  ),
-                                                  const SizedBox(height: 20),
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      final quantity =
-                                                          int.tryParse(
-                                                            quantitycontroller
-                                                                .text,
-                                                          ) ??
-                                                          1;
-                                                      final updatedMeal = MealDto(
-                                                        foodId: meal.foodId,
-                                                        name: meal.name,
-                                                        calories:
-                                                            (meal.calories *
-                                                                    multiplier)
-                                                                .round(),
-                                                        protein:
-                                                            meal.protein *
-                                                            multiplier,
-                                                        carbs:
-                                                            meal.carbs *
-                                                            multiplier,
-                                                        fat:
-                                                            meal.fat *
-                                                            multiplier,
-                                                        quantity: quantity,
-                                                        baseWeight: baseWeight,
-                                                        unit: selectedUnit,
-                                                        multiplier: multiplier,
-                                                      );
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop(updatedMeal);
-                                                    },
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.white,
-                                                          foregroundColor:
-                                                              Colors.black,
-                                                        ),
-                                                    child: const Text(
-                                                      "Hozzáadás",
-                                                    ),
-                                                  ),
-                                                ],
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 85, 173, 78),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: IconButton(
+                              onPressed: () {
+                                Future.microtask(() async {
+                                  bool _hasPopped = false;
+                                  final scannedCode =
+                                      await Navigator.of(context).push<String>(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AiBarcodeScanner(
+                                                onDetect: (capture) {
+                                                  if (_hasPopped) return;
+                                                  final code = capture
+                                                      .barcodes
+                                                      .first
+                                                      .rawValue;
+                                                  if (code != null) {
+                                                    _hasPopped = true;
+                                                    Navigator.of(
+                                                      context,
+                                                    ).pop(code);
+                                                  }
+                                                },
                                               ),
-                                            ),
-                                          ),
                                         ),
                                       );
-                                    },
-                                  );
-                                },
-                              );
-                              if (updatedMeal != null) {
-                                setState(() {
-                                  userMeals.add(updatedMeal);
-                                });
 
-                                final cleanName = stripHtmlTags(
-                                  updatedMeal.name ?? "Ismeretlen étel",
-                                );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '$cleanName hozzáadva a listádhoz!',
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 45, 45, 45),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      cleanName,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.piece}',
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                            ),
+                                  if (scannedCode != null &&
+                                      scannedCode.isNotEmpty) {
+                                    final results = await fetchMealsByBarcode(
+                                      scannedCode,
+                                    );
+                                    if (results.isNotEmpty) {
+                                      setState(() {
+                                        searchResults = results;
+                                      });
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Nincs ilyen vonalkódú étel",
                                           ),
+                                          duration: Duration(seconds: 2),
                                         ),
-                                      ],
+                                      );
+                                    }
+                                  }
+                                });
+                              },
+                              icon: const Icon(
+                                CupertinoIcons.barcode,
+                                size: 25,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 4),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 200, 70, 70),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: IconButton(
+                              onPressed: () {},
+                              icon: const Icon(
+                                CupertinoIcons.add_circled,
+                                size: 25,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: const Color.fromARGB(255, 58, 58, 58),
+                      iconTheme: const IconThemeData(color: Colors.white),
+                    ),
+                  ),
+
+                  !anyResults
+                      ? const Center(child: Text(""))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: searchResults.length,
+                          itemBuilder: (context, index) {
+                            final meal = searchResults[index];
+                            final cleanName = stripHtmlTags(
+                              meal.name ?? "Ismeretlen étel",
+                            );
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(255, 45, 45, 45),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.5),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        cleanName,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '${meal.qCalories} kcal | '
+                                              '${meal.qProtein.toStringAsFixed(3)} g protein | '
+                                              '${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | '
+                                              '${meal.qFat.toStringAsFixed(3)} g zsír',
+                                              style: const TextStyle(
+                                                color: Colors.white70,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        );
-                      },
+                            );
+                          },
+                        ),
+
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: searchResults.length,
+                          itemBuilder: (context, index) {
+                            final meal = searchResults[index];
+                            final cleanName = stripHtmlTags(
+                              meal.name ?? "Ismeretlen étel",
+                            );
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  print("id: ${meal.foodId}");
+                                  final units = await _fetchUnit(meal.foodId);
+                                  if (units.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Nem található mértékegység ehhez az ételhez.",
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  String selectedUnit =
+                                      (units.first["Name"]?.toString() ?? '')
+                                          .replaceFirst("UNIT_", "");
+                                  double baseWeight =
+                                      double.tryParse(
+                                        units.first["nWeight"]?.toString() ??
+                                            '1',
+                                      ) ??
+                                      1.0;
+                                  double multiplier = baseWeight / 100;
+                                  int cmultiplier = multiplier.toInt();
+
+                                  final updatedMeal = await showDialog<MealDto>(
+                                    context: context,
+                                    builder: (context) {
+                                      return StatefulBuilder(
+                                        builder: (context, setState) {
+                                          return Center(
+                                            child: SingleChildScrollView(
+                                              child: Dialog(
+                                                backgroundColor:
+                                                    const Color.fromARGB(
+                                                      255,
+                                                      35,
+                                                      35,
+                                                      35,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                    16,
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      const Text(
+                                                        "Válassz mennyiséget!",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 12,
+                                                      ),
+                                                      Container(
+                                                        width:
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).size.width *
+                                                            0.3,
+                                                        height:
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).size.height *
+                                                            0.06,
+                                                        padding:
+                                                            const EdgeInsets.fromLTRB(
+                                                              0,
+                                                              0,
+                                                              0,
+                                                              18,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              const Color.fromARGB(
+                                                                255,
+                                                                72,
+                                                                72,
+                                                                72,
+                                                              ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                        ),
+                                                        child: TextField(
+                                                          cursorColor:
+                                                              Colors.white,
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 20,
+                                                              ),
+                                                          controller:
+                                                              quantitycontroller,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          decoration: InputDecoration(
+                                                            border: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                            focusedBorder: OutlineInputBorder(
+                                                              borderSide:
+                                                                  const BorderSide(
+                                                                    color: Colors
+                                                                        .transparent,
+                                                                    width: 2,
+                                                                  ),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                            enabledBorder: OutlineInputBorder(
+                                                              borderSide:
+                                                                  const BorderSide(
+                                                                    color: Colors
+                                                                        .transparent,
+                                                                    width: 1,
+                                                                  ),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .number,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 12,
+                                                      ),
+                                                      Wrap(
+                                                        spacing: 8,
+                                                        runSpacing: 8,
+                                                        children: units.map((
+                                                          unit,
+                                                        ) {
+                                                          final name =
+                                                              unit["Name"]
+                                                                  .replaceFirst(
+                                                                    "UNIT_",
+                                                                    "",
+                                                                  );
+                                                          final weight =
+                                                              double.tryParse(
+                                                                unit["nWeight"],
+                                                              ) ??
+                                                              1.0;
+                                                          final isSelected =
+                                                              name ==
+                                                              selectedUnit;
+
+                                                          return ChoiceChip(
+                                                            label: Text(
+                                                              "$name (${weight.toStringAsFixed(0)}g/ml)",
+                                                              style: TextStyle(
+                                                                color:
+                                                                    isSelected
+                                                                    ? Colors
+                                                                          .black
+                                                                    : Colors
+                                                                          .white,
+                                                              ),
+                                                            ),
+                                                            selected:
+                                                                isSelected,
+                                                            selectedColor:
+                                                                Colors.white,
+                                                            backgroundColor:
+                                                                const Color.fromARGB(
+                                                                  255,
+                                                                  60,
+                                                                  60,
+                                                                  60,
+                                                                ),
+                                                            onSelected: (selected) {
+                                                              if (selected) {
+                                                                setState(() {
+                                                                  selectedUnit =
+                                                                      name;
+                                                                  baseWeight =
+                                                                      weight;
+                                                                  multiplier =
+                                                                      baseWeight /
+                                                                      100;
+                                                                });
+                                                              }
+                                                            },
+                                                          );
+                                                        }).toList(),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 20,
+                                                      ),
+                                                      ElevatedButton(
+                                                        onPressed: () {
+                                                          final quantity =
+                                                              int.tryParse(
+                                                                quantitycontroller
+                                                                    .text,
+                                                              ) ??
+                                                              1;
+                                                          final updatedMeal = MealDto(
+                                                            foodId: meal.foodId,
+                                                            name: meal.name,
+                                                            calories:
+                                                                (meal.calories *
+                                                                        multiplier)
+                                                                    .round(),
+                                                            protein:
+                                                                meal.protein *
+                                                                multiplier,
+                                                            carbs:
+                                                                meal.carbs *
+                                                                multiplier,
+                                                            fat:
+                                                                meal.fat *
+                                                                multiplier,
+                                                            quantity: quantity,
+                                                            baseWeight:
+                                                                baseWeight,
+                                                            unit: selectedUnit,
+                                                            multiplier:
+                                                                multiplier,
+                                                          );
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop(updatedMeal);
+                                                        },
+                                                        style:
+                                                            ElevatedButton.styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.white,
+                                                              foregroundColor:
+                                                                  Colors.black,
+                                                            ),
+                                                        child: const Text(
+                                                          "Hozzáadás",
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                  if (updatedMeal != null) {
+                                    setState(() {
+                                      userMeals.add(updatedMeal);
+                                    });
+
+                                    final cleanName = stripHtmlTags(
+                                      updatedMeal.name ?? "Ismeretlen étel",
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '$cleanName hozzáadva a listádhoz!',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(
+                                      255,
+                                      45,
+                                      45,
+                                      45,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.white24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.5),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          cleanName,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.piece}',
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ],
+              ),
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () => {
+                if (_scrollController.hasClients)
+                  {
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeOut,
                     ),
-            ],
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => {
-            if (_scrollController.hasClients)
-              {
-                _scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOut,
-                ),
+                  },
               },
-          },
-          backgroundColor: const Color.fromRGBO(85, 173, 78, 1),
-          child: const Icon(Icons.arrow_upward, color: Colors.white, size: 32),
-        ),
-      ),
+              backgroundColor: const Color.fromRGBO(85, 173, 78, 1),
+              child: const Icon(
+                Icons.arrow_upward,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

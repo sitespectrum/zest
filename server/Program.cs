@@ -37,7 +37,6 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Lazy-loadinghoz: csak regisztráljuk a MealService-t
 builder.Services.AddHttpClient<IMealService, MealService>();
 
 var app = builder.Build();

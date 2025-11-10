@@ -45,7 +45,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.get(
-      Uri.parse("$s/api/auth/getUser"),
+      Uri.parse("$s/api/auth/getUser"), // s || l
       headers: {"Authorization": "Bearer $token"},
     );
 
@@ -63,7 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.put(
-      Uri.parse("$s/api/auth/updateCalorieGoal"),
+      Uri.parse("$s/api/auth/updateCalorieGoal"), // s || l
       headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
