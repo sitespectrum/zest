@@ -6,10 +6,7 @@ import '../models/meal.dart';
 import 'add_meal_page.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import '../constants.dart' as constants;
-
-String l = constants.localroute;
-String s = constants.serverroute;
+import '../constants.dart';
 
 Future<double> fetchCalorieGoal() async {
   final prefs = await SharedPreferences.getInstance();
@@ -17,7 +14,7 @@ Future<double> fetchCalorieGoal() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$l/api/auth/getUser"), // s || l
+    Uri.parse("$apiUrl/api/auth/getUser"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -37,7 +34,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$l/api/meals/getUserMeals"), // s || l
+    Uri.parse("$apiUrl/api/meals/getUserMeals"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -58,7 +55,7 @@ Future<double> fetchTodayCalories() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$l/api/meals/getTodayCalories"), // s || l
+    Uri.parse("$apiUrl/api/meals/getTodayCalories"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
 

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:client/constants.dart' as constants;
+import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,8 +16,6 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String? username;
   bool loggedIn = false;
-  String l = constants.localroute;
-  String s = constants.serverroute;
   final caloriestypeController = TextEditingController();
   late Future<double> calorieGoal;
 
@@ -44,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.get(
-      Uri.parse("$l/api/auth/getUser"), // s || l
+      Uri.parse("$apiUrl/api/auth/getUser"), // s || l
       headers: {"Authorization": "Bearer $token"},
     );
 
@@ -62,7 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.put(
-      Uri.parse("$l/api/auth/updateCalorieGoal"), // s || l
+      Uri.parse("$apiUrl/api/auth/updateCalorieGoal"), // s || l
       headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
@@ -108,7 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       final response = await http.post(
-        Uri.parse("$l/api/auth/logout"), // s || l
+        Uri.parse("$apiUrl/api/auth/logout"), // s || l
         headers: {
           "Content-Type": "application/json",
           if (token != null) "Authorization": "Bearer $token",

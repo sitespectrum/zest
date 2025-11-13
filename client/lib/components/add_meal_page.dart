@@ -6,7 +6,7 @@ import 'package:client/models/meal.dart';
 import 'dart:async';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants.dart' as constants;
+import '../constants.dart';
 import 'dart:math';
 
 class AddMealPage extends StatefulWidget {
@@ -25,8 +25,6 @@ class _AddMealPageState extends State<AddMealPage> {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController quantitycontroller = TextEditingController();
   final barcodeController = TextEditingController();
-  String l = constants.localroute;
-  String s = constants.serverroute;
   List<MealDto> searchResults = [];
   bool isLoading = false;
   bool anyResults = false;
@@ -67,7 +65,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
       final uri = Uri.parse(
-        '$l/api/meals/get-units?foodId=$foodId', // s || l
+        '$apiUrl/api/meals/get-units?foodId=$foodId', // s || l
       );
       final response = await http.get(uri);
 
@@ -94,7 +92,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
       final uri = Uri.parse(
-        '$l/api/meals/get-by-barcode?code=$code', // s || l
+        '$apiUrl/api/meals/get-by-barcode?code=$code', // s || l
       );
       final response = await http.get(uri);
 
@@ -134,7 +132,7 @@ class _AddMealPageState extends State<AddMealPage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.get(
-      Uri.parse("$l/api/meals/getUserMeals"), // s || l
+      Uri.parse("$apiUrl/api/meals/getUserMeals"), // s || l
       headers: {"Authorization": "Bearer $token"},
     );
 
@@ -197,7 +195,7 @@ class _AddMealPageState extends State<AddMealPage> {
     });
 
     try {
-      final uri = Uri.parse('$l/api/meals/search?q=$q'); // s || l
+      final uri = Uri.parse('$apiUrl/api/meals/search?q=$q'); // s || l
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {

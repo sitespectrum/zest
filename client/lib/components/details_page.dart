@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../constants.dart' as constants;
+import '../constants.dart';
 
 class DetailsPage extends StatefulWidget {
   const DetailsPage({super.key, required this.userId});
@@ -21,8 +21,6 @@ class _DetailsPageState extends State<DetailsPage> {
   final TextEditingController goalcontroller = TextEditingController();
   final TextEditingController activitycontroller = TextEditingController();
   DateTime? selectedBirth;
-  String l = constants.localroute;
-  String s = constants.serverroute;
   int _gselectedIndex = 3;
   int _aselectedIndex = 5;
   double multiplier = 1;
@@ -115,7 +113,7 @@ class _DetailsPageState extends State<DetailsPage> {
     }
 
     final response = await http.post(
-      Uri.parse("$l/api/auth/details"), // s || l
+      Uri.parse("$apiUrl/api/auth/details"), // s || l
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "userId": widget.userId,

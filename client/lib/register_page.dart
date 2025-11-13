@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'components/details_page.dart';
-import '../constants.dart' as constants;
+import '../constants.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -16,8 +16,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController userNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  String l = constants.localroute;
-  String s = constants.serverroute;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +128,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () async {
                   print("szia");
                   final response = await http.post(
-                    Uri.parse("$l/api/auth/register"), // s || l
+                    Uri.parse("$apiUrl/api/auth/register"), // s || l
                     headers: {"Content-Type": "application/json"},
                     body: jsonEncode({
                       "username": userNameController.text,

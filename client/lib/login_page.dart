@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'pages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants.dart' as constants;
+import '../constants.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,8 +16,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String l = constants.localroute;
-  String s = constants.serverroute;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                   final password = _passwordController.text;
 
                   final response = await http.post(
-                    Uri.parse('$l/api/auth/login'), // s || l
+                    Uri.parse('$apiUrl/api/auth/login'), // s || l
                     headers: <String, String>{
                       'Content-Type': 'application/json; charset=UTF-8',
                     },

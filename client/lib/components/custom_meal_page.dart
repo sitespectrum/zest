@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:client/models/meal.dart';
 import 'dart:async';
 import 'package:client/pages.dart';
-import '../constants.dart' as constants;
+import '../constants.dart';
 
 class CMealPage extends StatefulWidget {
   const CMealPage({super.key});
@@ -42,8 +42,6 @@ Future<void> saveUserMeals(
   String mealName,
   int userId,
 ) async {
-  String l = constants.localroute;
-  String s = constants.serverroute;
   final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
   final totalProtein = meals.fold<double>(
     0.0,
@@ -56,7 +54,7 @@ Future<void> saveUserMeals(
 
   if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
-  final uri = Uri.parse("$l/api/Meals/addGroup"); // s || l
+  final uri = Uri.parse("$apiUrl/api/Meals/addGroup"); // s || l
 
   final dto = {
     "MealName": mealName,
