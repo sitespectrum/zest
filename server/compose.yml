@@ -7,7 +7,7 @@ services:
     ports:
       - "10000:10000"
     volumes:
-      - ./zest.db:/app/zest.db
+      - ./db:/app/db
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:10000
     restart: unless-stopped

@@ -20,7 +20,7 @@ RUN dotnet ef database update
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /app .
-# COPY --from=build /src/zest.db /app/zest.db
+# COPY --from=build /src/db /app/db
 
 # Configure the container to listen on all interfaces
 ENV ASPNETCORE_URLS=http://0.0.0.0:10000
