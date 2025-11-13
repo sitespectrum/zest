@@ -11,7 +11,7 @@ COPY . .
 RUN dotnet publish -c Release -o /app
 
 
-RUN dotnet tool install --global dotnet-ef
+RUN dotnet tool install dotnet-ef --version 9.0.0-preview.3.24172.4
 ENV PATH="$PATH:/root/.dotnet/tools"
 
 RUN dotnet ef database update
