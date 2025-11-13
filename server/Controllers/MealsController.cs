@@ -161,47 +161,45 @@ public class MealsController : ControllerBase
     }
 
     [HttpPost("addGroup")]
+    [Authorize]
     public async Task<IActionResult> AddUserMealGroup([FromBody] AddUserMealGroupRequest request)
     {
-        if (request.Meals == null || !request.Meals.Any())
-            return BadRequest("Legalább egy ételt meg kell adni.");
+        // Tokenből user azonosító
+        var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
 
-        var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
-        if (!userExists)
-            return BadRequest("Hibás UserId.");
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            return BadRequest("Felhasználó nem található.");
 
         var userMeal = new UserMeal
         {
             MealName = Enum.Parse<MealName>(request.MealName),
-            UserId = request.UserId,
+            UserId = userId,
             EatenAt = request.EatenAt,
             TotalCalories = request.Meals.Sum(m => m.Calories * m.Quantity),
             TotalProtein = request.Meals.Sum(m => m.Protein * m.Quantity),
             TotalCarbs = request.Meals.Sum(m => m.Carbs * m.Quantity),
             TotalFat = request.Meals.Sum(m => m.Fat * m.Quantity),
-            Meals = new List<Meals>()
-        };
-
-        foreach (var mealDto in request.Meals)
-        {
-            userMeal.Meals.Add(new Meals
+            Meals = request.Meals.Select(m => new Meals
             {
-                FoodId = mealDto.FoodId,
-                Name = mealDto.Name,
-                Piece = mealDto.Piece,
-                Calories = mealDto.Calories,
-                Proteins = mealDto.Protein,
-                Carbs = mealDto.Carbs,
-                Fat = mealDto.Fat,
-                Quantity = mealDto.Quantity
-            });
-        }
+                FoodId = m.FoodId,
+                Name = m.Name,
+                Piece = m.Piece,
+                Calories = m.Calories,
+                Proteins = m.Protein,
+                Carbs = m.Carbs,
+                Fat = m.Fat,
+                Quantity = m.Quantity
+            }).ToList()
+        };
 
         _context.UserMeals.Add(userMeal);
         await _context.SaveChangesAsync();
+        Console.WriteLine($"[AddUserMealGroup] Received UserId: {request.UserId}");
 
         return Ok(new { Message = "Csoportos mentés sikeres", UserMealId = userMeal.Id });
     }
+
 
     [HttpGet("getUserMeals")]
     [Authorize]

@@ -21,7 +21,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final caloriestypeController = TextEditingController();
   late Future<double> calorieGoal;
 
-
   @override
   void initState() {
     super.initState();
@@ -45,7 +44,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.get(
-      Uri.parse("$s/api/auth/getUser"), // s || l
+      Uri.parse("$l/api/auth/getUser"), // s || l
       headers: {"Authorization": "Bearer $token"},
     );
 
@@ -63,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.put(
-      Uri.parse("$s/api/auth/updateCalorieGoal"), // s || l
+      Uri.parse("$l/api/auth/updateCalorieGoal"), // s || l
       headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
@@ -72,7 +71,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (response.statusCode != 200) {
-      throw Exception("Nem sikerült frissíteni a kalóriacélt: ${response.body}");
+      throw Exception(
+        "Nem sikerült frissíteni a kalóriacélt: ${response.body}",
+      );
     }
   }
 
@@ -88,22 +89,45 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       await updateCalorieGoal(newCalories);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Kalóriacél frissítve!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Kalóriacél frissítve!")));
       setState(() {
         calorieGoal = fetchCalorieGoal();
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Hiba történt: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Hiba történt: $e")));
     }
   }
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    try {
+      final response = await http.post(
+        Uri.parse("$l/api/auth/logout"), // s || l
+        headers: {
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint("Sikeres kijelentkezés a szerveren.");
+      } else {
+        debugPrint(
+          "Sikertelen kijelentkezés: ${response.statusCode} ${response.body}",
+        );
+      }
+    } catch (e) {
+      debugPrint("Hiba a kijelentkezés során: $e");
+    }
+
     await prefs.remove("username");
+    await prefs.remove("jwt_token");
     await prefs.remove("accessToken");
     await prefs.remove("refreshToken");
 
@@ -112,10 +136,13 @@ class _ProfilePageState extends State<ProfilePage> {
       username = null;
     });
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const MainPage()),
-    );
+    if (context.mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainPage()),
+        (route) => false,
+      );
+    }
   }
 
   void _login() {

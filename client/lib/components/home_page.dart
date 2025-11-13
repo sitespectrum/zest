@@ -17,7 +17,7 @@ Future<double> fetchCalorieGoal() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$s/api/auth/getUser"), // s || l
+    Uri.parse("$l/api/auth/getUser"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -37,7 +37,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$s/api/meals/getUserMeals"), // s || l
+    Uri.parse("$l/api/meals/getUserMeals"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -58,7 +58,7 @@ Future<double> fetchTodayCalories() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$s/api/meals/getTodayCalories"), // s || l
+    Uri.parse("$l/api/meals/getTodayCalories"), // s || l
     headers: {"Authorization": "Bearer $token"},
   );
 

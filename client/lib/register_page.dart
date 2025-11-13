@@ -130,7 +130,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () async {
                   print("szia");
                   final response = await http.post(
-                    Uri.parse("$s/api/auth/register"), // s || l
+                    Uri.parse("$l/api/auth/register"), // s || l
                     headers: {"Content-Type": "application/json"},
                     body: jsonEncode({
                       "username": userNameController.text,

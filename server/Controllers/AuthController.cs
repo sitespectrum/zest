@@ -165,6 +165,22 @@ public class AuthController : ControllerBase
         });
     }
 
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] string refreshToken)
+    {
+        if (string.IsNullOrEmpty(refreshToken))
+            return BadRequest("Nem található refreshtoken");
+
+        var existing = await _dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
+        if (existing == null)
+            return NotFound("Ez a token már nem létezik");
+
+        _dbContext.RefreshTokens.Remove(existing);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok("Sikeres kijelentkezés.");
+    }
+
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
     {

@@ -38,85 +38,80 @@ class MainPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        SizedBox(height: MediaQuery.of(context).size.height * 0.10),
+    final screenHeight = MediaQuery.of(context).size.height;
 
-        Center(
-          child: Image.asset(
-            'assets/icon/Zest_logo.png',
-            width: 200,
-            height: 200,
-          ),
-        ),
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: screenHeight * 0.1),
 
-        SizedBox(height: MediaQuery.of(context).size.height * 0.10),
+                Center(
+                  child: Image.asset(
+                    'assets/icon/Zest_logo.png',
+                    width: 200,
+                    height: 200,
+                  ),
+                ),
 
-        Center(
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => RegisterPage()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color.fromARGB(255, 85, 173, 78),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(11),
-              ),
-            ),
-            child: const Text(
-              "Még nincs fiókod? Regisztráció",
-              style: TextStyle(fontSize: 18, color: Colors.white),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
+                SizedBox(height: screenHeight * 0.1),
 
-        SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text(
+                    "Még nincs fiókod? Regisztráció",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
 
-        Center(
-          child: FilledButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Color.fromARGB(255, 85, 173, 78),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(11),
-              ),
-            ),
-            child: const Text(
-              "Már van fiókod? Bejelentkezés",
-              style: TextStyle(fontSize: 18, color: Colors.white),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
+                const SizedBox(height: 12),
 
-        SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-
-        Center(
-          child: TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => Pages()),
-              );
-            },
-            child: const Text(
-              "Belépés regisztráció nélkül",
-              style: TextStyle(fontSize: 18, color: Colors.white),
-              textAlign: TextAlign.center,
+                FilledButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text(
+                    "Már van fiókod? Bejelentkezés",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
