@@ -26,7 +26,7 @@ class _DetailsPageState extends State<DetailsPage> {
   double multiplier = 1;
   int IncreaseOrDecreaseCalories = 0;
 
-  final List _goals = ["Tömegelés", "Szintentartás", "Fogyás"];
+  final List _goals = ["Tömegelés", "Szintentartás", "Fogyás"]; 
 
   final List _activity = [
     "Enyhén_aktív",

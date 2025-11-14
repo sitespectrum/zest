@@ -32,138 +32,140 @@ class _WorkoutPageState extends State<WorkoutPage> {
   Widget build(BuildContext context) {
     final appTitle = "Edzés";
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Container(
-            margin: const EdgeInsets.all(6),
-            child: AppBar(
-              title: Text(
-                appTitle,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              margin: const EdgeInsets.all(6),
+              child: AppBar(
+                title: Text(
+                  appTitle,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+                automaticallyImplyLeading: false,
+                backgroundColor: Color.fromARGB(255, 58, 58, 58),
               ),
-              automaticallyImplyLeading: false,
-              backgroundColor: Color.fromARGB(255, 58, 58, 58),
             ),
           ),
-        ),
 
-        Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 45, 45, 45),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 45, 45, 45),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TableCalendar(
+                  locale: 'hu_HU',
+                  firstDay: DateTime.utc(2020, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  focusedDay: _focusedDay,
+                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                  },
+                  headerStyle: HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                    titleTextStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
+                    leftChevronIcon: const Icon(
+                      Icons.chevron_left,
+                      color: Colors.white,
+                    ),
+                    rightChevronIcon: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.white,
+                    ),
                   ),
-                ],
-              ),
-              child: TableCalendar(
-                locale: 'hu_HU',
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                focusedDay: _focusedDay,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                },
-                headerStyle: HeaderStyle(
-                  formatButtonVisible: false,
-                  titleCentered: true,
-                  titleTextStyle: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
-                  leftChevronIcon: const Icon(
-                    Icons.chevron_left,
-                    color: Colors.white,
-                  ),
-                  rightChevronIcon: const Icon(
-                    Icons.chevron_right,
-                    color: Colors.white,
+                  calendarStyle: CalendarStyle(
+                    todayDecoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                    selectedDecoration: BoxDecoration(
+                      color: Color.fromARGB(255, 58, 58, 58),
+                      shape: BoxShape.circle,
+                    ),
+                    defaultTextStyle: const TextStyle(color: Colors.white),
+                    weekendTextStyle: const TextStyle(color: Colors.white),
                   ),
                 ),
-                calendarStyle: CalendarStyle(
-                  todayDecoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
+              ),
+
+              Positioned(
+                top: MediaQuery.of(context).size.height * 0.005,
+                left: MediaQuery.of(context).size.width * 0.09,
+                child: Text(
+                  "Korábbi edzések",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  selectedDecoration: BoxDecoration(
-                    color: Color.fromARGB(255, 58, 58, 58),
-                    shape: BoxShape.circle,
-                  ),
-                  defaultTextStyle: const TextStyle(color: Colors.white),
-                  weekendTextStyle: const TextStyle(color: Colors.white),
                 ),
               ),
-            ),
+            ],
+          ),
 
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.005,
-              left: MediaQuery.of(context).size.width * 0.09,
-              child: Text(
-                "Korábbi edzések",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+          Center(
+            child: Text(
+              "Sablonjaim",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
               ),
-            ),
-          ],
-        ),
-
-        Center(
-          child: Text(
-            "Sablonjaim",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
             ),
           ),
-        ),
 
-        Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height * 0.15,
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 45, 45, 45),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height * 0.15,
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 45, 45, 45),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

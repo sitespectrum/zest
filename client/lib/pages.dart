@@ -18,12 +18,7 @@ class _PagesState extends State<Pages> {
   String? username;
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    HomePage(),
-    WorkoutPage(),
-    HealthPage(),
-    ProfilePage(),
-  ];
+  final PageController _pageController = PageController();
 
   @override
   void initState() {
@@ -38,18 +33,40 @@ class _PagesState extends State<Pages> {
     });
   }
 
+  void onNavTap(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void onPageChanged(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   Widget build(BuildContext context) {
     final appTitle = 'Üdv, $username!';
 
     return Scaffold(
-      body: SingleChildScrollView(child: _pages[_selectedIndex]),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: onPageChanged,
+        children: const [
+          HomePage(),
+          WorkoutPage(),
+          HealthPage(),
+          ProfilePage(),
+        ],
+      ),
 
       bottomNavigationBar: NavigationBar(
         backgroundColor: Color.fromARGB(255, 85, 173, 78),
         indicatorColor: Color.fromARGB(255, 78, 156, 71),
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
+        onDestinationSelected: onNavTap,
         destinations: [
           Padding(
             padding: EdgeInsets.only(right: 20),
