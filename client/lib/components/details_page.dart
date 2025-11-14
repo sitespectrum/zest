@@ -61,7 +61,7 @@ class _DetailsPageState extends State<DetailsPage> {
     if (picked != null) {
       setState(() {
         selectedBirth = picked;
-        birthcontroller.text = DateFormat('yyyy.MM.dd').format(picked);
+        birthcontroller.text = DateFormat('yyyy-MM-dd', 'hu').format(DateTime.now());
         final age = _calcAge(picked);
       });
     }
