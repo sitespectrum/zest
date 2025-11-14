@@ -8,6 +8,9 @@ class UserDto {
   final String goal;
   final String activity;
   final double calorieGoal;
+  final double proteinGoal;
+  final double carbsGoal;
+  final double fatGoal;
 
   UserDto({
     required this.id,
@@ -19,6 +22,9 @@ class UserDto {
     required this.goal,
     required this.activity,
     required this.calorieGoal,
+    required this.proteinGoal,
+    required this.carbsGoal,
+    required this.fatGoal,
   });
 
   factory UserDto.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,9 @@ class UserDto {
       goal: json['goal'] ?? '',
       activity: json['activity'] ?? '',
       calorieGoal: (json['calorieGoal'] ?? 0).toDouble(),
+      proteinGoal: (json['proteinGoal'] ?? 0).toDouble(),
+      carbsGoal: (json['carbsGoal'] ?? 0).toDouble(),
+      fatGoal: (json['fatGoal'] ?? 0).toDouble(),
     );
   }
 }

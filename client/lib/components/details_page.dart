@@ -104,6 +104,9 @@ class _DetailsPageState extends State<DetailsPage> {
 
     double BMR = 10 * weight + 6.25 * height - 5 * age + 5;
     double calorieGoal = BMR * multiplier + IncreaseOrDecreaseCalories;
+    double proteinGoal = 0.3 * calorieGoal / 4;
+    double carbsGoal = 0.4 * calorieGoal / 4;
+    double fatGoal = 0.3 * calorieGoal / 9;
 
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -124,6 +127,9 @@ class _DetailsPageState extends State<DetailsPage> {
         "goal": goal,
         "activity": activity,
         "calorieGoal": calorieGoal,
+        "proteinGoal": proteinGoal,
+        "carbsGoal": carbsGoal,
+        "fatGoal": fatGoal
       }),
     );
 

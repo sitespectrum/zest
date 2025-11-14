@@ -76,7 +76,10 @@ public class AuthController : ControllerBase
             user.Gender,
             user.Goal,
             user.Activity,
-            user.CalorieGoal
+            user.CalorieGoal,
+            user.ProteinGoal,
+            user.FatGoal,
+            user.CarbsGoal
         });
     }
 
