@@ -4,6 +4,7 @@ import "package:shared_preferences/shared_preferences.dart";
 import "login_page.dart";
 import "pages.dart";
 import "register_page.dart";
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,12 @@ class Myapp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      supportedLocales: const [Locale('en'), Locale('hu')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: Color.fromARGB(255, 58, 58, 58),
