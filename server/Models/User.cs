@@ -38,5 +38,8 @@ public class User
     public Goal Goal { get; set; }
     public Activity Activity { get; set; }
     public double CalorieGoal { get; set; }
+    public double ProteinGoal { get; set; }
+    public double CarbsGoal { get; set; }
+    public double FatGoal { get; set; }
     public ICollection<UserMeal> UserMeals { get; set; } = new List<UserMeal>();
 }

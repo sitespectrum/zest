@@ -37,6 +37,29 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   }
 }
 
+Future<Map<String, double>> fetchMacroGoals() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception("Nincs token");
+
+  final response = await http.get(
+    Uri.parse("$apiUrl/api/auth/getUsers"), // s || l
+    headers: {"Authorization": "Bearer $token"},
+  );
+  print("szia, ${response.body}");
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return {
+      'carbsGoal': (data['carbsGoal'] as num).toDouble(),
+      'fatGoal': (data['fatGoal'] as num).toDouble(),
+      'proteinGoal': (data['proteinGoal'] as num).toDouble(),
+    };
+  } else {
+    throw Exception("Nem sikerült lekérni a tápanyagokat: ${response.body}");
+  }
+}
+
 Future<Map<String, double>> fetchTodayNutrients() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
@@ -66,6 +89,7 @@ class _HealthPageState extends State<HealthPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<String, double>? nutrients;
+  Map<String, double>? macros;
   late Future<List<UserMealDto>> _futureMeals;
 
   @override
@@ -74,6 +98,7 @@ class _HealthPageState extends State<HealthPage> {
     _loadUser();
     initializeDateFormatting('hu_HU', null);
     loadNutrients();
+    loadMacros();
   }
 
   @override
@@ -96,6 +121,17 @@ class _HealthPageState extends State<HealthPage> {
       final fetched = await fetchTodayNutrients();
       setState(() {
         nutrients = fetched;
+      });
+    } catch (e) {
+      print("Hiba a fetchnél: $e");
+    }
+  }
+
+  void loadMacros() async {
+    try {
+      final fetched = await fetchMacroGoals();
+      setState(() {
+        macros = fetched;
       });
     } catch (e) {
       print("Hiba a fetchnél: $e");
@@ -468,7 +504,8 @@ class _HealthPageState extends State<HealthPage> {
                                     Stack(
                                       children: [
                                         Text(
-                                          'Fehérje: ${nutrients!['protein']!.toStringAsFixed(0)} g',
+                                          'Fehérje: ${nutrients!['protein']!.toStringAsFixed(0)} g'
+                                          'Fehérje: ${macros?['proteinGoal']!.toStringAsFixed(0)} g',
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 20,
@@ -497,6 +534,22 @@ class _HealthPageState extends State<HealthPage> {
                                   ],
                                 ),
 
+                                Row(
+                                  children: [
+                                    Stack(
+                                      children: [
+                                        Text(
+                                          'Zsír: ${nutrients!['fat']!.toStringAsFixed(0)} g',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                                 Row(
                                   children: [
                                     Stack(
