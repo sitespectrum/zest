@@ -13,11 +13,15 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage>
+    with AutomaticKeepAliveClientMixin {
   String? username;
   bool loggedIn = false;
   final caloriestypeController = TextEditingController();
   late Future<double> calorieGoal;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -163,6 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final appTitle = username != null ? 'Üdv, $username!' : 'Üdv!';
 
     return SingleChildScrollView(

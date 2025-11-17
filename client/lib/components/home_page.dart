@@ -75,10 +75,13 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   late Future<List<UserMealDto>> _futureMeals;
   late Future<double> _todaycalories;
   late Future<double> _calorieGoal;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void didChangeDependencies() {
@@ -94,6 +97,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     const appTitle = "Főoldal";
 
     return SingleChildScrollView(

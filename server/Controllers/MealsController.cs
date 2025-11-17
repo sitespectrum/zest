@@ -164,7 +164,6 @@ public class MealsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> AddUserMealGroup([FromBody] AddUserMealGroupRequest request)
     {
-        // Tokenből user azonosító
         var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
 
         var user = await _context.Users.FindAsync(userId);
@@ -189,7 +188,9 @@ public class MealsController : ControllerBase
                 Proteins = m.Protein,
                 Carbs = m.Carbs,
                 Fat = m.Fat,
-                Quantity = m.Quantity
+                Quantity = m.Quantity,
+                BaseWeight = m.BaseWeight,
+                Unit = m.Unit
             }).ToList()
         };
 

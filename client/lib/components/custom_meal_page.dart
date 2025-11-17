@@ -17,20 +17,46 @@ class CMealPage extends StatefulWidget {
 
 class UserMealDto {
   final String mealName;
-  final String foodId;
+  final int foodId;
   final DateTime eatenAt;
+
+  final int piece;
+  final int calories;
+  final double protein;
+  final double carbs;
+  final double fat;
+  final double quantity;
+
+  final double baseWeight;
+  final String unit;
 
   UserMealDto({
     required this.mealName,
     required this.foodId,
     required this.eatenAt,
+    required this.piece,
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+    required this.quantity,
+    required this.baseWeight,
+    required this.unit,
   });
 
   Map<String, dynamic> toJson() {
     return {
-      "mealName": mealName,
-      "foodId": foodId,
-      "eatenAt": eatenAt.toIso8601String(),
+      "MealName": mealName,
+      "FoodId": foodId,
+      "EatenAt": eatenAt.toIso8601String(),
+      "Piece": piece,
+      "Calories": calories,
+      "Protein": protein,
+      "Carbs": carbs,
+      "Fat": fat,
+      "Quantity": quantity,
+      "BaseWeight": baseWeight,
+      "Unit": unit,
     };
   }
 }
@@ -54,7 +80,7 @@ Future<void> saveUserMeals(
 
   if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
-  final uri = Uri.parse("$apiUrl/api/Meals/addGroup"); // s || l
+  final uri = Uri.parse("$apiUrl/api/Meals/addGroup");
 
   final dto = {
     "MealName": mealName,
@@ -65,6 +91,8 @@ Future<void> saveUserMeals(
     "TotalProtein": totalProtein,
     "TotalCarbs": totalCarbs,
     "TotalFat": totalFat,
+    "BaseWeight": meals.first.baseWeight,
+    "Unit": meals.first.unit,
   };
 
   final response = await http.post(

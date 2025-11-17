@@ -65,7 +65,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
       final uri = Uri.parse(
-        '$apiUrl/api/meals/get-units?foodId=$foodId', // s || l
+        '$apiUrl/api/meals/get-units?foodId=$foodId',
       );
       final response = await http.get(uri);
 
@@ -92,7 +92,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
       final uri = Uri.parse(
-        '$apiUrl/api/meals/get-by-barcode?code=$code', // s || l
+        '$apiUrl/api/meals/get-by-barcode?code=$code',
       );
       final response = await http.get(uri);
 
@@ -132,7 +132,7 @@ class _AddMealPageState extends State<AddMealPage> {
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.get(
-      Uri.parse("$apiUrl/api/meals/getUserMeals"), // s || l
+      Uri.parse("$apiUrl/api/meals/getUserMeals"),
       headers: {"Authorization": "Bearer $token"},
     );
 

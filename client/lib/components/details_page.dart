@@ -13,7 +13,8 @@ class DetailsPage extends StatefulWidget {
   State<DetailsPage> createState() => _DetailsPageState();
 }
 
-class _DetailsPageState extends State<DetailsPage> {
+class _DetailsPageState extends State<DetailsPage>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController heightcontroller = TextEditingController();
   final TextEditingController weightcontroller = TextEditingController();
   final TextEditingController birthcontroller = TextEditingController();
@@ -26,7 +27,7 @@ class _DetailsPageState extends State<DetailsPage> {
   double multiplier = 1;
   int IncreaseOrDecreaseCalories = 0;
 
-  final List _goals = ["Tömegelés", "Szintentartás", "Fogyás"]; 
+  final List _goals = ["Tömegelés", "Szintentartás", "Fogyás"];
 
   final List _activity = [
     "Enyhén_aktív",
@@ -34,6 +35,9 @@ class _DetailsPageState extends State<DetailsPage> {
     "Nagyon_aktív",
     "Extrém_aktív",
   ];
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Future<void> _selectDate() async {
@@ -61,7 +65,10 @@ class _DetailsPageState extends State<DetailsPage> {
     if (picked != null) {
       setState(() {
         selectedBirth = picked;
-        birthcontroller.text = DateFormat('yyyy-MM-dd', 'hu').format(DateTime.now());
+        birthcontroller.text = DateFormat(
+          'yyyy-MM-dd',
+          'hu',
+        ).format(DateTime.now());
         final age = _calcAge(picked);
       });
     }
@@ -129,7 +136,7 @@ class _DetailsPageState extends State<DetailsPage> {
         "calorieGoal": calorieGoal,
         "proteinGoal": proteinGoal,
         "carbsGoal": carbsGoal,
-        "fatGoal": fatGoal
+        "fatGoal": fatGoal,
       }),
     );
 
@@ -160,6 +167,7 @@ class _DetailsPageState extends State<DetailsPage> {
   }
 
   Widget build(BuildContext context) {
+    super.build(context);
     const appTitle = "Adataim";
 
     return Scaffold(

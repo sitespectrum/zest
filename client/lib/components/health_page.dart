@@ -84,13 +84,17 @@ Future<Map<String, double>> fetchTodayNutrients() async {
   }
 }
 
-class _HealthPageState extends State<HealthPage> {
+class _HealthPageState extends State<HealthPage>
+    with AutomaticKeepAliveClientMixin {
   String? username;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<String, double>? nutrients;
   Map<String, double>? macros;
   late Future<List<UserMealDto>> _futureMeals;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -140,6 +144,7 @@ class _HealthPageState extends State<HealthPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final appTitle = "Egészség";
 
     return SingleChildScrollView(
