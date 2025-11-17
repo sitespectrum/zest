@@ -133,6 +133,8 @@ class _DetailsPageState extends State<DetailsPage> {
       }),
     );
 
+    print("$calorieGoal : $proteinGoal");
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       if (context.mounted) {
         showDialog(

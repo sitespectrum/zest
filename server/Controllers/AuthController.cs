@@ -132,6 +132,9 @@ public class AuthController : ControllerBase
         user.Goal = goalEnum;
         user.Activity = activityEnum;
         user.CalorieGoal = request.CalorieGoal;
+        user.ProteinGoal = request.ProteinGoal;
+        user.FatGoal = request.FatGoal;
+        user.CarbsGoal = request.CarbsGoal;
 
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
@@ -281,6 +284,9 @@ public class DetailsRequest
     public string? Goal { get; set; }
     public string? Activity { get; set; }
     public double CalorieGoal { get; set; }
+    public double ProteinGoal { get; set; }
+    public double CarbsGoal { get; set; }
+    public double FatGoal { get; set; }
 }
 
 public class LoginRequest

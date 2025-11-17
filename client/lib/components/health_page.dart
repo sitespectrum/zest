@@ -43,7 +43,7 @@ Future<Map<String, double>> fetchMacroGoals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$apiUrl/api/auth/getUsers"), // s || l
+    Uri.parse("$apiUrl/api/auth/getUser"),
     headers: {"Authorization": "Bearer $token"},
   );
   print("szia, ${response.body}");
@@ -502,7 +502,7 @@ class _HealthPageState extends State<HealthPage> {
                                       Stack(
                                         children: [
                                           Text(
-                                            'Kalória: ${nutrients!['calories']!.toStringAsFixed(0)} kcal',
+                                            'Kalória: ${nutrients!['calories']!.toStringAsFixed(0)} kcal \n',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
@@ -514,30 +514,13 @@ class _HealthPageState extends State<HealthPage> {
                                     ],
                                   ),
 
-                                Row(
-                                  children: [
-                                    Stack(
-                                      children: [
-                                        Text(
-                                          'Fehérje: ${nutrients!['protein']!.toStringAsFixed(0)} g'
-                                          'Fehérje: ${macros?['proteinGoal']!.toStringAsFixed(0)} g',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-
                                   Row(
                                     children: [
                                       Stack(
                                         children: [
                                           Text(
-                                            'Szénhidrát: ${nutrients!['carbs']!.toStringAsFixed(0)} g',
+                                            'Fehérje: ${nutrients!['protein']!.toStringAsFixed(0)} g \n'
+                                            'Fehérjecél: ${macros?['proteinGoal']!.toStringAsFixed(0)} g \n',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
@@ -549,28 +532,31 @@ class _HealthPageState extends State<HealthPage> {
                                     ],
                                   ),
 
-                                Row(
-                                  children: [
-                                    Stack(
-                                      children: [
-                                        Text(
-                                          'Zsír: ${nutrients!['fat']!.toStringAsFixed(0)} g',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
                                   Row(
                                     children: [
                                       Stack(
                                         children: [
                                           Text(
-                                            'Zsír: ${nutrients!['fat']!.toStringAsFixed(0)} g',
+                                            'Szénhidrát: ${nutrients!['carbs']!.toStringAsFixed(0)} g \n'
+                                            'Szénhidrátcél: ${macros?['carbsGoal']!.toStringAsFixed(0)} g \n',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+
+                                  Row(
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          Text(
+                                            'Zsír: ${nutrients!['fat']!.toStringAsFixed(0)} g \n'
+                                            'Zsírcél: ${macros?['fatGoal']!.toStringAsFixed(0)} g \n',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
