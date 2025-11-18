@@ -65,10 +65,7 @@ class _DetailsPageState extends State<DetailsPage>
     if (picked != null) {
       setState(() {
         selectedBirth = picked;
-        birthcontroller.text = DateFormat(
-          'yyyy-MM-dd',
-          'hu',
-        ).format(DateTime.now());
+        birthcontroller.text = DateFormat('yyyy-MM-dd', 'hu').format(picked);
         final age = _calcAge(picked);
       });
     }
@@ -111,8 +108,8 @@ class _DetailsPageState extends State<DetailsPage>
 
     double BMR = 10 * weight + 6.25 * height - 5 * age + 5;
     double calorieGoal = BMR * multiplier + IncreaseOrDecreaseCalories;
-    double proteinGoal = 0.3 * calorieGoal / 4;
-    double carbsGoal = 0.4 * calorieGoal / 4;
+    double proteinGoal = 0.2 * calorieGoal / 4;
+    double carbsGoal = 0.5 * calorieGoal / 4;
     double fatGoal = 0.3 * calorieGoal / 9;
 
     if (selectedBirth == null) {

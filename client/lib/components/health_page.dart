@@ -547,8 +547,17 @@ class _HealthPageState extends State<HealthPage>
                                                     .toDouble(),
                                             center: Text(
                                               "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros!['proteinGoal']!.toStringAsFixed(0)} g",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
                                             ),
                                             progressColor: Colors.blue,
+                                            backgroundColor: Color.fromRGBO(
+                                              58,
+                                              58,
+                                              58,
+                                              1,
+                                            ),
                                             barRadius: const Radius.circular(
                                               12,
                                             ),
@@ -585,8 +594,17 @@ class _HealthPageState extends State<HealthPage>
                                                     .toDouble(),
                                             center: Text(
                                               "${nutrients!['carbs']!.toStringAsFixed(0)} g / ${macros!['carbsGoal']!.toStringAsFixed(0)} g",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
                                             ),
                                             progressColor: Colors.orange,
+                                            backgroundColor: Color.fromRGBO(
+                                              58,
+                                              58,
+                                              58,
+                                              1,
+                                            ),
                                             barRadius: const Radius.circular(
                                               12,
                                             ),
@@ -623,8 +641,17 @@ class _HealthPageState extends State<HealthPage>
                                                     .toDouble(),
                                             center: Text(
                                               "${nutrients!['fat']!.toStringAsFixed(0)} g / ${macros!['fatGoal']!.toStringAsFixed(0)} g",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
                                             ),
                                             progressColor: Colors.pink,
+                                            backgroundColor: Color.fromRGBO(
+                                              58,
+                                              58,
+                                              58,
+                                              1,
+                                            ),
                                             barRadius: const Radius.circular(
                                               12,
                                             ),

@@ -75,7 +75,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
   late Future<List<UserMealDto>> _futureMeals;
   late Future<double> _todaycalories;
   late Future<double> _calorieGoal;
@@ -161,12 +162,13 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 45, 45, 45),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
+                      border: Border.all(
+                        color: Color.fromRGBO(85, 173, 78, 0.69),
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Color.fromRGBO(85, 173, 78, 0.69),
                           blurRadius: 4,
-                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -255,14 +257,15 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                     margin: const EdgeInsets.all(20),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 45, 45, 45),
+                      color: const Color.fromRGBO(45, 45, 45, 1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
+                      border: Border.all(
+                        color: Color.fromRGBO(85, 173, 78, 0.69),
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Color.fromRGBO(85, 173, 78, 0.69),
                           blurRadius: 4,
-                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -293,12 +296,13 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                           decoration: BoxDecoration(
                             color: const Color.fromARGB(255, 45, 45, 45),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
+                            border: Border.all(
+                              color: Color.fromRGBO(85, 173, 78, 0.69),
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
+                                color: Color.fromRGBO(85, 173, 78, 0.69),
                                 blurRadius: 4,
-                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
@@ -504,12 +508,13 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                             decoration: BoxDecoration(
                               color: const Color.fromARGB(255, 45, 45, 45),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white24),
+                              border: Border.all(
+                                color: Color.fromRGBO(85, 173, 78, 0.69),
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Color.fromRGBO(85, 173, 78, 0.69),
                                   blurRadius: 4,
-                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
