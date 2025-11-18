@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
 import '../constants.dart';
@@ -523,13 +524,33 @@ class _HealthPageState extends State<HealthPage>
                                     children: [
                                       Stack(
                                         children: [
-                                          Text(
-                                            'Fehérje: ${nutrients!['protein']!.toStringAsFixed(0)} g \n'
-                                            'Fehérjecél: ${macros?['proteinGoal']!.toStringAsFixed(0)} g \n',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
+                                          LinearPercentIndicator(
+                                            width:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width *
+                                                0.5,
+                                            animation: true,
+                                            animationDuration: 1000,
+                                            lineHeight: 20.0,
+                                            leading: Text(
+                                              "Fehérje:",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            percent:
+                                                (nutrients!['protein']! /
+                                                        macros!['proteinGoal']!)
+                                                    .toDouble(),
+                                            center: Text(
+                                              "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros!['proteinGoal']!.toStringAsFixed(0)} g",
+                                            ),
+                                            progressColor: Colors.blue,
+                                            barRadius: const Radius.circular(
+                                              12,
                                             ),
                                           ),
                                         ],
@@ -541,13 +562,33 @@ class _HealthPageState extends State<HealthPage>
                                     children: [
                                       Stack(
                                         children: [
-                                          Text(
-                                            'Szénhidrát: ${nutrients!['carbs']!.toStringAsFixed(0)} g \n'
-                                            'Szénhidrátcél: ${macros?['carbsGoal']!.toStringAsFixed(0)} g \n',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
+                                          LinearPercentIndicator(
+                                            width:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width *
+                                                0.5,
+                                            animation: true,
+                                            animationDuration: 1000,
+                                            lineHeight: 20.0,
+                                            leading: Text(
+                                              "Szénhidrát:",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            percent:
+                                                (nutrients!['carbs']! /
+                                                        macros!['carbsGoal']!)
+                                                    .toDouble(),
+                                            center: Text(
+                                              "${nutrients!['carbs']!.toStringAsFixed(0)} g / ${macros!['carbsGoal']!.toStringAsFixed(0)} g",
+                                            ),
+                                            progressColor: Colors.orange,
+                                            barRadius: const Radius.circular(
+                                              12,
                                             ),
                                           ),
                                         ],
@@ -559,13 +600,33 @@ class _HealthPageState extends State<HealthPage>
                                     children: [
                                       Stack(
                                         children: [
-                                          Text(
-                                            'Zsír: ${nutrients!['fat']!.toStringAsFixed(0)} g \n'
-                                            'Zsírcél: ${macros?['fatGoal']!.toStringAsFixed(0)} g \n',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
+                                          LinearPercentIndicator(
+                                            width:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width *
+                                                0.5,
+                                            animation: true,
+                                            animationDuration: 1000,
+                                            lineHeight: 20.0,
+                                            leading: Text(
+                                              "Zsír:",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            percent:
+                                                (nutrients!['fat']! /
+                                                        macros!['fatGoal']!)
+                                                    .toDouble(),
+                                            center: Text(
+                                              "${nutrients!['fat']!.toStringAsFixed(0)} g / ${macros!['fatGoal']!.toStringAsFixed(0)} g",
+                                            ),
+                                            progressColor: Colors.pink,
+                                            barRadius: const Radius.circular(
+                                              12,
                                             ),
                                           ),
                                         ],
