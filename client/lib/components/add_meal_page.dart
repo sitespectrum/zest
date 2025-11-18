@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:client/models/meal.dart';
-import 'create_new_meal_page.dart';
 import 'dart:async';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -408,16 +407,7 @@ class _AddMealPageState extends State<AddMealPage> {
                               borderRadius: BorderRadius.circular(11),
                             ),
                             child: IconButton(
-                              onPressed: () {
-                                if (context.mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const CreateNewMealPage(),
-                                  ),
-                                );
-                                }
-                              },
+                              onPressed: () {},
                               icon: const Icon(
                                 CupertinoIcons.add_circled,
                                 size: 25,
