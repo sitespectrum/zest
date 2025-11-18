@@ -39,6 +39,9 @@ public class AuthController : ControllerBase
         if (!IsValidEmail(request.Email))
             return BadRequest("Érvénytelen email!");
 
+        if (await _dbContext.Users.AnyAsync(u => u.UserName == request.UserName))
+            return BadRequest("Ezzel a felhasználónévvel már van regisztrált felhasználó!");
+
         if (await _dbContext.Users.AnyAsync(u => u.Email == request.Email))
             return BadRequest("Ezzel az emaillel már van regisztrált felhasználó!");
 

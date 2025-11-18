@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:client/models/meal.dart';
+import 'create_new_meal_page.dart';
 import 'dart:async';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,9 +65,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
-      final uri = Uri.parse(
-        '$apiUrl/api/meals/get-units?foodId=$foodId',
-      );
+      final uri = Uri.parse('$apiUrl/api/meals/get-units?foodId=$foodId');
       final response = await http.get(uri);
 
       print("STATUS: ${response.statusCode}");
@@ -91,9 +90,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
-      final uri = Uri.parse(
-        '$apiUrl/api/meals/get-by-barcode?code=$code',
-      );
+      final uri = Uri.parse('$apiUrl/api/meals/get-by-barcode?code=$code');
       final response = await http.get(uri);
 
       print("STATUS: ${response.statusCode}");
@@ -195,7 +192,7 @@ class _AddMealPageState extends State<AddMealPage> {
     });
 
     try {
-      final uri = Uri.parse('$apiUrl/api/meals/search?q=$q'); // s || l
+      final uri = Uri.parse('$apiUrl/api/meals/search?q=$q');
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {
@@ -411,7 +408,16 @@ class _AddMealPageState extends State<AddMealPage> {
                               borderRadius: BorderRadius.circular(11),
                             ),
                             child: IconButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CreateNewMealPage(),
+                                  ),
+                                );
+                                }
+                              },
                               icon: const Icon(
                                 CupertinoIcons.add_circled,
                                 size: 25,
