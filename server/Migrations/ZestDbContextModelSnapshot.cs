@@ -23,8 +23,14 @@ namespace server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CustomName")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("EatenAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCustom")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("MealName")
                         .IsRequired()
