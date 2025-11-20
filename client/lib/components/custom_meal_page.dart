@@ -817,20 +817,45 @@ class _CMealPageState extends State<CMealPage> {
                                             foregroundColor: Colors.black,
                                           ),
                                           onPressed: () async {
-                                            final prefs =
-                                                await SharedPreferences.getInstance();
-                                            final userId = prefs.getInt(
-                                              'userId',
-                                            );
-                                            if (userId == null) {
-                                              throw Exception(
-                                                "Nincs userId a gépen.",
+                                            try {
+                                              final prefs =
+                                                  await SharedPreferences.getInstance();
+                                              final userId = prefs.getInt(
+                                                'userId',
+                                              );
+                                              if (userId == null) {
+                                                throw Exception(
+                                                  "Nincs userId a gépen.",
+                                                );
+                                              }
+
+                                              await saveTemplateAsUserMeal(
+                                                meal,
+                                                userId,
+                                              );
+
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Sikeresen mentve!",
+                                                  ),
+                                                  showCloseIcon: true,
+                                                  duration: Duration(
+                                                    seconds: 1,
+                                                  ),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Hiba: $e"),
+                                                ),
                                               );
                                             }
-                                            await saveTemplateAsUserMeal(
-                                              meal,
-                                              userId,
-                                            );
                                             if (_debounce?.isActive ?? false) {
                                               _debounce!.cancel();
                                             }
