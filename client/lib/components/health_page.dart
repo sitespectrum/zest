@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -541,12 +542,18 @@ class _HealthPageState extends State<HealthPage>
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                            percent:
-                                                (nutrients!['protein']! /
-                                                        macros!['proteinGoal']!)
-                                                    .toDouble(),
+                                            percent: min(
+                                              (nutrients!['protein']! /
+                                                      macros!['proteinGoal']!)
+                                                  .toDouble(),
+                                              1.0,
+                                            ),
                                             center: Text(
-                                              "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros!['proteinGoal']!.toStringAsFixed(0)} g",
+                                              "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros!['proteinGoal']!.toStringAsFixed(0)} g ${macros!['proteinGoal']! <= nutrients!['protein']! && nutrients!['protein']! <= macros!['proteinGoal']! + 50
+                                                  ? "✅"
+                                                  : nutrients!['protein']! > macros!['proteinGoal']! + 50
+                                                  ? "😡"
+                                                  : ""}",
                                               style: TextStyle(
                                                 color: Colors.white,
                                               ),
@@ -588,12 +595,18 @@ class _HealthPageState extends State<HealthPage>
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                            percent:
-                                                (nutrients!['carbs']! /
-                                                        macros!['carbsGoal']!)
-                                                    .toDouble(),
+                                            percent: min(
+                                              (nutrients!['carbs']! /
+                                                      macros!['carbsGoal']!)
+                                                  .toDouble(),
+                                              1.0,
+                                            ),
                                             center: Text(
-                                              "${nutrients!['carbs']!.toStringAsFixed(0)} g / ${macros!['carbsGoal']!.toStringAsFixed(0)} g",
+                                              "${nutrients!['carbs']!.toStringAsFixed(0)} g / ${macros!['carbsGoal']!.toStringAsFixed(0)} g ${macros!['carbsGoal']! <= nutrients!['carbs']! && nutrients!['carbs']! <= macros!['carbsGoal']! + 30
+                                                  ? "✅"
+                                                  : nutrients!['carbs']! > macros!['carbsGoal']! + 30
+                                                  ? "😡"
+                                                  : ""}",
                                               style: TextStyle(
                                                 color: Colors.white,
                                               ),
@@ -635,12 +648,18 @@ class _HealthPageState extends State<HealthPage>
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                            percent:
-                                                (nutrients!['fat']! /
-                                                        macros!['fatGoal']!)
-                                                    .toDouble(),
+                                            percent: min(
+                                              (nutrients!['fat']! /
+                                                      macros!['fatGoal']!)
+                                                  .toDouble(),
+                                              1.0,
+                                            ),
                                             center: Text(
-                                              "${nutrients!['fat']!.toStringAsFixed(0)} g / ${macros!['fatGoal']!.toStringAsFixed(0)} g",
+                                              "${nutrients!['fat']!.toStringAsFixed(0)} g / ${macros!['fatGoal']!.toStringAsFixed(0)} g ${macros!['fatGoal']! <= nutrients!['fat']! && nutrients!['fat']! <= macros!['fatGoal']! + 20
+                                                  ? "✅"
+                                                  : nutrients!['fat']! > macros!['fatGoal']! + 20
+                                                  ? "😡"
+                                                  : ""}",
                                               style: TextStyle(
                                                 color: Colors.white,
                                               ),
