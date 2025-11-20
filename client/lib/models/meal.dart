@@ -145,6 +145,7 @@ class MealDto {
 class UserMealDto {
   final int id;
   final String mealName;
+  final String customName;
   final double totalCalories;
   final double totalProtein;
   final double totalCarbs;
@@ -155,6 +156,7 @@ class UserMealDto {
   UserMealDto({
     required this.id,
     required this.mealName,
+    required this.customName,
     required this.totalCalories,
     required this.totalProtein,
     required this.totalCarbs,
@@ -197,6 +199,7 @@ class UserMealDto {
     return UserMealDto(
       id: json['id'],
       mealName: json['mealName'],
+      customName: json['customName']?.toString() ?? '',
       totalCalories: (json['totalCalories'] ?? 0).toDouble(),
       totalProtein: (json['totalProtein'] ?? 0).toDouble(),
       totalCarbs: (json['totalCarbs'] ?? 0).toDouble(),
@@ -212,6 +215,87 @@ class UserMealDto {
     return {
       "id": id,
       "mealName": mealName,
+      "customName": customName,
+      "calories": totalCalories,
+      "protein": totalProtein,
+      "carbs": totalCarbs,
+      "fat": totalFat,
+      "eatenAt": eatenAt.toIso8601String(),
+      "meals": meals,
+    };
+  }
+}
+
+class CustomUserMealDto {
+  final int id;
+  final String customName;
+  final double totalCalories;
+  final double totalProtein;
+  final double totalCarbs;
+  final double totalFat;
+  final DateTime eatenAt;
+  final List<MealDto> meals;
+
+  CustomUserMealDto({
+    required this.id,
+    required this.customName,
+    required this.totalCalories,
+    required this.totalProtein,
+    required this.totalCarbs,
+    required this.totalFat,
+    required this.eatenAt,
+    required this.meals,
+  });
+
+  static String _firstNonNull(Map<String, dynamic> json, List<String> keys) {
+    for (final k in keys) {
+      if (json.containsKey(k) && json[k] != null) return json[k].toString();
+    }
+    return '';
+  }
+
+  static String _cleanNumberString(String s) {
+    var t = s.trim();
+    final m = RegExp(r'[-+]?\d+[.,]?\d*').firstMatch(t);
+    if (m != null) return m.group(0)!.replaceAll(',', '.');
+    return '0';
+  }
+
+  factory CustomUserMealDto.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    return CustomUserMealDto(
+      id: json['id'],
+      customName: json['customName']?.toString() ?? '',
+      totalCalories: (json['totalCalories'] ?? 0).toDouble(),
+      totalProtein: (json['totalProtein'] ?? 0).toDouble(),
+      totalCarbs: (json['totalCarbs'] ?? 0).toDouble(),
+      totalFat: (json['totalFat'] ?? 0).toDouble(),
+      eatenAt: DateTime.parse(json['eatenAt']),
+      meals: (json['meals'] as List<dynamic>)
+          .map((e) => MealDto.fromJson(e))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "customName": customName,
       "calories": totalCalories,
       "protein": totalProtein,
       "carbs": totalCarbs,

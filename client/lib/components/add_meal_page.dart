@@ -398,23 +398,6 @@ class _AddMealPageState extends State<AddMealPage> {
                               ),
                             ),
                           ),
-
-                          const SizedBox(width: 4),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 200, 70, 70),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: IconButton(
-                              onPressed: () {},
-                              icon: const Icon(
-                                CupertinoIcons.add_circled,
-                                size: 25,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                       backgroundColor: const Color.fromARGB(255, 58, 58, 58),
