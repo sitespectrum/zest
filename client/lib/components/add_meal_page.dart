@@ -42,6 +42,13 @@ class _AddMealPageState extends State<AddMealPage> {
       SnackBar(
         content: Text('${cleanName} hozzáadva a listádhoz!'),
         showCloseIcon: true,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+        duration: Duration(milliseconds: 1800),
+        animation: CurvedAnimation(
+          parent: kAlwaysCompleteAnimation,
+          curve: Curves.easeInOut,
+        ),
       ),
     );
   }
@@ -380,11 +387,23 @@ class _AddMealPageState extends State<AddMealPage> {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        const SnackBar(
+                                        SnackBar(
                                           content: Text(
                                             "Nincs ilyen vonalkódú étel",
                                           ),
-                                          duration: Duration(seconds: 2),
+                                          behavior: SnackBarBehavior.floating,
+                                          margin: EdgeInsets.only(
+                                            bottom: 30,
+                                            left: 16,
+                                            right: 16,
+                                          ),
+                                          duration: Duration(
+                                            milliseconds: 1800,
+                                          ),
+                                          animation: CurvedAnimation(
+                                            parent: kAlwaysCompleteAnimation,
+                                            curve: Curves.easeInOut,
+                                          ),
                                         ),
                                       );
                                     }
@@ -443,9 +462,22 @@ class _AddMealPageState extends State<AddMealPage> {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        const SnackBar(
+                                        SnackBar(
                                           content: Text(
                                             "Nem található mértékegység ehhez az ételhez.",
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          margin: EdgeInsets.only(
+                                            bottom: 30,
+                                            left: 16,
+                                            right: 16,
+                                          ),
+                                          duration: Duration(
+                                            milliseconds: 1800,
+                                          ),
+                                          animation: CurvedAnimation(
+                                            parent: kAlwaysCompleteAnimation,
+                                            curve: Curves.easeInOut,
                                           ),
                                         ),
                                       );
@@ -729,6 +761,19 @@ class _AddMealPageState extends State<AddMealPage> {
                                           content: Text(
                                             '$cleanName hozzáadva a listádhoz!',
                                           ),
+                                          behavior: SnackBarBehavior.floating,
+                                          margin: EdgeInsets.only(
+                                            bottom: 30,
+                                            left: 16,
+                                            right: 16,
+                                          ),
+                                          duration: Duration(
+                                            milliseconds: 1800,
+                                          ),
+                                          animation: CurvedAnimation(
+                                            parent: kAlwaysCompleteAnimation,
+                                            curve: Curves.easeInOut,
+                                          ),
                                         ),
                                       );
                                     }
@@ -811,9 +856,20 @@ class _AddMealPageState extends State<AddMealPage> {
                                   final units = await _fetchUnit(meal.foodId);
                                   if (units.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
                                           "Nem található mértékegység ehhez az ételhez.",
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: EdgeInsets.only(
+                                          bottom: 30,
+                                          left: 16,
+                                          right: 16,
+                                        ),
+                                        duration: Duration(milliseconds: 1800),
+                                        animation: CurvedAnimation(
+                                          parent: kAlwaysCompleteAnimation,
+                                          curve: Curves.easeInOut,
                                         ),
                                       ),
                                     );
@@ -1086,6 +1142,17 @@ class _AddMealPageState extends State<AddMealPage> {
                                       SnackBar(
                                         content: Text(
                                           '$cleanName hozzáadva a listádhoz!',
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: EdgeInsets.only(
+                                          bottom: 30,
+                                          left: 16,
+                                          right: 16,
+                                        ),
+                                        duration: Duration(milliseconds: 1800),
+                                        animation: CurvedAnimation(
+                                          parent: kAlwaysCompleteAnimation,
+                                          curve: Curves.easeInOut,
                                         ),
                                       ),
                                     );

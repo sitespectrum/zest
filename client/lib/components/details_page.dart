@@ -86,7 +86,16 @@ class _DetailsPageState extends State<DetailsPage>
   Future<void> submitDetails() async {
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Válassz születési dátumot!")),
+        SnackBar(
+          content: Text("Válassz születési dátumot!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
       );
       return;
     }
@@ -99,7 +108,16 @@ class _DetailsPageState extends State<DetailsPage>
 
     if (height == null || weight == null || gender.isEmpty || goal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Töltsd ki az összes mezőt helyesen!")),
+        SnackBar(
+          content: Text("Töltsd ki az összes mezőt helyesen!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
       );
       return;
     }
@@ -114,7 +132,16 @@ class _DetailsPageState extends State<DetailsPage>
 
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Válassz születési dátumot!")),
+        SnackBar(
+          content: Text("Válassz születési dátumot!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
       );
       return;
     }
