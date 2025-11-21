@@ -84,16 +84,34 @@ class _ProfilePageState extends State<ProfilePage>
 
     if (newCalories == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Adj meg egy érvényes számot!")),
+        SnackBar(
+          content: Text("Adj meg egy érvényes számot!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
       );
       return;
     }
 
     try {
       await updateCalorieGoal(newCalories);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Kalóriacél frissítve!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Kalóriacél frissítve!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
+      );
       setState(() {
         calorieGoal = fetchCalorieGoal();
       });

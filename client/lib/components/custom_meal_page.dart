@@ -853,6 +853,21 @@ class _CMealPageState extends State<CMealPage> {
                                               ).showSnackBar(
                                                 SnackBar(
                                                   content: Text("Hiba: $e"),
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                  margin: EdgeInsets.only(
+                                                    bottom: 30,
+                                                    left: 16,
+                                                    right: 16,
+                                                  ),
+                                                  duration: Duration(
+                                                    milliseconds: 1800,
+                                                  ),
+                                                  animation: CurvedAnimation(
+                                                    parent:
+                                                        kAlwaysCompleteAnimation,
+                                                    curve: Curves.easeInOut,
+                                                  ),
                                                 ),
                                               );
                                             }
@@ -1109,19 +1124,50 @@ class _CMealPageState extends State<CMealPage> {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
-                                            const SnackBar(
+                                            SnackBar(
                                               content: Text(
                                                 "Sikeresen mentve!",
                                               ),
                                               showCloseIcon: true,
-                                              duration: Duration(seconds: 1),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
                                             ),
                                           );
                                         } catch (e) {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
-                                            SnackBar(content: Text("Hiba: $e")),
+                                            SnackBar(
+                                              content: Text("Hiba: $e"),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
+                                            ),
                                           );
                                         }
                                         if (_debounce?.isActive ?? false) {
@@ -1198,12 +1244,26 @@ class _CMealPageState extends State<CMealPage> {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
-                                            const SnackBar(
+                                            SnackBar(
                                               content: Text(
                                                 "Sikeresen mentve!",
                                               ),
                                               showCloseIcon: true,
-                                              duration: Duration(seconds: 1),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
                                             ),
                                           );
                                         } catch (e) {
