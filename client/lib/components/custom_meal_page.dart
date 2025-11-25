@@ -9,7 +9,8 @@ import 'package:client/pages.dart';
 import '../constants.dart';
 
 class CMealPage extends StatefulWidget {
-  const CMealPage({super.key});
+  final DateTime selectedDay;
+  const CMealPage({super.key, required this.selectedDay});
 
   @override
   State<CMealPage> createState() => _CMealPageState();
@@ -18,161 +19,170 @@ class CMealPage extends StatefulWidget {
 final mealtypecontroller = TextEditingController();
 final mealnamecontroller = TextEditingController();
 
-Future<void> saveUserMeals(
-  List<MealDto> meals,
-  String mealName,
-  int userId,
-) async {
-  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
-  final totalProtein = meals.fold<double>(
-    0.0,
-    (sum, meal) => sum + meal.protein,
-  );
-  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
-  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null || token.isEmpty) throw Exception("Nincs token.");
-
-  final uri = Uri.parse("$apiUrl/api/Meals/addGroup");
-
-  final dto = {
-    "MealName": mealName,
-    "UserId": userId,
-    "EatenAt": DateTime.now().toIso8601String(),
-    "Meals": meals.map((m) => m.toJson()).toList(),
-    "TotalCalories": totalCalories,
-    "TotalProtein": totalProtein,
-    "TotalCarbs": totalCarbs,
-    "TotalFat": totalFat,
-    "BaseWeight": meals.first.baseWeight,
-    "Unit": meals.first.unit,
-    "IsCustom": false,
-  };
-
-  final response = await http.post(
-    uri,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    },
-    body: jsonEncode(dto),
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception(
-      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
-    );
-  }
-}
-
-Future<void> saveUserMealsS(
-  List<MealDto> meals,
-  String customName,
-  int userId,
-) async {
-  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
-  final totalProtein = meals.fold<double>(
-    0.0,
-    (sum, meal) => sum + meal.protein,
-  );
-  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
-  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null || token.isEmpty) throw Exception("Nincs token.");
-
-  final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
-
-  final dto = {
-    "CustomName": mealnamecontroller.text,
-    "UserId": userId,
-    "EatenAt": DateTime.now().toIso8601String(),
-    "Meals": meals.map((m) => m.toJson()).toList(),
-    "TotalCalories": totalCalories,
-    "TotalProtein": totalProtein,
-    "TotalCarbs": totalCarbs,
-    "TotalFat": totalFat,
-    "BaseWeight": meals.first.baseWeight,
-    "Unit": meals.first.unit,
-    "IsCustom": true,
-  };
-
-  final response = await http.post(
-    uri,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    },
-    body: jsonEncode(dto),
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception(
-      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
-    );
-  }
-}
-
-Future<void> UserMealsSampleSave(
-  List<MealDto> meals,
-  String customName,
-  int userId,
-) async {
-  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
-  final totalProtein = meals.fold<double>(
-    0.0,
-    (sum, meal) => sum + meal.protein,
-  );
-  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
-  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null || token.isEmpty) throw Exception("Nincs token.");
-
-  final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
-
-  final dto = {
-    "CustomName": customName,
-    "UserId": userId,
-    "EatenAt": DateTime.now().toIso8601String(),
-    "Meals": meals.map((m) => m.toJson()).toList(),
-    "TotalCalories": totalCalories,
-    "TotalProtein": totalProtein,
-    "TotalCarbs": totalCarbs,
-    "TotalFat": totalFat,
-    "BaseWeight": meals.first.baseWeight,
-    "Unit": meals.first.unit,
-    "IsCustom": false,
-  };
-
-  final response = await http.post(
-    uri,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    },
-    body: jsonEncode(dto),
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception(
-      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
-    );
-  }
-}
-
-Future<void> saveTemplateAsUserMeal(
-  CustomUserMealDto template,
-  int userId,
-) async {
-  await UserMealsSampleSave(template.meals, template.customName, userId);
-}
-
 class _CMealPageState extends State<CMealPage> {
+  Future<void> saveUserMeals(
+    List<MealDto> meals,
+    String mealName,
+    int userId,
+  ) async {
+    final totalCalories = meals.fold<int>(
+      0,
+      (sum, meal) => sum + meal.calories,
+    );
+    final totalProtein = meals.fold<double>(
+      0.0,
+      (sum, meal) => sum + meal.protein,
+    );
+    final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+    final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Meals/addGroup");
+
+    final dto = {
+      "MealName": mealName,
+      "UserId": userId,
+      "EatenAt": widget.selectedDay.toIso8601String(),
+      "Meals": meals.map((m) => m.toJson()).toList(),
+      "TotalCalories": totalCalories,
+      "TotalProtein": totalProtein,
+      "TotalCarbs": totalCarbs,
+      "TotalFat": totalFat,
+      "BaseWeight": meals.first.baseWeight,
+      "Unit": meals.first.unit,
+      "IsCustom": false,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  Future<void> saveUserMealsS(
+    List<MealDto> meals,
+    String customName,
+    int userId,
+  ) async {
+    final totalCalories = meals.fold<int>(
+      0,
+      (sum, meal) => sum + meal.calories,
+    );
+    final totalProtein = meals.fold<double>(
+      0.0,
+      (sum, meal) => sum + meal.protein,
+    );
+    final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+    final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
+
+    final dto = {
+      "CustomName": mealnamecontroller.text,
+      "UserId": userId,
+      "EatenAt": widget.selectedDay.toIso8601String(),
+      "Meals": meals.map((m) => m.toJson()).toList(),
+      "TotalCalories": totalCalories,
+      "TotalProtein": totalProtein,
+      "TotalCarbs": totalCarbs,
+      "TotalFat": totalFat,
+      "BaseWeight": meals.first.baseWeight,
+      "Unit": meals.first.unit,
+      "IsCustom": true,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  Future<void> UserMealsSampleSave(
+    List<MealDto> meals,
+    String customName,
+    int userId,
+  ) async {
+    final totalCalories = meals.fold<int>(
+      0,
+      (sum, meal) => sum + meal.calories,
+    );
+    final totalProtein = meals.fold<double>(
+      0.0,
+      (sum, meal) => sum + meal.protein,
+    );
+    final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+    final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
+
+    final dto = {
+      "CustomName": customName,
+      "UserId": userId,
+      "EatenAt": widget.selectedDay.toIso8601String(),
+      "Meals": meals.map((m) => m.toJson()).toList(),
+      "TotalCalories": totalCalories,
+      "TotalProtein": totalProtein,
+      "TotalCarbs": totalCarbs,
+      "TotalFat": totalFat,
+      "BaseWeight": meals.first.baseWeight,
+      "Unit": meals.first.unit,
+      "IsCustom": false,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  Future<void> saveTemplateAsUserMeal(
+    CustomUserMealDto template,
+    int userId,
+  ) async {
+    await UserMealsSampleSave(template.meals, template.customName, userId);
+  }
+
   List<MealDto> userMeals = [];
   int mealindex = 4;
   final List _mealtypes = ["Reggeli", "Ebéd", "Vacsora", "Egyéb"];
@@ -837,13 +847,24 @@ class _CMealPageState extends State<CMealPage> {
                                               ScaffoldMessenger.of(
                                                 context,
                                               ).showSnackBar(
-                                                const SnackBar(
+                                                SnackBar(
                                                   content: Text(
                                                     "Sikeresen mentve!",
                                                   ),
-                                                  showCloseIcon: true,
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                  margin: EdgeInsets.only(
+                                                    bottom: 30,
+                                                    left: 16,
+                                                    right: 16,
+                                                  ),
                                                   duration: Duration(
-                                                    seconds: 1,
+                                                    milliseconds: 1800,
+                                                  ),
+                                                  animation: CurvedAnimation(
+                                                    parent:
+                                                        kAlwaysCompleteAnimation,
+                                                    curve: Curves.easeInOut,
                                                   ),
                                                 ),
                                               );
@@ -1270,7 +1291,24 @@ class _CMealPageState extends State<CMealPage> {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
-                                            SnackBar(content: Text("Hiba: $e")),
+                                            SnackBar(
+                                              content: Text("Hiba: $e"),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
+                                            ),
                                           );
                                         }
                                         if (_debounce?.isActive ?? false) {

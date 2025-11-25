@@ -196,7 +196,8 @@ class _PagesState extends State<Pages> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const CMealPage(),
+                                    builder: (context) =>
+                                        CMealPage(selectedDay: DateTime.now()),
                                   ),
                                 );
                               },

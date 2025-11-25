@@ -9,6 +9,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
 import '../constants.dart';
+import 'custom_meal_page.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -279,6 +280,8 @@ class _HealthPageState extends State<HealthPage>
 
                         if (!context.mounted) return;
 
+                        DateTime tempSelectedDay = _selectedDay ?? DateTime.now();
+
                         showDialog(
                           context: context,
                           builder: (context) {
@@ -312,6 +315,8 @@ class _HealthPageState extends State<HealthPage>
                                           setState(() {
                                             _selectedDay = newDay;
                                             _focusedDay = newDay;
+                                            selectedDay =
+                                                newDay;
                                           });
                                         },
                                         itemBuilder: (context, index) {
@@ -433,6 +438,45 @@ class _HealthPageState extends State<HealthPage>
                                                             );
                                                           },
                                                         ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                ElevatedButton.icon(
+                                                  onPressed: () async {
+                                                    await Navigator.of(
+                                                      context,
+                                                    ).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            CMealPage(
+                                                              selectedDay:
+                                                                  tempSelectedDay,
+                                                            ),
+                                                      ),
+                                                    );
+
+                                                    setState(() {
+                                                      selectedDay =
+                                                          DateTime.now();
+                                                      _selectedDay =
+                                                          DateTime.now();
+                                                      _focusedDay =
+                                                          DateTime.now();
+                                                    });
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.add,
+                                                    color: Colors.white,
+                                                  ),
+                                                  label: const Text(
+                                                    "Új étkezés hozzáadása",
+                                                  ),
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                      ),
                                                 ),
                                               ],
                                             ),
