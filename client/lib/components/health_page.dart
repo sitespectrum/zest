@@ -144,6 +144,20 @@ class _HealthPageState extends State<HealthPage>
     }
   }
 
+  Map<DateTime, List<UserMealDto>> groupMealsByDay(List<UserMealDto> meals) {
+    final Map<DateTime, List<UserMealDto>> grouped = {};
+    for (var meal in meals) {
+      final d = DateTime(
+        meal.eatenAt.year,
+        meal.eatenAt.month,
+        meal.eatenAt.day,
+      );
+      grouped.putIfAbsent(d, () => []);
+      grouped[d]!.add(meal);
+    }
+    return grouped;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -249,218 +263,217 @@ class _HealthPageState extends State<HealthPage>
                         });
 
                         final allMeals = await fetchUserMeals();
+                        final grouped = groupMealsByDay(allMeals);
 
-                        final selectedMeals = allMeals.where((meal) {
-                          final eatenDate = meal.eatenAt.toLocal();
-                          return eatenDate.year == selectedDay.year &&
-                              eatenDate.month == selectedDay.month &&
-                              eatenDate.day == selectedDay.day;
-                        }).toList();
+                        final int window = 30;
+                        final DateTime startDate = DateTime(
+                          selectedDay.year,
+                          selectedDay.month,
+                          selectedDay.day,
+                        ).subtract(Duration(days: window));
+                        final List<DateTime> days = List.generate(
+                          window * 2 + 1,
+                          (i) => startDate.add(Duration(days: i)),
+                        );
+                        final int initialPage = window;
 
-                        if (context.mounted) {
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              if (selectedMeals.isEmpty) {
-                                return Dialog(
-                                  insetPadding: const EdgeInsets.all(20),
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                        255,
-                                        40,
-                                        40,
-                                        40,
-                                      ),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white24),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          "Nincs adat",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20,
-                                          ),
-                                        ),
-                                        SizedBox(height: 12),
-                                        Text(
-                                          "Ezen a napon nem ettél semmit",
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                          ),
-                                        ),
-                                        SizedBox(height: 12),
-                                        Positioned(
-                                          child: FilledButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor:
-                                                  const Color.fromARGB(
-                                                    255,
-                                                    30,
-                                                    30,
-                                                    30,
-                                                  ),
-                                              side: const BorderSide(
-                                                color: Colors.white24,
-                                                width: 1,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              "Bezárás",
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
+                        if (!context.mounted) return;
 
-                              return Dialog(
-                                insetPadding: const EdgeInsets.all(20),
-                                backgroundColor: const Color.fromARGB(
-                                  255,
-                                  30,
-                                  30,
-                                  30,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      255,
-                                      40,
-                                      40,
-                                      40,
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            final PageController controller = PageController(
+                              initialPage: initialPage,
+                            );
+                            return Dialog(
+                              insetPadding: const EdgeInsets.all(15),
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                40,
+                                40,
+                                40,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: const BorderSide(color: Colors.white24),
+                              ),
+                              child: SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.65,
+                                width: double.infinity,
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: PageView.builder(
+                                        controller: controller,
+                                        itemCount: days.length,
+                                        onPageChanged: (page) {
+                                          final DateTime newDay = days[page];
+                                          setState(() {
+                                            _selectedDay = newDay;
+                                            _focusedDay = newDay;
+                                          });
+                                        },
+                                        itemBuilder: (context, index) {
+                                          final DateTime day = days[index];
+                                          final List<UserMealDto> mealsForDay =
+                                              grouped[day] ?? [];
+
+                                          return Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Column(
+                                              children: [
+                                                Text(
+                                                  "${day.year}.${day.month}.${day.day}",
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Expanded(
+                                                  child: mealsForDay.isEmpty
+                                                      ? Center(
+                                                          child: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: const [
+                                                              Icon(
+                                                                Icons
+                                                                    .calendar_month,
+                                                                size: 56,
+                                                                color: Colors
+                                                                    .white24,
+                                                              ),
+                                                              SizedBox(
+                                                                height: 8,
+                                                              ),
+                                                              Text(
+                                                                "Ezen a napon nincs adat",
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .white70,
+                                                                  fontSize: 16,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        )
+                                                      : ListView.builder(
+                                                          itemCount: mealsForDay
+                                                              .length,
+                                                          itemBuilder: (context, i) {
+                                                            final meal =
+                                                                mealsForDay[i];
+                                                            final cleanName =
+                                                                stripHtmlTags(
+                                                                  meal.mealName ??
+                                                                      "Ismeretlen étel",
+                                                                );
+
+                                                            return Container(
+                                                              margin:
+                                                                  const EdgeInsets.symmetric(
+                                                                    vertical: 6,
+                                                                  ),
+                                                              padding:
+                                                                  const EdgeInsets.all(
+                                                                    12,
+                                                                  ),
+                                                              decoration: BoxDecoration(
+                                                                color:
+                                                                    const Color.fromARGB(
+                                                                      255,
+                                                                      30,
+                                                                      30,
+                                                                      30,
+                                                                    ),
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      10,
+                                                                    ),
+                                                                border: Border.all(
+                                                                  color: Colors
+                                                                      .white24,
+                                                                ),
+                                                              ),
+                                                              child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Text(
+                                                                    cleanName,
+                                                                    style: const TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontSize:
+                                                                          16,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    height: 6,
+                                                                  ),
+                                                                  Text(
+                                                                    "${meal.totalCalories.toStringAsFixed(2)} kcal  |  ${meal.totalProtein.toStringAsFixed(2)}g fehérje  |  ${meal.totalCarbs.toStringAsFixed(2)}g szénhidrát  |  ${meal.totalFat.toStringAsFixed(2)}g zsír",
+                                                                    style: const TextStyle(
+                                                                      color: Colors
+                                                                          .white70,
+                                                                      fontSize:
+                                                                          13,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          },
+                                                        ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.white24),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        "${selectedDay.year}.${selectedDay.month}.${selectedDay.day}",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
                                       ),
-                                      const SizedBox(height: 12),
-                                      Flexible(
-                                        child: ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: selectedMeals.length,
-                                          itemBuilder: (context, index) {
-                                            final meal = selectedMeals[index];
-                                            final cleanName = stripHtmlTags(
-                                              meal.mealName ??
-                                                  "Ismeretlen étel",
-                                            );
-                                            return Container(
-                                              margin:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 4,
-                                                  ),
-                                              padding: const EdgeInsets.all(10),
-                                              decoration: BoxDecoration(
-                                                color: const Color.fromARGB(
-                                                  255,
-                                                  30,
-                                                  30,
-                                                  30,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                border: Border.all(
-                                                  color: Colors.white24,
-                                                ),
-                                              ),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    cleanName,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    "${meal.totalCalories.toStringAsFixed(2)} kcal | "
-                                                    "${meal.totalProtein.toStringAsFixed(2)}g fehérje | "
-                                                    "${meal.totalCarbs.toStringAsFixed(2)}g szénhidrát | "
-                                                    "${meal.totalFat.toStringAsFixed(2)}g zsír",
-                                                    style: const TextStyle(
-                                                      color: Colors.white70,
-                                                      fontSize: 13,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Positioned(
-                                        child: FilledButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  30,
-                                                  30,
-                                                  30,
-                                                ),
-                                            side: const BorderSide(
-                                              color: Colors.white24,
-                                              width: 1,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
+                                      child: FilledButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: const Color.fromARGB(
+                                            255,
+                                            30,
+                                            30,
+                                            30,
+                                          ),
+                                          side: const BorderSide(
+                                            color: Colors.white24,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
                                             ),
                                           ),
-                                          child: Text(
-                                            "Bezárás",
-                                            style: TextStyle(color: Colors.red),
-                                          ),
+                                        ),
+                                        child: const Text(
+                                          "Bezárás",
+                                          style: TextStyle(color: Colors.red),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                          );
-                        }
+                              ),
+                            );
+                          },
+                        );
                       },
                     ),
                   ),
