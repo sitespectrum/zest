@@ -162,13 +162,12 @@ class _HomePageState extends State<HomePage>
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 45, 45, 45),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Color.fromRGBO(85, 173, 78, 0.69),
-                      ),
+                      border: Border.all(color: Colors.white24),
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromRGBO(85, 173, 78, 0.69),
+                          color: Colors.black.withOpacity(0.5),
                           blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -257,15 +256,14 @@ class _HomePageState extends State<HomePage>
                     margin: const EdgeInsets.all(20),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color.fromRGBO(45, 45, 45, 1),
+                      color: const Color.fromARGB(255, 45, 45, 45),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Color.fromRGBO(85, 173, 78, 0.69),
-                      ),
+                      border: Border.all(color: Colors.white24),
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromRGBO(85, 173, 78, 0.69),
+                          color: Colors.black.withOpacity(0.5),
                           blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -296,13 +294,12 @@ class _HomePageState extends State<HomePage>
                           decoration: BoxDecoration(
                             color: const Color.fromARGB(255, 45, 45, 45),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Color.fromRGBO(85, 173, 78, 0.69),
-                            ),
+                            border: Border.all(color: Colors.white24),
                             boxShadow: [
                               BoxShadow(
-                                color: Color.fromRGBO(85, 173, 78, 0.69),
+                                color: Colors.black.withOpacity(0.5),
                                 blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
@@ -508,13 +505,12 @@ class _HomePageState extends State<HomePage>
                             decoration: BoxDecoration(
                               color: const Color.fromARGB(255, 45, 45, 45),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Color.fromRGBO(85, 173, 78, 0.69),
-                              ),
+                              border: Border.all(color: Colors.white24),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Color.fromRGBO(85, 173, 78, 0.69),
+                                  color: Colors.black.withOpacity(0.5),
                                   blurRadius: 4,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
