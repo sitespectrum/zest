@@ -456,327 +456,31 @@ class _AddMealPageState extends State<AddMealPage> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(12),
                                   onTap: () async {
-                                    print("id: ${meal.foodId}");
-                                    final units = await _fetchUnit(meal.foodId);
-                                    if (units.isEmpty) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            "Nem található mértékegység ehhez az ételhez.",
-                                          ),
-                                          behavior: SnackBarBehavior.floating,
-                                          margin: EdgeInsets.only(
-                                            bottom: 30,
-                                            left: 16,
-                                            right: 16,
-                                          ),
-                                          duration: Duration(
-                                            milliseconds: 1800,
-                                          ),
-                                          animation: CurvedAnimation(
-                                            parent: kAlwaysCompleteAnimation,
-                                            curve: Curves.easeInOut,
-                                          ),
-                                        ),
-                                      );
-                                      return;
-                                    }
+                                    setState(() {
+                                      userMeals.add(meal);
+                                    });
 
-                                    String selectedUnit =
-                                        (units.first["Name"]?.toString() ?? '')
-                                            .replaceFirst("UNIT_", "");
-                                    double baseWeight =
-                                        double.tryParse(
-                                          units.first["nWeight"]?.toString() ??
-                                              '1',
-                                        ) ??
-                                        1.0;
-                                    double multiplier = baseWeight / 100;
-                                    int cmultiplier = multiplier.toInt();
-
-                                    final updatedMeal = await showDialog<MealDto>(
-                                      context: context,
-                                      builder: (context) {
-                                        return StatefulBuilder(
-                                          builder: (context, setState) {
-                                            return Center(
-                                              child: SingleChildScrollView(
-                                                child: Dialog(
-                                                  backgroundColor:
-                                                      const Color.fromARGB(
-                                                        255,
-                                                        35,
-                                                        35,
-                                                        35,
-                                                      ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          16,
-                                                        ),
-                                                  ),
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          16,
-                                                        ),
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        const Text(
-                                                          "Válassz mennyiséget!",
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 20,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 12,
-                                                        ),
-                                                        Container(
-                                                          width:
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).size.width *
-                                                              0.3,
-                                                          height:
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).size.height *
-                                                              0.06,
-                                                          padding:
-                                                              const EdgeInsets.fromLTRB(
-                                                                0,
-                                                                0,
-                                                                0,
-                                                                18,
-                                                              ),
-                                                          decoration: BoxDecoration(
-                                                            color:
-                                                                const Color.fromARGB(
-                                                                  255,
-                                                                  72,
-                                                                  72,
-                                                                  72,
-                                                                ),
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
-                                                          ),
-                                                          child: TextField(
-                                                            cursorColor:
-                                                                Colors.white,
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 20,
-                                                                ),
-                                                            controller:
-                                                                quantitycontroller,
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            decoration: InputDecoration(
-                                                              border: OutlineInputBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12,
-                                                                    ),
-                                                              ),
-                                                              focusedBorder: OutlineInputBorder(
-                                                                borderSide:
-                                                                    const BorderSide(
-                                                                      color: Colors
-                                                                          .transparent,
-                                                                      width: 2,
-                                                                    ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12,
-                                                                    ),
-                                                              ),
-                                                              enabledBorder: OutlineInputBorder(
-                                                                borderSide:
-                                                                    const BorderSide(
-                                                                      color: Colors
-                                                                          .transparent,
-                                                                      width: 1,
-                                                                    ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12,
-                                                                    ),
-                                                              ),
-                                                            ),
-                                                            keyboardType:
-                                                                TextInputType
-                                                                    .number,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 12,
-                                                        ),
-                                                        Wrap(
-                                                          spacing: 8,
-                                                          runSpacing: 8,
-                                                          children: units.map((
-                                                            unit,
-                                                          ) {
-                                                            final name =
-                                                                unit["Name"]
-                                                                    .replaceFirst(
-                                                                      "UNIT_",
-                                                                      "",
-                                                                    );
-                                                            final weight =
-                                                                double.tryParse(
-                                                                  unit["nWeight"],
-                                                                ) ??
-                                                                1.0;
-                                                            final isSelected =
-                                                                name ==
-                                                                selectedUnit;
-
-                                                            return ChoiceChip(
-                                                              label: Text(
-                                                                "$name (${weight.toStringAsFixed(0)}g/ml)",
-                                                                style: TextStyle(
-                                                                  color:
-                                                                      isSelected
-                                                                      ? Colors
-                                                                            .black
-                                                                      : Colors
-                                                                            .white,
-                                                                ),
-                                                              ),
-                                                              selected:
-                                                                  isSelected,
-                                                              selectedColor:
-                                                                  Colors.white,
-                                                              backgroundColor:
-                                                                  const Color.fromARGB(
-                                                                    255,
-                                                                    60,
-                                                                    60,
-                                                                    60,
-                                                                  ),
-                                                              onSelected: (selected) {
-                                                                if (selected) {
-                                                                  setState(() {
-                                                                    selectedUnit =
-                                                                        name;
-                                                                    baseWeight =
-                                                                        weight;
-                                                                    multiplier =
-                                                                        baseWeight /
-                                                                        100;
-                                                                  });
-                                                                }
-                                                              },
-                                                            );
-                                                          }).toList(),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 20,
-                                                        ),
-                                                        ElevatedButton(
-                                                          onPressed: () {
-                                                            final quantity =
-                                                                int.tryParse(
-                                                                  quantitycontroller
-                                                                      .text,
-                                                                ) ??
-                                                                1;
-                                                            final updatedMeal = MealDto(
-                                                              foodId:
-                                                                  meal.foodId,
-                                                              name: meal.name,
-                                                              calories:
-                                                                  (meal.calories *
-                                                                          multiplier)
-                                                                      .round(),
-                                                              protein:
-                                                                  meal.protein *
-                                                                  multiplier,
-                                                              carbs:
-                                                                  meal.carbs *
-                                                                  multiplier,
-                                                              fat:
-                                                                  meal.fat *
-                                                                  multiplier,
-                                                              quantity:
-                                                                  quantity,
-                                                              baseWeight:
-                                                                  baseWeight,
-                                                              unit:
-                                                                  selectedUnit,
-                                                              multiplier:
-                                                                  multiplier,
-                                                            );
-                                                            Navigator.of(
-                                                              context,
-                                                            ).pop(updatedMeal);
-                                                          },
-                                                          style:
-                                                              ElevatedButton.styleFrom(
-                                                                backgroundColor:
-                                                                    Colors
-                                                                        .white,
-                                                                foregroundColor:
-                                                                    Colors
-                                                                        .black,
-                                                              ),
-                                                          child: const Text(
-                                                            "Hozzáadás",
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
+                                    final cleanName = stripHtmlTags(
+                                      meal.name ?? "Ismeretlen étel",
                                     );
-                                    if (updatedMeal != null) {
-                                      setState(() {
-                                        userMeals.add(updatedMeal);
-                                      });
-
-                                      final cleanName = stripHtmlTags(
-                                        updatedMeal.name ?? "Ismeretlen étel",
-                                      );
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            '$cleanName hozzáadva a listádhoz!',
-                                          ),
-                                          behavior: SnackBarBehavior.floating,
-                                          margin: EdgeInsets.only(
-                                            bottom: 30,
-                                            left: 16,
-                                            right: 16,
-                                          ),
-                                          duration: Duration(
-                                            milliseconds: 1800,
-                                          ),
-                                          animation: CurvedAnimation(
-                                            parent: kAlwaysCompleteAnimation,
-                                            curve: Curves.easeInOut,
-                                          ),
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '$cleanName hozzáadva a listádhoz!',
                                         ),
-                                      );
-                                    }
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: EdgeInsets.only(
+                                          bottom: 30,
+                                          left: 16,
+                                          right: 16,
+                                        ),
+                                        duration: Duration(milliseconds: 1800),
+                                        animation: CurvedAnimation(
+                                          parent: kAlwaysCompleteAnimation,
+                                          curve: Curves.easeInOut,
+                                        ),
+                                      ),
+                                    );
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -815,7 +519,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.piece}',
+                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.quantity} ${meal.piece}',
                                                   style: const TextStyle(
                                                     color: Colors.white70,
                                                   ),
