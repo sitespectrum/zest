@@ -86,7 +86,16 @@ class _DetailsPageState extends State<DetailsPage>
   Future<void> submitDetails() async {
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Válassz születési dátumot!")),
+        SnackBar(
+          content: Text("Válassz születési dátumot!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
       );
       return;
     }
@@ -99,7 +108,16 @@ class _DetailsPageState extends State<DetailsPage>
 
     if (height == null || weight == null || gender.isEmpty || goal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Töltsd ki az összes mezőt helyesen!")),
+        SnackBar(
+          content: Text("Töltsd ki az összes mezőt helyesen!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
       );
       return;
     }
@@ -114,7 +132,16 @@ class _DetailsPageState extends State<DetailsPage>
 
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Válassz születési dátumot!")),
+        SnackBar(
+          content: Text("Válassz születési dátumot!"),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
       );
       return;
     }
@@ -634,7 +661,9 @@ class _DetailsPageState extends State<DetailsPage>
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(8, 15, 8, 15),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         GestureDetector(
                           onTap: () {
@@ -648,7 +677,7 @@ class _DetailsPageState extends State<DetailsPage>
                           },
                           child: Container(
                             width: double.infinity,
-                            height: MediaQuery.of(context).size.height * 0.1,
+                            height: MediaQuery.of(context).size.height * 0.12,
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
                               color: _aselectedIndex == 0
@@ -657,19 +686,37 @@ class _DetailsPageState extends State<DetailsPage>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Center(
-                                  child: Text(
-                                    "Enyhén aktív",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize:
-                                          MediaQuery.of(context).size.height *
-                                          0.035,
-                                      fontWeight: FontWeight.bold,
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Enyhén aktív",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.035,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
+                                    Text(
+                                      "Napi séta, heti 1-3 könnyű edzés.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: _aselectedIndex == 0
+                                            ? Color.fromARGB(255, 58, 58, 58)
+                                            : Colors.grey,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.02,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -690,7 +737,7 @@ class _DetailsPageState extends State<DetailsPage>
                           },
                           child: Container(
                             width: double.infinity,
-                            height: MediaQuery.of(context).size.height * 0.1,
+                            height: MediaQuery.of(context).size.height * 0.12,
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
                               color: _aselectedIndex == 1
@@ -699,19 +746,37 @@ class _DetailsPageState extends State<DetailsPage>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Center(
-                                  child: Text(
-                                    "Közepesen aktív",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize:
-                                          MediaQuery.of(context).size.height *
-                                          0.035,
-                                      fontWeight: FontWeight.bold,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Közepesen aktív",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.035,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
+                                    Text(
+                                      "Heti 3-5 edzés, ülőmunka.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: _aselectedIndex == 1
+                                            ? Color.fromARGB(255, 58, 58, 58)
+                                            : Colors.grey,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.02,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -732,7 +797,7 @@ class _DetailsPageState extends State<DetailsPage>
                           },
                           child: Container(
                             width: double.infinity,
-                            height: MediaQuery.of(context).size.height * 0.1,
+                            height: MediaQuery.of(context).size.height * 0.12,
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
                               color: _aselectedIndex == 2
@@ -741,19 +806,37 @@ class _DetailsPageState extends State<DetailsPage>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Center(
-                                  child: Text(
-                                    "Nagyon aktív",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize:
-                                          MediaQuery.of(context).size.height *
-                                          0.035,
-                                      fontWeight: FontWeight.bold,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Nagyon aktív",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.035,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
+                                    Text(
+                                      "Napi edzés, aktív, fizikai munka.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: _aselectedIndex == 2
+                                            ? Color.fromARGB(255, 58, 58, 58)
+                                            : Colors.grey,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.02,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -774,7 +857,7 @@ class _DetailsPageState extends State<DetailsPage>
                           },
                           child: Container(
                             width: double.infinity,
-                            height: MediaQuery.of(context).size.height * 0.1,
+                            height: MediaQuery.of(context).size.height * 0.12,
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
                               color: _aselectedIndex == 3
@@ -783,19 +866,37 @@ class _DetailsPageState extends State<DetailsPage>
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Center(
-                                  child: Text(
-                                    "Extrém aktív",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize:
-                                          MediaQuery.of(context).size.height *
-                                          0.035,
-                                      fontWeight: FontWeight.bold,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Extrém aktív",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.035,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
+                                    Text(
+                                      "Napi 2 edzés, például sportkarrier.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: _aselectedIndex == 3
+                                            ? Color.fromARGB(255, 58, 58, 58)
+                                            : Colors.grey,
+                                        fontSize:
+                                            MediaQuery.of(context).size.height *
+                                            0.02,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

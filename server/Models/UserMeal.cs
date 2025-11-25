@@ -22,6 +22,8 @@ public class UserMeal
     public double TotalProtein { get; set; }
     public double TotalCarbs { get; set; }
     public double TotalFat { get; set; }
+    public bool IsCustom { get; set; }
+    public string? CustomName { get; set; }
 
     public DateTime EatenAt { get; set; } = DateTime.Today;
 

@@ -13,6 +13,7 @@ using Zest.Api.DTOs;
 using Zest.Api.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json.Serialization;
+using server.Migrations;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -179,6 +180,7 @@ public class MealsController : ControllerBase
             TotalProtein = request.Meals.Sum(m => m.Protein * m.Quantity),
             TotalCarbs = request.Meals.Sum(m => m.Carbs * m.Quantity),
             TotalFat = request.Meals.Sum(m => m.Fat * m.Quantity),
+            IsCustom = request.IsCustom,
             Meals = request.Meals.Select(m => new Meals
             {
                 FoodId = m.FoodId,
@@ -190,7 +192,7 @@ public class MealsController : ControllerBase
                 Fat = m.Fat,
                 Quantity = m.Quantity,
                 BaseWeight = m.BaseWeight,
-                Unit = m.Unit
+                Unit = m.Unit,
             }).ToList()
         };
 
@@ -201,6 +203,47 @@ public class MealsController : ControllerBase
         return Ok(new { Message = "Csoportos mentés sikeres", UserMealId = userMeal.Id });
     }
 
+    [HttpPost("addGroupS")]
+    [Authorize]
+    public async Task<IActionResult> AddUserMealGroupS([FromBody] AddUserMealGroupRequest request)
+    {
+        var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            return BadRequest("Felhasználó nem található.");
+
+        var userMeal = new UserMeal
+        {
+            CustomName = request.CustomName,
+            UserId = userId,
+            EatenAt = request.EatenAt,
+            TotalCalories = request.Meals.Sum(m => m.Calories * m.Quantity),
+            TotalProtein = request.Meals.Sum(m => m.Protein * m.Quantity),
+            TotalCarbs = request.Meals.Sum(m => m.Carbs * m.Quantity),
+            TotalFat = request.Meals.Sum(m => m.Fat * m.Quantity),
+            IsCustom = request.IsCustom,
+            Meals = request.Meals.Select(m => new Meals
+            {
+                FoodId = m.FoodId,
+                Name = m.Name,
+                Piece = m.Piece,
+                Calories = m.Calories,
+                Proteins = m.Protein,
+                Carbs = m.Carbs,
+                Fat = m.Fat,
+                Quantity = m.Quantity,
+                BaseWeight = m.BaseWeight,
+                Unit = m.Unit,
+            }).ToList()
+        };
+
+        _context.UserMeals.Add(userMeal);
+        await _context.SaveChangesAsync();
+        Console.WriteLine($"[AddUserMealGroup] Received UserId: {request.UserId}");
+
+        return Ok(new { Message = "Csoportos mentés sikeres", UserMealId = userMeal.Id });
+    }
 
     [HttpGet("getUserMeals")]
     [Authorize]
@@ -224,6 +267,54 @@ public class MealsController : ControllerBase
                 m.TotalCarbs,
                 m.TotalFat,
                 m.EatenAt,
+                m.IsCustom,
+                Meals = m.Meals.Select(mi => new
+                {
+                    mi.FoodId,
+                    mi.Name,
+                    mi.Calories,
+                    mi.Proteins,
+                    mi.Carbs,
+                    mi.Fat,
+                    mi.Quantity,
+                    mi.Unit,
+                    mi.BaseWeight,
+                    CalculatedCalories = mi.Calories * mi.Quantity,
+                    CalculatedProtein = mi.Proteins * mi.Quantity,
+                    CalculatedCarbs = mi.Carbs * mi.Quantity,
+                    CalculatedFat = mi.Fat * mi.Quantity
+                }).ToList()
+            })
+            .ToListAsync();
+
+        Console.WriteLine($"Talált {meals.Count} étkezést a UserId={userId}-hez");
+
+        return Ok(meals);
+    }
+
+    [HttpGet("getCustomUserMeals")]
+    [Authorize]
+    public async Task<IActionResult> GetCustomUserMeals()
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized();
+
+        var userId = int.Parse(userIdClaim);
+
+        var meals = await _context.UserMeals
+            .Where(m => m.UserId == userId && m.IsCustom == true)
+            .Include(m => m.Meals)
+            .OrderByDescending(m => m.EatenAt)
+            .Select(m => new
+            {
+                m.Id,
+                m.CustomName,
+                m.TotalCalories,
+                m.TotalProtein,
+                m.TotalCarbs,
+                m.TotalFat,
+                m.EatenAt,
+                m.IsCustom,
                 Meals = m.Meals.Select(mi => new
                 {
                     mi.FoodId,
@@ -328,6 +419,7 @@ public class MealsDto
 public class AddUserMealGroupRequest
 {
     public string? MealName { get; set; }
+    public string? CustomName { get; set; }
     public int UserId { get; set; }
     public DateTime EatenAt { get; set; }
     public List<MealsDto> Meals { get; set; } = new();
@@ -335,4 +427,5 @@ public class AddUserMealGroupRequest
     public double TotalProtein { get; set; }
     public double TotalCarbs { get; set; }
     public double TotalFat { get; set; }
+    public bool IsCustom { get; set; }
 }

@@ -15,53 +15,8 @@ class CMealPage extends StatefulWidget {
   State<CMealPage> createState() => _CMealPageState();
 }
 
-class UserMealDto {
-  final String mealName;
-  final int foodId;
-  final DateTime eatenAt;
-
-  final int piece;
-  final int calories;
-  final double protein;
-  final double carbs;
-  final double fat;
-  final double quantity;
-
-  final double baseWeight;
-  final String unit;
-
-  UserMealDto({
-    required this.mealName,
-    required this.foodId,
-    required this.eatenAt,
-    required this.piece,
-    required this.calories,
-    required this.protein,
-    required this.carbs,
-    required this.fat,
-    required this.quantity,
-    required this.baseWeight,
-    required this.unit,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      "MealName": mealName,
-      "FoodId": foodId,
-      "EatenAt": eatenAt.toIso8601String(),
-      "Piece": piece,
-      "Calories": calories,
-      "Protein": protein,
-      "Carbs": carbs,
-      "Fat": fat,
-      "Quantity": quantity,
-      "BaseWeight": baseWeight,
-      "Unit": unit,
-    };
-  }
-}
-
 final mealtypecontroller = TextEditingController();
+final mealnamecontroller = TextEditingController();
 
 Future<void> saveUserMeals(
   List<MealDto> meals,
@@ -93,6 +48,7 @@ Future<void> saveUserMeals(
     "TotalFat": totalFat,
     "BaseWeight": meals.first.baseWeight,
     "Unit": meals.first.unit,
+    "IsCustom": false,
   };
 
   final response = await http.post(
@@ -111,6 +67,111 @@ Future<void> saveUserMeals(
   }
 }
 
+Future<void> saveUserMealsS(
+  List<MealDto> meals,
+  String customName,
+  int userId,
+) async {
+  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
+  final totalProtein = meals.fold<double>(
+    0.0,
+    (sum, meal) => sum + meal.protein,
+  );
+  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+  final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
+
+  final dto = {
+    "CustomName": mealnamecontroller.text,
+    "UserId": userId,
+    "EatenAt": DateTime.now().toIso8601String(),
+    "Meals": meals.map((m) => m.toJson()).toList(),
+    "TotalCalories": totalCalories,
+    "TotalProtein": totalProtein,
+    "TotalCarbs": totalCarbs,
+    "TotalFat": totalFat,
+    "BaseWeight": meals.first.baseWeight,
+    "Unit": meals.first.unit,
+    "IsCustom": true,
+  };
+
+  final response = await http.post(
+    uri,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    },
+    body: jsonEncode(dto),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception(
+      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+    );
+  }
+}
+
+Future<void> UserMealsSampleSave(
+  List<MealDto> meals,
+  String customName,
+  int userId,
+) async {
+  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
+  final totalProtein = meals.fold<double>(
+    0.0,
+    (sum, meal) => sum + meal.protein,
+  );
+  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+  final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
+
+  final dto = {
+    "CustomName": customName,
+    "UserId": userId,
+    "EatenAt": DateTime.now().toIso8601String(),
+    "Meals": meals.map((m) => m.toJson()).toList(),
+    "TotalCalories": totalCalories,
+    "TotalProtein": totalProtein,
+    "TotalCarbs": totalCarbs,
+    "TotalFat": totalFat,
+    "BaseWeight": meals.first.baseWeight,
+    "Unit": meals.first.unit,
+    "IsCustom": false,
+  };
+
+  final response = await http.post(
+    uri,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    },
+    body: jsonEncode(dto),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception(
+      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+    );
+  }
+}
+
+Future<void> saveTemplateAsUserMeal(
+  CustomUserMealDto template,
+  int userId,
+) async {
+  await UserMealsSampleSave(template.meals, template.customName, userId);
+}
+
 class _CMealPageState extends State<CMealPage> {
   List<MealDto> userMeals = [];
   int mealindex = 4;
@@ -124,6 +185,39 @@ class _CMealPageState extends State<CMealPage> {
   double get userFatSum =>
       userMeals.fold<double>(0, (sum, meal) => sum + meal.qFat);
   Timer? _debounce;
+  late Future<List<CustomUserMealDto>> futureCustomMeals;
+
+  @override
+  void initState() {
+    super.initState();
+    futureCustomMeals = fetchCustomUserMeals().catchError((e) {
+      print("FETCH ERROR: $e");
+      return <CustomUserMealDto>[];
+    });
+  }
+
+  Future<List<CustomUserMealDto>> fetchCustomUserMeals() async {
+    print("fetchCustomUserMeals called");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) throw Exception("Nincs token");
+
+    final response = await http.get(
+      Uri.parse("$apiUrl/api/meals/getCustomUserMeals"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print("RESPONSE BODY: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      print('szia, $token');
+      return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
+    } else {
+      throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -519,6 +613,338 @@ class _CMealPageState extends State<CMealPage> {
                   ],
                 ),
               ),
+
+              SizedBox(height: 20),
+
+              Center(
+                child: Text(
+                  "Sablonjaim",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
+              FutureBuilder<List<CustomUserMealDto>>(
+                future: futureCustomMeals,
+                builder: (context, snapshot) {
+                  print(
+                    "FUTUREBUILDER SNAPSHOT: ${snapshot.connectionState}, hasData: ${snapshot.hasData}, hasError: ${snapshot.hasError}",
+                  );
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        "Hiba történt: ${snapshot.error}",
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    );
+                  }
+
+                  final meals = snapshot.data ?? [];
+                  print(meals);
+
+                  if (meals.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "Nincs sablon létrehozva.",
+                        style: TextStyle(color: Colors.white70, fontSize: 18),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: meals.length,
+                    itemBuilder: (context, index) {
+                      final meal = meals[index];
+
+                      return GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return Dialog(
+                                insetPadding: const EdgeInsets.all(20),
+                                backgroundColor: const Color.fromARGB(
+                                  255,
+                                  30,
+                                  30,
+                                  30,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(
+                                      255,
+                                      40,
+                                      40,
+                                      40,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        meal.customName.isNotEmpty
+                                            ? meal.customName
+                                            : "Ismeretlen sablon",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Flexible(
+                                        child: ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: meal.meals.length,
+                                          itemBuilder: (context, i) {
+                                            final item = meal.meals[i];
+                                            final cleanName = stripHtmlTags(
+                                              item.name ?? "Ismeretlen étel",
+                                            );
+
+                                            return Container(
+                                              width: double.infinity,
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 3,
+                                                    horizontal: 4,
+                                                  ),
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: const Color.fromARGB(
+                                                  255,
+                                                  30,
+                                                  30,
+                                                  30,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Colors.white24,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    "$cleanName (${item.quantity})",
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${item.qCalories.toStringAsFixed(3)} kcal',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${item.qProtein.toStringAsFixed(3)} g protein',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${item.qCarbs.toStringAsFixed(3)} g szénhidrát',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${item.qFat.toStringAsFixed(3)} g zsír',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+
+                                      Center(
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: Colors.black,
+                                          ),
+                                          onPressed: () async {
+                                            try {
+                                              final prefs =
+                                                  await SharedPreferences.getInstance();
+                                              final userId = prefs.getInt(
+                                                'userId',
+                                              );
+                                              if (userId == null) {
+                                                throw Exception(
+                                                  "Nincs userId a gépen.",
+                                                );
+                                              }
+
+                                              await saveTemplateAsUserMeal(
+                                                meal,
+                                                userId,
+                                              );
+
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Sikeresen mentve!",
+                                                  ),
+                                                  showCloseIcon: true,
+                                                  duration: Duration(
+                                                    seconds: 1,
+                                                  ),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Hiba: $e"),
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                  margin: EdgeInsets.only(
+                                                    bottom: 30,
+                                                    left: 16,
+                                                    right: 16,
+                                                  ),
+                                                  duration: Duration(
+                                                    milliseconds: 1800,
+                                                  ),
+                                                  animation: CurvedAnimation(
+                                                    parent:
+                                                        kAlwaysCompleteAnimation,
+                                                    curve: Curves.easeInOut,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            if (_debounce?.isActive ?? false) {
+                                              _debounce!.cancel();
+                                            }
+                                            _debounce = Timer(
+                                              const Duration(
+                                                milliseconds: 1500,
+                                              ),
+                                              () {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).hideCurrentSnackBar();
+                                                Navigator.push<List<MealDto>>(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const Pages(),
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                          child: Text("Mentés étkezésként"),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 6,
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 45, 45, 45),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    meal.customName.isNotEmpty
+                                        ? meal.customName
+                                        : "Ismeretlen sablon",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${meal.totalCalories} kcal | ${meal.totalProtein.toStringAsFixed(3)} g protein | ${meal.totalCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.totalFat.toStringAsFixed(3)} g zsír',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -564,38 +990,345 @@ class _CMealPageState extends State<CMealPage> {
 
               FilledButton(
                 onPressed: () async {
-                  try {
-                    final prefs = await SharedPreferences.getInstance();
-                    final userId = prefs.getInt('userId');
-                    if (userId == null)
-                      throw Exception("Nincs userId a gépen.");
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return Dialog(
+                        insetPadding: const EdgeInsets.all(20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 40, 40, 40),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "Sablon mentése",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Stack(
+                                  children: [
+                                    Container(
+                                      width: double.infinity,
+                                      height: null,
+                                      margin: const EdgeInsets.fromLTRB(
+                                        0,
+                                        20,
+                                        0,
+                                        20,
+                                      ),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        0,
+                                        0,
+                                        5,
+                                        5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromARGB(
+                                          255,
+                                          72,
+                                          72,
+                                          72,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: TextField(
+                                        cursorColor: Colors.white,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                        ),
+                                        controller: mealnamecontroller,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                              color: Colors.transparent,
+                                              width: 2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                              color: Colors.transparent,
+                                              width: 1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        keyboardType: TextInputType.text,
+                                      ),
+                                    ),
 
-                    await saveUserMeals(
-                      userMeals,
-                      _mealtypes[mealindex],
-                      userId,
-                    );
+                                    Positioned(
+                                      top:
+                                          MediaQuery.of(context).size.height *
+                                          0.01,
+                                      left:
+                                          MediaQuery.of(context).size.width *
+                                          0.04,
+                                      child: const Text(
+                                        "Sablon neve",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Sikeresen mentve!"),
-                        showCloseIcon: true,
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text("Hiba: $e")));
-                  }
-                  if (_debounce?.isActive ?? false) _debounce!.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 1500), () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    Navigator.push<List<MealDto>>(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Pages()),
-                    );
-                  });
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    FilledButton(
+                                      onPressed: () async {
+                                        try {
+                                          final prefs =
+                                              await SharedPreferences.getInstance();
+                                          final userId = prefs.getInt('userId');
+                                          if (userId == null) {
+                                            throw Exception(
+                                              "Nincs userId a gépen.",
+                                            );
+                                          }
+
+                                          await saveUserMeals(
+                                            userMeals,
+                                            _mealtypes[mealindex],
+                                            userId,
+                                          );
+
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "Sikeresen mentve!",
+                                              ),
+                                              showCloseIcon: true,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text("Hiba: $e"),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        if (_debounce?.isActive ?? false) {
+                                          _debounce!.cancel();
+                                        }
+                                        _debounce = Timer(
+                                          const Duration(milliseconds: 1500),
+                                          () {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).hideCurrentSnackBar();
+                                            Navigator.push<List<MealDto>>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const Pages(),
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color.fromARGB(
+                                          255,
+                                          85,
+                                          173,
+                                          78,
+                                        ),
+                                        fixedSize: Size(
+                                          MediaQuery.of(context).size.width *
+                                              0.36,
+                                          MediaQuery.of(context).size.height *
+                                              0.07,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            11,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Nincs mentés',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+
+                                    FilledButton(
+                                      onPressed: () async {
+                                        try {
+                                          final prefs =
+                                              await SharedPreferences.getInstance();
+                                          final userId = prefs.getInt('userId');
+                                          if (userId == null) {
+                                            throw Exception(
+                                              "Nincs userId a gépen.",
+                                            );
+                                          }
+
+                                          print(mealnamecontroller.text);
+
+                                          await saveUserMealsS(
+                                            userMeals,
+                                            mealnamecontroller.text,
+                                            userId,
+                                          );
+
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "Sikeresen mentve!",
+                                              ),
+                                              showCloseIcon: true,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(content: Text("Hiba: $e")),
+                                          );
+                                        }
+                                        if (_debounce?.isActive ?? false) {
+                                          _debounce!.cancel();
+                                        }
+                                        _debounce = Timer(
+                                          const Duration(milliseconds: 1500),
+                                          () {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).hideCurrentSnackBar();
+                                            Navigator.push<List<MealDto>>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const Pages(),
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color.fromARGB(
+                                          255,
+                                          85,
+                                          173,
+                                          78,
+                                        ),
+                                        fixedSize: Size(
+                                          MediaQuery.of(context).size.width *
+                                              0.36,
+                                          MediaQuery.of(context).size.height *
+                                              0.07,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            11,
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Mentés',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 85, 173, 78),
@@ -608,7 +1341,7 @@ class _CMealPageState extends State<CMealPage> {
                   ),
                 ),
                 child: const Text(
-                  'Mentés',
+                  'Tovább',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
