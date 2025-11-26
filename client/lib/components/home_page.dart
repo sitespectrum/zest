@@ -34,15 +34,12 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getUserMeals"), // s || l
+    Uri.parse("$apiUrl/api/meals/getUserMeals"),
     headers: {"Authorization": "Bearer $token"},
   );
 
-  print("RESPONSE BODY: ${response.body}");
-
   if (response.statusCode == 200) {
     final List<dynamic> data = jsonDecode(response.body);
-    print('szia, $token');
     return data.map((e) => UserMealDto.fromJson(e)).toList();
   } else {
     throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
@@ -55,13 +52,12 @@ Future<double> fetchTodayCalories() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getTodayCalories"), // s || l
+    Uri.parse("$apiUrl/api/meals/getTodayCalories"),
     headers: {"Authorization": "Bearer $token"},
   );
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-    print("szia, ${data}");
     return (data as num).toDouble();
   } else {
     throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
@@ -165,6 +161,7 @@ class _HomePageState extends State<HomePage>
                       border: Border.all(color: Colors.white24),
                       boxShadow: [
                         BoxShadow(
+                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.5),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -261,6 +258,7 @@ class _HomePageState extends State<HomePage>
                       border: Border.all(color: Colors.white24),
                       boxShadow: [
                         BoxShadow(
+                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.5),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -297,6 +295,7 @@ class _HomePageState extends State<HomePage>
                             border: Border.all(color: Colors.white24),
                             boxShadow: [
                               BoxShadow(
+                                // ignore: deprecated_member_use
                                 color: Colors.black.withOpacity(0.5),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
@@ -319,7 +318,6 @@ class _HomePageState extends State<HomePage>
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
-                                print("Meals hossza: ${lastMeal.meals.length}");
                                 return Dialog(
                                   insetPadding: const EdgeInsets.all(20),
                                   backgroundColor: const Color.fromARGB(
@@ -364,7 +362,7 @@ class _HomePageState extends State<HomePage>
                                               final meal =
                                                   lastMeal.meals[index];
                                               final cleanName = stripHtmlTags(
-                                                meal.name ?? "Ismeretlen étel",
+                                                meal.name,
                                               );
 
                                               return Container(
@@ -395,7 +393,7 @@ class _HomePageState extends State<HomePage>
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      "${cleanName} (${meal.quantity})",
+                                                      "$cleanName (${meal.quantity})",
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 16,
@@ -508,6 +506,7 @@ class _HomePageState extends State<HomePage>
                               border: Border.all(color: Colors.white24),
                               boxShadow: [
                                 BoxShadow(
+                                  // ignore: deprecated_member_use
                                   color: Colors.black.withOpacity(0.5),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
@@ -522,7 +521,7 @@ class _HomePageState extends State<HomePage>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "${lastMeal.mealName} - ${formattedDate}",
+                                      "${lastMeal.mealName} - $formattedDate",
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize:

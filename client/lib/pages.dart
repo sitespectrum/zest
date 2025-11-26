@@ -47,8 +47,9 @@ class _PagesState extends State<Pages> {
     });
   }
 
+  @override
   Widget build(BuildContext context) {
-    final appTitle = 'Üdv, $username!';
+    'Üdv, $username!';
 
     return Scaffold(
       body: PageView(
