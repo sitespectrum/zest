@@ -3,7 +3,6 @@ import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:client/login_page.dart';
 import 'package:client/main.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -100,6 +99,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     try {
       await updateCalorieGoal(newCalories);
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Kalóriacél frissítve!"),
@@ -117,6 +117,7 @@ class _ProfilePageState extends State<ProfilePage>
       });
     } catch (e) {
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text("Hiba történt: $e")));
     }
@@ -128,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     try {
       final response = await http.post(
-        Uri.parse("$apiUrl/api/auth/logout"), // s || l
+        Uri.parse("$apiUrl/api/auth/logout"),
         headers: {
           "Content-Type": "application/json",
           if (token != null) "Authorization": "Bearer $token",
@@ -158,6 +159,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     if (context.mounted) {
       Navigator.pushAndRemoveUntil(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => const MainPage()),
         (route) => false,

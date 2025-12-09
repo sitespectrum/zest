@@ -36,11 +36,11 @@ class _AddMealPageState extends State<AddMealPage> {
     setState(() {
       userMeals.add(meal);
     });
-    final cleanName = stripHtmlTags(meal.name ?? "Ismeretlen étel");
+    final cleanName = stripHtmlTags(meal.name);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${cleanName} hozzáadva a listádhoz!'),
+        content: Text('$cleanName hozzáadva a listádhoz!'),
         showCloseIcon: true,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
@@ -74,22 +74,17 @@ class _AddMealPageState extends State<AddMealPage> {
       final uri = Uri.parse('$apiUrl/api/meals/get-units?foodId=$foodId');
       final response = await http.get(uri);
 
-      print("STATUS: ${response.statusCode}");
-      print("BODY: ${response.body}");
-
       if (response.statusCode != 200) throw Exception('HTTP hiba');
 
       final data = jsonDecode(response.body);
       if (data is! List) {
-        print("Nem lista típus!");
         return [];
       }
 
       final units = List<Map<String, dynamic>>.from(data);
-      print("Units: $units");
       return units;
+    // ignore: unused_catch_stack
     } catch (e, st) {
-      print("Hiba a fetchUnit-ban: $e\n$st");
       return [];
     }
   }
@@ -98,9 +93,6 @@ class _AddMealPageState extends State<AddMealPage> {
     try {
       final uri = Uri.parse('$apiUrl/api/meals/get-by-barcode?code=$code');
       final response = await http.get(uri);
-
-      print("STATUS: ${response.statusCode}");
-      print("BODY: ${response.body}");
 
       if (response.statusCode != 200) throw Exception('HTTP hiba');
 
@@ -122,8 +114,8 @@ class _AddMealPageState extends State<AddMealPage> {
       );
 
       return [meal];
+    // ignore: unused_catch_stack
     } catch (e, st) {
-      print("Hiba a fetchMealsByBarcode-ban: $e\n$st");
       return [];
     }
   }
@@ -139,11 +131,8 @@ class _AddMealPageState extends State<AddMealPage> {
       headers: {"Authorization": "Bearer $token"},
     );
 
-    print("RESPONSE BODY: ${response.body}");
-
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      print('szia, $token');
       return data.map((e) => UserMealDto.fromJson(e)).toList();
     } else {
       throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
@@ -202,7 +191,6 @@ class _AddMealPageState extends State<AddMealPage> {
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {
-        print('HTTP error: ${response.statusCode}');
         setState(() => searchResults = []);
         return;
       }
@@ -213,7 +201,6 @@ class _AddMealPageState extends State<AddMealPage> {
       try {
         decoded = jsonDecode(body);
       } catch (e) {
-        print('Nem JSON válasz: $e');
         setState(() => searchResults = []);
         return;
       }
@@ -237,8 +224,8 @@ class _AddMealPageState extends State<AddMealPage> {
           .toList();
 
       setState(() => searchResults = results);
+    // ignore: unused_catch_stack
     } catch (e, st) {
-      print('Keresés hiba: $e\n$st');
       setState(() => searchResults = []);
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -256,7 +243,7 @@ class _AddMealPageState extends State<AddMealPage> {
           return Center(child: Text('Hiba: ${snapshot.error}'));
         }
 
-        final meals = snapshot.data!;
+        // ignore: deprecated_member_use
         return WillPopScope(
           onWillPop: () async {
             Navigator.pop(context, userMeals);
@@ -282,8 +269,9 @@ class _AddMealPageState extends State<AddMealPage> {
                                 child: TextField(
                                   controller: _controller,
                                   onChanged: (value) {
-                                    if (_debounce?.isActive ?? false)
+                                    if (_debounce?.isActive ?? false) {
                                       _debounce!.cancel();
+                                    }
                                     _debounce = Timer(
                                       const Duration(milliseconds: 600),
                                       () {
@@ -351,20 +339,21 @@ class _AddMealPageState extends State<AddMealPage> {
                             child: IconButton(
                               onPressed: () {
                                 Future.microtask(() async {
-                                  bool _hasPopped = false;
+                                  bool hasPopped = false;
                                   final scannedCode =
+                                      // ignore: use_build_context_synchronously
                                       await Navigator.of(context).push<String>(
                                         MaterialPageRoute(
                                           builder: (context) =>
                                               AiBarcodeScanner(
                                                 onDetect: (capture) {
-                                                  if (_hasPopped) return;
+                                                  if (hasPopped) return;
                                                   final code = capture
                                                       .barcodes
                                                       .first
                                                       .rawValue;
                                                   if (code != null) {
-                                                    _hasPopped = true;
+                                                    hasPopped = true;
                                                     Navigator.of(
                                                       context,
                                                     ).pop(code);
@@ -385,6 +374,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                       });
                                     } else {
                                       ScaffoldMessenger.of(
+                                        // ignore: use_build_context_synchronously
                                         context,
                                       ).showSnackBar(
                                         SnackBar(
@@ -432,7 +422,7 @@ class _AddMealPageState extends State<AddMealPage> {
                           itemBuilder: (context, index) {
                             final meal = searchResults[index];
                             final cleanName = stripHtmlTags(
-                              meal.name ?? "Ismeretlen étel",
+                              meal.name,
                             );
 
                             return Padding(
@@ -447,6 +437,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                   border: Border.all(color: Colors.white24),
                                   boxShadow: [
                                     BoxShadow(
+                                      // ignore: deprecated_member_use
                                       color: Colors.black.withOpacity(0.5),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
@@ -461,7 +452,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                     });
 
                                     final cleanName = stripHtmlTags(
-                                      meal.name ?? "Ismeretlen étel",
+                                      meal.name,
                                     );
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -494,6 +485,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                       border: Border.all(color: Colors.white24),
                                       boxShadow: [
                                         BoxShadow(
+                                          // ignore: deprecated_member_use
                                           color: Colors.black.withOpacity(0.5),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
@@ -545,7 +537,7 @@ class _AddMealPageState extends State<AddMealPage> {
                           itemBuilder: (context, index) {
                             final meal = searchResults[index];
                             final cleanName = stripHtmlTags(
-                              meal.name ?? "Ismeretlen étel",
+                              meal.name,
                             );
 
                             return Padding(
@@ -556,9 +548,9 @@ class _AddMealPageState extends State<AddMealPage> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: () async {
-                                  print("id: ${meal.foodId}");
                                   final units = await _fetchUnit(meal.foodId);
                                   if (units.isEmpty) {
+                                    // ignore: use_build_context_synchronously
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -590,9 +582,9 @@ class _AddMealPageState extends State<AddMealPage> {
                                       ) ??
                                       1.0;
                                   double multiplier = baseWeight / 100;
-                                  int cmultiplier = multiplier.toInt();
 
                                   final updatedMeal = await showDialog<MealDto>(
+                                    // ignore: use_build_context_synchronously
                                     context: context,
                                     builder: (context) {
                                       return StatefulBuilder(
@@ -840,8 +832,9 @@ class _AddMealPageState extends State<AddMealPage> {
                                     });
 
                                     final cleanName = stripHtmlTags(
-                                      updatedMeal.name ?? "Ismeretlen étel",
+                                      updatedMeal.name,
                                     );
+                                    // ignore: use_build_context_synchronously
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -874,6 +867,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                     border: Border.all(color: Colors.white24),
                                     boxShadow: [
                                       BoxShadow(
+                                        // ignore: deprecated_member_use
                                         color: Colors.black.withOpacity(0.5),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),

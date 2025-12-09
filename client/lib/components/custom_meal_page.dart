@@ -124,6 +124,7 @@ class _CMealPageState extends State<CMealPage> {
     }
   }
 
+  // ignore: non_constant_identifier_names
   Future<void> UserMealsSampleSave(
     List<MealDto> meals,
     String customName,
@@ -201,13 +202,11 @@ class _CMealPageState extends State<CMealPage> {
   void initState() {
     super.initState();
     futureCustomMeals = fetchCustomUserMeals().catchError((e) {
-      print("FETCH ERROR: $e");
       return <CustomUserMealDto>[];
     });
   }
 
   Future<List<CustomUserMealDto>> fetchCustomUserMeals() async {
-    print("fetchCustomUserMeals called");
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
@@ -218,11 +217,8 @@ class _CMealPageState extends State<CMealPage> {
       headers: {"Authorization": "Bearer $token"},
     );
 
-    print("RESPONSE BODY: ${response.body}");
-
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      print('szia, $token');
       return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
     } else {
       throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
@@ -232,6 +228,7 @@ class _CMealPageState extends State<CMealPage> {
   @override
   Widget build(BuildContext context) {
     const appTitle = "Új étkezés";
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, userMeals);
@@ -278,7 +275,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Reggeli"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 0
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -288,6 +284,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -297,6 +294,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Reggeli"),
                               ),
                             ],
                           ),
@@ -313,7 +311,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Ebéd"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 1
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -323,6 +320,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -332,6 +330,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Ebéd"),
                               ),
                             ],
                           ),
@@ -352,7 +351,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Vacsora"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 2
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -362,6 +360,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -371,6 +370,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Vacsora"),
                               ),
                             ],
                           ),
@@ -387,7 +387,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Egyéb"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 3
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -397,6 +396,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -406,6 +406,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Egyéb"),
                               ),
                             ],
                           ),
@@ -441,7 +442,7 @@ class _CMealPageState extends State<CMealPage> {
                         itemBuilder: (context, index) {
                           final meal = userMeals[index];
                           final cleanName = stripHtmlTags(
-                            meal.name ?? "Ismeretlen étel",
+                            meal.name,
                           );
                           return Padding(
                             padding: const EdgeInsets.symmetric(
@@ -457,6 +458,7 @@ class _CMealPageState extends State<CMealPage> {
                                   border: Border.all(color: Colors.white24),
                                   boxShadow: [
                                     BoxShadow(
+                                      // ignore: deprecated_member_use
                                       color: Colors.black.withOpacity(0.5),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
@@ -517,111 +519,110 @@ class _CMealPageState extends State<CMealPage> {
 
               SizedBox(height: 20),
 
-              Container(
-                child: Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.all(20),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 45, 45, 45),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.5),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Kalória: ${userCaloriesSum} kcal',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Fehérje: ${userProteinsSum.toStringAsFixed(3)} g',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Szénhidrát: ${userCarbsSum.toStringAsFixed(3)} g',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Zsír: ${userFatSum.toStringAsFixed(3)} g',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      top: MediaQuery.of(context).size.height * 0.006,
-                      left: MediaQuery.of(context).size.width * 0.09,
-                      child: Text(
-                        "Összegzés",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+              Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 45, 45, 45),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white24),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.5),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Kalória: $userCaloriesSum kcal',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+              
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Fehérje: ${userProteinsSum.toStringAsFixed(3)} g',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+              
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Szénhidrát: ${userCarbsSum.toStringAsFixed(3)} g',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+              
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Zsír: ${userFatSum.toStringAsFixed(3)} g',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: MediaQuery.of(context).size.height * 0.006,
+                    left: MediaQuery.of(context).size.width * 0.09,
+                    child: Text(
+                      "Összegzés",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
               SizedBox(height: 20),
@@ -640,9 +641,6 @@ class _CMealPageState extends State<CMealPage> {
               FutureBuilder<List<CustomUserMealDto>>(
                 future: futureCustomMeals,
                 builder: (context, snapshot) {
-                  print(
-                    "FUTUREBUILDER SNAPSHOT: ${snapshot.connectionState}, hasData: ${snapshot.hasData}, hasError: ${snapshot.hasError}",
-                  );
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -658,7 +656,6 @@ class _CMealPageState extends State<CMealPage> {
                   }
 
                   final meals = snapshot.data ?? [];
-                  print(meals);
 
                   if (meals.isEmpty) {
                     return const Center(
@@ -726,7 +723,7 @@ class _CMealPageState extends State<CMealPage> {
                                           itemBuilder: (context, i) {
                                             final item = meal.meals[i];
                                             final cleanName = stripHtmlTags(
-                                              item.name ?? "Ismeretlen étel",
+                                              item.name,
                                             );
 
                                             return Container(
@@ -845,6 +842,7 @@ class _CMealPageState extends State<CMealPage> {
                                               );
 
                                               ScaffoldMessenger.of(
+                                                // ignore: use_build_context_synchronously
                                                 context,
                                               ).showSnackBar(
                                                 SnackBar(
@@ -870,6 +868,7 @@ class _CMealPageState extends State<CMealPage> {
                                               );
                                             } catch (e) {
                                               ScaffoldMessenger.of(
+                                                // ignore: use_build_context_synchronously
                                                 context,
                                               ).showSnackBar(
                                                 SnackBar(
@@ -1143,6 +1142,7 @@ class _CMealPageState extends State<CMealPage> {
                                           );
 
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
                                             SnackBar(
@@ -1169,6 +1169,7 @@ class _CMealPageState extends State<CMealPage> {
                                           );
                                         } catch (e) {
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
                                             SnackBar(
@@ -1254,8 +1255,6 @@ class _CMealPageState extends State<CMealPage> {
                                             );
                                           }
 
-                                          print(mealnamecontroller.text);
-
                                           await saveUserMealsS(
                                             userMeals,
                                             mealnamecontroller.text,
@@ -1263,6 +1262,7 @@ class _CMealPageState extends State<CMealPage> {
                                           );
 
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
                                             SnackBar(
@@ -1289,6 +1289,7 @@ class _CMealPageState extends State<CMealPage> {
                                           );
                                         } catch (e) {
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
                                             SnackBar(

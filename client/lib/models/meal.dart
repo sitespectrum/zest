@@ -95,7 +95,7 @@ class MealDto {
 
   factory MealDto.fromJson(Map<String, dynamic> json) {
     final fid = _firstNonNull(json, ['foodId', 'food_id', 'id', 'obj_id']);
-    final name = _firstNonNull(json, ['name', 'title']) ?? 'Ismeretlen';
+    final name = _firstNonNull(json, ['name', 'title']);
     String unit = _firstNonNull(json, ['unit']);
 
     final calRaw = _firstNonNull(json, ['calories', 'cal', 'kcal_and_unit']);
@@ -165,37 +165,7 @@ class UserMealDto {
     required this.meals,
   });
 
-  static String _firstNonNull(Map<String, dynamic> json, List<String> keys) {
-    for (final k in keys) {
-      if (json.containsKey(k) && json[k] != null) return json[k].toString();
-    }
-    return '';
-  }
-
-  static String _cleanNumberString(String s) {
-    var t = s.trim();
-    final m = RegExp(r'[-+]?\d+[.,]?\d*').firstMatch(t);
-    if (m != null) return m.group(0)!.replaceAll(',', '.');
-    return '0';
-  }
-
   factory UserMealDto.fromJson(Map<String, dynamic> json) {
-    double parseDouble(dynamic value) {
-      if (value == null) return 0.0;
-      if (value is double) return value;
-      if (value is int) return value.toDouble();
-      if (value is String) return double.tryParse(value) ?? 0.0;
-      return 0.0;
-    }
-
-    int parseInt(dynamic value) {
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is double) return value.toInt();
-      if (value is String) return int.tryParse(value) ?? 0;
-      return 0;
-    }
-
     return UserMealDto(
       id: json['id'],
       mealName: json['mealName'],
@@ -247,37 +217,9 @@ class CustomUserMealDto {
     required this.meals,
   });
 
-  static String _firstNonNull(Map<String, dynamic> json, List<String> keys) {
-    for (final k in keys) {
-      if (json.containsKey(k) && json[k] != null) return json[k].toString();
-    }
-    return '';
-  }
 
-  static String _cleanNumberString(String s) {
-    var t = s.trim();
-    final m = RegExp(r'[-+]?\d+[.,]?\d*').firstMatch(t);
-    if (m != null) return m.group(0)!.replaceAll(',', '.');
-    return '0';
-  }
 
   factory CustomUserMealDto.fromJson(Map<String, dynamic> json) {
-    double parseDouble(dynamic value) {
-      if (value == null) return 0.0;
-      if (value is double) return value;
-      if (value is int) return value.toDouble();
-      if (value is String) return double.tryParse(value) ?? 0.0;
-      return 0.0;
-    }
-
-    int parseInt(dynamic value) {
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is double) return value.toInt();
-      if (value is String) return int.tryParse(value) ?? 0;
-      return 0;
-    }
-
     return CustomUserMealDto(
       id: json['id'],
       customName: json['customName']?.toString() ?? '',
