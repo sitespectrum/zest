@@ -47,7 +47,7 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=TociayuHeV0zm54lJNEDnBhxJy;");
+            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML;");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
@@ -91,7 +91,7 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=TociayuHeV0zm54lJNEDnBhxJy;");
+            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML;");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
@@ -144,7 +144,7 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=TociayuHeV0zm54lJNEDnBhxJy;");
+            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML;");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
@@ -387,6 +387,24 @@ public class MealsController : ControllerBase
             .SumAsync(t => t.TotalProtein);
 
         return Ok(new { totalcalories, totalcarbs, totalfat, totalprotein });
+    }
+
+    [HttpDelete("deleteUserMeal/{id}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteUserMeal(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var meal = await _context.UserMeals.FindAsync(id);
+        if (meal == null)
+            return NotFound();
+
+        _context.UserMeals.Remove(meal);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 
 }

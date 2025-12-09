@@ -156,6 +156,26 @@ class _HealthPageState extends State<HealthPage>
     return grouped;
   }
 
+  Future<bool> deleteMeal(int mealId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    final url = Uri.parse("$apiUrl/api/Meals/deleteUserMeal/$mealId");
+
+    final response = await http.delete(
+      url,
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    print("DELETE válasz: ${response.statusCode} - ${response.body}");
+    print("TOKEN: $token");
+
+    return response.statusCode == 204;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -276,7 +296,8 @@ class _HealthPageState extends State<HealthPage>
 
                         if (!context.mounted) return;
 
-                        DateTime tempSelectedDay = _selectedDay ?? DateTime.now();
+                        DateTime tempSelectedDay =
+                            _selectedDay ?? DateTime.now();
 
                         showDialog(
                           context: context,
@@ -284,232 +305,286 @@ class _HealthPageState extends State<HealthPage>
                             final PageController controller = PageController(
                               initialPage: initialPage,
                             );
-                            return Dialog(
-                              insetPadding: const EdgeInsets.all(15),
-                              backgroundColor: const Color.fromARGB(
-                                255,
-                                40,
-                                40,
-                                40,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: const BorderSide(color: Colors.white24),
-                              ),
-                              child: SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.65,
-                                width: double.infinity,
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                      child: PageView.builder(
-                                        controller: controller,
-                                        itemCount: days.length,
-                                        onPageChanged: (page) {
-                                          final DateTime newDay = days[page];
-                                          setState(() {
-                                            _selectedDay = newDay;
-                                            _focusedDay = newDay;
-                                            selectedDay =
-                                                newDay;
-                                          });
-                                        },
-                                        itemBuilder: (context, index) {
-                                          final DateTime day = days[index];
-                                          final List<UserMealDto> mealsForDay =
-                                              grouped[day] ?? [];
+                            return StatefulBuilder(
+                              builder: (context, setStateDialog) {
+                                return Dialog(
+                                  insetPadding: const EdgeInsets.all(15),
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    40,
+                                    40,
+                                    40,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: const BorderSide(
+                                      color: Colors.white24,
+                                    ),
+                                  ),
+                                  child: SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height *
+                                        0.65,
+                                    width: double.infinity,
+                                    child: Column(
+                                      children: [
+                                        Expanded(
+                                          child: PageView.builder(
+                                            controller: controller,
+                                            itemCount: days.length,
+                                            onPageChanged: (page) {
+                                              final DateTime newDay =
+                                                  days[page];
+                                              setState(() {
+                                                _selectedDay = newDay;
+                                                _focusedDay = newDay;
+                                                selectedDay = newDay;
+                                              });
+                                            },
+                                            itemBuilder: (context, index) {
+                                              final DateTime day = days[index];
+                                              final List<UserMealDto>
+                                              mealsForDay = grouped[day] ?? [];
 
-                                          return Padding(
-                                            padding: const EdgeInsets.all(16),
-                                            child: Column(
-                                              children: [
-                                                Text(
-                                                  "${day.year}.${day.month}.${day.day}",
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                              return Padding(
+                                                padding: const EdgeInsets.all(
+                                                  16,
                                                 ),
-                                                const SizedBox(height: 12),
-                                                Expanded(
-                                                  child: mealsForDay.isEmpty
-                                                      ? Center(
-                                                          child: Column(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: const [
-                                                              Icon(
-                                                                Icons
-                                                                    .calendar_month,
-                                                                size: 56,
-                                                                color: Colors
-                                                                    .white24,
-                                                              ),
-                                                              SizedBox(
-                                                                height: 8,
-                                                              ),
-                                                              Text(
-                                                                "Ezen a napon nincs adat",
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                  fontSize: 16,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        )
-                                                      : ListView.builder(
-                                                          itemCount: mealsForDay
-                                                              .length,
-                                                          itemBuilder: (context, i) {
-                                                            final meal =
-                                                                mealsForDay[i];
-                                                            final cleanName =
-                                                                stripHtmlTags(
-                                                                  meal.mealName,
-                                                                );
-
-                                                            return Container(
-                                                              margin:
-                                                                  const EdgeInsets.symmetric(
-                                                                    vertical: 6,
-                                                                  ),
-                                                              padding:
-                                                                  const EdgeInsets.all(
-                                                                    12,
-                                                                  ),
-                                                              decoration: BoxDecoration(
-                                                                color:
-                                                                    const Color.fromARGB(
-                                                                      255,
-                                                                      30,
-                                                                      30,
-                                                                      30,
-                                                                    ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      10,
-                                                                    ),
-                                                                border: Border.all(
-                                                                  color: Colors
-                                                                      .white24,
-                                                                ),
-                                                              ),
+                                                child: Column(
+                                                  children: [
+                                                    Text(
+                                                      "${day.year}.${day.month}.${day.day}",
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Expanded(
+                                                      child: mealsForDay.isEmpty
+                                                          ? Center(
                                                               child: Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  Text(
-                                                                    cleanName,
-                                                                    style: const TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontSize:
-                                                                          16,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                    ),
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: const [
+                                                                  Icon(
+                                                                    Icons
+                                                                        .calendar_month,
+                                                                    size: 56,
+                                                                    color: Colors
+                                                                        .white24,
                                                                   ),
-                                                                  const SizedBox(
-                                                                    height: 6,
+                                                                  SizedBox(
+                                                                    height: 8,
                                                                   ),
                                                                   Text(
-                                                                    "${meal.totalCalories.toStringAsFixed(2)} kcal  |  ${meal.totalProtein.toStringAsFixed(2)}g fehérje  |  ${meal.totalCarbs.toStringAsFixed(2)}g szénhidrát  |  ${meal.totalFat.toStringAsFixed(2)}g zsír",
-                                                                    style: const TextStyle(
+                                                                    "Ezen a napon nincs adat",
+                                                                    style: TextStyle(
                                                                       color: Colors
                                                                           .white70,
                                                                       fontSize:
-                                                                          13,
+                                                                          16,
                                                                     ),
                                                                   ),
                                                                 ],
                                                               ),
-                                                            );
-                                                          },
-                                                        ),
-                                                ),
-                                                const SizedBox(height: 12),
-                                                ElevatedButton.icon(
-                                                  onPressed: () async {
-                                                    await Navigator.of(
-                                                      context,
-                                                    ).push(
-                                                      MaterialPageRoute(
-                                                        builder: (_) =>
-                                                            CMealPage(
-                                                              selectedDay:
-                                                                  tempSelectedDay,
-                                                            ),
-                                                      ),
-                                                    );
+                                                            )
+                                                          : ListView.builder(
+                                                              itemCount:
+                                                                  mealsForDay
+                                                                      .length,
+                                                              itemBuilder: (context, i) {
+                                                                final meal =
+                                                                    mealsForDay[i];
+                                                                final cleanName =
+                                                                    stripHtmlTags(
+                                                                      meal.mealName,
+                                                                    );
 
-                                                    setState(() {
-                                                      selectedDay =
-                                                          DateTime.now();
-                                                      _selectedDay =
-                                                          DateTime.now();
-                                                      _focusedDay =
-                                                          DateTime.now();
-                                                    });
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.add,
-                                                    color: Colors.white,
-                                                  ),
-                                                  label: const Text(
-                                                    "Új étkezés hozzáadása",
-                                                  ),
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.green,
-                                                        foregroundColor:
-                                                            Colors.white,
+                                                                return Container(
+                                                                  margin:
+                                                                      const EdgeInsets.symmetric(
+                                                                        vertical:
+                                                                            6,
+                                                                      ),
+                                                                  padding:
+                                                                      const EdgeInsets.all(
+                                                                        12,
+                                                                      ),
+                                                                  decoration: BoxDecoration(
+                                                                    color:
+                                                                        const Color.fromARGB(
+                                                                          255,
+                                                                          30,
+                                                                          30,
+                                                                          30,
+                                                                        ),
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          10,
+                                                                        ),
+                                                                    border: Border.all(
+                                                                      color: Colors
+                                                                          .white24,
+                                                                    ),
+                                                                  ),
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceBetween,
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child: Text(
+                                                                              cleanName,
+                                                                              style: const TextStyle(
+                                                                                color: Colors.white,
+                                                                                fontSize: 16,
+                                                                                fontWeight: FontWeight.bold,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          IconButton(
+                                                                            icon: const Icon(
+                                                                              Icons.delete,
+                                                                              color: Colors.red,
+                                                                            ),
+                                                                            onPressed: () async {
+                                                                              final success = await deleteMeal(
+                                                                                meal.id,
+                                                                              );
+
+                                                                              if (success) {
+                                                                                setStateDialog(
+                                                                                  () {
+                                                                                    grouped[day]!.removeAt(
+                                                                                      i,
+                                                                                    );
+                                                                                  },
+                                                                                );
+
+                                                                                setState(
+                                                                                  () {
+                                                                                    _futureMeals = fetchUserMeals();
+                                                                                    loadNutrients();
+                                                                                  },
+                                                                                );
+                                                                              }
+                                                                            },
+                                                                          ),
+                                                                        ],
+                                                                      ),
+
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            6,
+                                                                      ),
+
+                                                                      Text(
+                                                                        "${meal.totalCalories.toStringAsFixed(2)} kcal  |  "
+                                                                        "${meal.totalProtein.toStringAsFixed(2)}g fehérje  |  "
+                                                                        "${meal.totalCarbs.toStringAsFixed(2)}g szénhidrát  |  "
+                                                                        "${meal.totalFat.toStringAsFixed(2)}g zsír",
+                                                                        style: const TextStyle(
+                                                                          color:
+                                                                              Colors.white70,
+                                                                          fontSize:
+                                                                              13,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              },
+                                                            ),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    ElevatedButton.icon(
+                                                      onPressed: () async {
+                                                        await Navigator.of(
+                                                          context,
+                                                        ).push(
+                                                          MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                CMealPage(
+                                                                  selectedDay:
+                                                                      tempSelectedDay,
+                                                                ),
+                                                          ),
+                                                        );
+
+                                                        setState(() {
+                                                          selectedDay =
+                                                              DateTime.now();
+                                                          _selectedDay =
+                                                              DateTime.now();
+                                                          _focusedDay =
+                                                              DateTime.now();
+                                                        });
+                                                      },
+                                                      icon: const Icon(
+                                                        Icons.add,
+                                                        color: Colors.white,
                                                       ),
+                                                      label: const Text(
+                                                        "Új étkezés hozzáadása",
+                                                      ),
+                                                      style:
+                                                          ElevatedButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors.green,
+                                                            foregroundColor:
+                                                                Colors.white,
+                                                          ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: FilledButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    30,
+                                                    30,
+                                                    30,
+                                                  ),
+                                              side: const BorderSide(
+                                                color: Colors.white24,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
                                             ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
-                                      ),
-                                      child: FilledButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: const Color.fromARGB(
-                                            255,
-                                            30,
-                                            30,
-                                            30,
-                                          ),
-                                          side: const BorderSide(
-                                            color: Colors.white24,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
+                                            child: const Text(
+                                              "Bezárás",
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                        child: const Text(
-                                          "Bezárás",
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
+                                  ),
+                                );
+                              },
                             );
                           },
                         );
