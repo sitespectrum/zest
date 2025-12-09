@@ -9,7 +9,8 @@ import 'package:client/pages.dart';
 import '../constants.dart';
 
 class CMealPage extends StatefulWidget {
-  const CMealPage({super.key});
+  final DateTime selectedDay;
+  const CMealPage({super.key, required this.selectedDay});
 
   @override
   State<CMealPage> createState() => _CMealPageState();
@@ -18,161 +19,171 @@ class CMealPage extends StatefulWidget {
 final mealtypecontroller = TextEditingController();
 final mealnamecontroller = TextEditingController();
 
-Future<void> saveUserMeals(
-  List<MealDto> meals,
-  String mealName,
-  int userId,
-) async {
-  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
-  final totalProtein = meals.fold<double>(
-    0.0,
-    (sum, meal) => sum + meal.protein,
-  );
-  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
-  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null || token.isEmpty) throw Exception("Nincs token.");
-
-  final uri = Uri.parse("$apiUrl/api/Meals/addGroup");
-
-  final dto = {
-    "MealName": mealName,
-    "UserId": userId,
-    "EatenAt": DateTime.now().toIso8601String(),
-    "Meals": meals.map((m) => m.toJson()).toList(),
-    "TotalCalories": totalCalories,
-    "TotalProtein": totalProtein,
-    "TotalCarbs": totalCarbs,
-    "TotalFat": totalFat,
-    "BaseWeight": meals.first.baseWeight,
-    "Unit": meals.first.unit,
-    "IsCustom": false,
-  };
-
-  final response = await http.post(
-    uri,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    },
-    body: jsonEncode(dto),
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception(
-      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
-    );
-  }
-}
-
-Future<void> saveUserMealsS(
-  List<MealDto> meals,
-  String customName,
-  int userId,
-) async {
-  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
-  final totalProtein = meals.fold<double>(
-    0.0,
-    (sum, meal) => sum + meal.protein,
-  );
-  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
-  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null || token.isEmpty) throw Exception("Nincs token.");
-
-  final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
-
-  final dto = {
-    "CustomName": mealnamecontroller.text,
-    "UserId": userId,
-    "EatenAt": DateTime.now().toIso8601String(),
-    "Meals": meals.map((m) => m.toJson()).toList(),
-    "TotalCalories": totalCalories,
-    "TotalProtein": totalProtein,
-    "TotalCarbs": totalCarbs,
-    "TotalFat": totalFat,
-    "BaseWeight": meals.first.baseWeight,
-    "Unit": meals.first.unit,
-    "IsCustom": true,
-  };
-
-  final response = await http.post(
-    uri,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    },
-    body: jsonEncode(dto),
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception(
-      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
-    );
-  }
-}
-
-Future<void> UserMealsSampleSave(
-  List<MealDto> meals,
-  String customName,
-  int userId,
-) async {
-  final totalCalories = meals.fold<int>(0, (sum, meal) => sum + meal.calories);
-  final totalProtein = meals.fold<double>(
-    0.0,
-    (sum, meal) => sum + meal.protein,
-  );
-  final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
-  final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null || token.isEmpty) throw Exception("Nincs token.");
-
-  final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
-
-  final dto = {
-    "CustomName": customName,
-    "UserId": userId,
-    "EatenAt": DateTime.now().toIso8601String(),
-    "Meals": meals.map((m) => m.toJson()).toList(),
-    "TotalCalories": totalCalories,
-    "TotalProtein": totalProtein,
-    "TotalCarbs": totalCarbs,
-    "TotalFat": totalFat,
-    "BaseWeight": meals.first.baseWeight,
-    "Unit": meals.first.unit,
-    "IsCustom": false,
-  };
-
-  final response = await http.post(
-    uri,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    },
-    body: jsonEncode(dto),
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception(
-      "Nem sikerült menteni: ${response.statusCode} ${response.body}",
-    );
-  }
-}
-
-Future<void> saveTemplateAsUserMeal(
-  CustomUserMealDto template,
-  int userId,
-) async {
-  await UserMealsSampleSave(template.meals, template.customName, userId);
-}
-
 class _CMealPageState extends State<CMealPage> {
+  Future<void> saveUserMeals(
+    List<MealDto> meals,
+    String mealName,
+    int userId,
+  ) async {
+    final totalCalories = meals.fold<int>(
+      0,
+      (sum, meal) => sum + meal.calories,
+    );
+    final totalProtein = meals.fold<double>(
+      0.0,
+      (sum, meal) => sum + meal.protein,
+    );
+    final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+    final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Meals/addGroup");
+
+    final dto = {
+      "MealName": mealName,
+      "UserId": userId,
+      "EatenAt": widget.selectedDay.toIso8601String(),
+      "Meals": meals.map((m) => m.toJson()).toList(),
+      "TotalCalories": totalCalories,
+      "TotalProtein": totalProtein,
+      "TotalCarbs": totalCarbs,
+      "TotalFat": totalFat,
+      "BaseWeight": meals.first.baseWeight,
+      "Unit": meals.first.unit,
+      "IsCustom": false,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  Future<void> saveUserMealsS(
+    List<MealDto> meals,
+    String customName,
+    int userId,
+  ) async {
+    final totalCalories = meals.fold<int>(
+      0,
+      (sum, meal) => sum + meal.calories,
+    );
+    final totalProtein = meals.fold<double>(
+      0.0,
+      (sum, meal) => sum + meal.protein,
+    );
+    final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+    final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
+
+    final dto = {
+      "CustomName": mealnamecontroller.text,
+      "UserId": userId,
+      "EatenAt": widget.selectedDay.toIso8601String(),
+      "Meals": meals.map((m) => m.toJson()).toList(),
+      "TotalCalories": totalCalories,
+      "TotalProtein": totalProtein,
+      "TotalCarbs": totalCarbs,
+      "TotalFat": totalFat,
+      "BaseWeight": meals.first.baseWeight,
+      "Unit": meals.first.unit,
+      "IsCustom": true,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  // ignore: non_constant_identifier_names
+  Future<void> UserMealsSampleSave(
+    List<MealDto> meals,
+    String customName,
+    int userId,
+  ) async {
+    final totalCalories = meals.fold<int>(
+      0,
+      (sum, meal) => sum + meal.calories,
+    );
+    final totalProtein = meals.fold<double>(
+      0.0,
+      (sum, meal) => sum + meal.protein,
+    );
+    final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
+    final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Meals/addGroupS");
+
+    final dto = {
+      "CustomName": customName,
+      "UserId": userId,
+      "EatenAt": widget.selectedDay.toIso8601String(),
+      "Meals": meals.map((m) => m.toJson()).toList(),
+      "TotalCalories": totalCalories,
+      "TotalProtein": totalProtein,
+      "TotalCarbs": totalCarbs,
+      "TotalFat": totalFat,
+      "BaseWeight": meals.first.baseWeight,
+      "Unit": meals.first.unit,
+      "IsCustom": false,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  Future<void> saveTemplateAsUserMeal(
+    CustomUserMealDto template,
+    int userId,
+  ) async {
+    await UserMealsSampleSave(template.meals, template.customName, userId);
+  }
+
   List<MealDto> userMeals = [];
   int mealindex = 4;
   final List _mealtypes = ["Reggeli", "Ebéd", "Vacsora", "Egyéb"];
@@ -191,13 +202,11 @@ class _CMealPageState extends State<CMealPage> {
   void initState() {
     super.initState();
     futureCustomMeals = fetchCustomUserMeals().catchError((e) {
-      print("FETCH ERROR: $e");
       return <CustomUserMealDto>[];
     });
   }
 
   Future<List<CustomUserMealDto>> fetchCustomUserMeals() async {
-    print("fetchCustomUserMeals called");
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
@@ -208,11 +217,8 @@ class _CMealPageState extends State<CMealPage> {
       headers: {"Authorization": "Bearer $token"},
     );
 
-    print("RESPONSE BODY: ${response.body}");
-
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      print('szia, $token');
       return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
     } else {
       throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
@@ -222,6 +228,7 @@ class _CMealPageState extends State<CMealPage> {
   @override
   Widget build(BuildContext context) {
     const appTitle = "Új étkezés";
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, userMeals);
@@ -268,7 +275,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Reggeli"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 0
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -278,6 +284,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -287,6 +294,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Reggeli"),
                               ),
                             ],
                           ),
@@ -303,7 +311,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Ebéd"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 1
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -313,6 +320,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -322,6 +330,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Ebéd"),
                               ),
                             ],
                           ),
@@ -342,7 +351,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Vacsora"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 2
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -352,6 +360,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -361,6 +370,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Vacsora"),
                               ),
                             ],
                           ),
@@ -377,7 +387,6 @@ class _CMealPageState extends State<CMealPage> {
                                   mealtypecontroller.text =
                                       _mealtypes[mealindex];
                                 },
-                                child: Text("Egyéb"),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: mealindex == 3
                                       ? const Color.fromARGB(255, 85, 173, 78)
@@ -387,6 +396,7 @@ class _CMealPageState extends State<CMealPage> {
                                     MediaQuery.of(context).size.height * 0.07,
                                   ),
                                   elevation: 8,
+                                  // ignore: deprecated_member_use
                                   shadowColor: Colors.black.withOpacity(0.8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(11),
@@ -396,6 +406,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
+                                child: Text("Egyéb"),
                               ),
                             ],
                           ),
@@ -431,7 +442,7 @@ class _CMealPageState extends State<CMealPage> {
                         itemBuilder: (context, index) {
                           final meal = userMeals[index];
                           final cleanName = stripHtmlTags(
-                            meal.name ?? "Ismeretlen étel",
+                            meal.name,
                           );
                           return Padding(
                             padding: const EdgeInsets.symmetric(
@@ -447,6 +458,7 @@ class _CMealPageState extends State<CMealPage> {
                                   border: Border.all(color: Colors.white24),
                                   boxShadow: [
                                     BoxShadow(
+                                      // ignore: deprecated_member_use
                                       color: Colors.black.withOpacity(0.5),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
@@ -507,111 +519,110 @@ class _CMealPageState extends State<CMealPage> {
 
               SizedBox(height: 20),
 
-              Container(
-                child: Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.all(20),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 45, 45, 45),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.5),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Kalória: ${userCaloriesSum} kcal',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Fehérje: ${userProteinsSum.toStringAsFixed(3)} g',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Szénhidrát: ${userCarbsSum.toStringAsFixed(3)} g',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: [
-                              Stack(
-                                children: [
-                                  Text(
-                                    'Zsír: ${userFatSum.toStringAsFixed(3)} g',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      top: MediaQuery.of(context).size.height * 0.006,
-                      left: MediaQuery.of(context).size.width * 0.09,
-                      child: Text(
-                        "Összegzés",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+              Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 45, 45, 45),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white24),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.5),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Kalória: $userCaloriesSum kcal',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+              
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Fehérje: ${userProteinsSum.toStringAsFixed(3)} g',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+              
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Szénhidrát: ${userCarbsSum.toStringAsFixed(3)} g',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+              
+                        Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Text(
+                                  'Zsír: ${userFatSum.toStringAsFixed(3)} g',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: MediaQuery.of(context).size.height * 0.006,
+                    left: MediaQuery.of(context).size.width * 0.09,
+                    child: Text(
+                      "Összegzés",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
               SizedBox(height: 20),
@@ -630,9 +641,6 @@ class _CMealPageState extends State<CMealPage> {
               FutureBuilder<List<CustomUserMealDto>>(
                 future: futureCustomMeals,
                 builder: (context, snapshot) {
-                  print(
-                    "FUTUREBUILDER SNAPSHOT: ${snapshot.connectionState}, hasData: ${snapshot.hasData}, hasError: ${snapshot.hasError}",
-                  );
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -648,7 +656,6 @@ class _CMealPageState extends State<CMealPage> {
                   }
 
                   final meals = snapshot.data ?? [];
-                  print(meals);
 
                   if (meals.isEmpty) {
                     return const Center(
@@ -716,7 +723,7 @@ class _CMealPageState extends State<CMealPage> {
                                           itemBuilder: (context, i) {
                                             final item = meal.meals[i];
                                             final cleanName = stripHtmlTags(
-                                              item.name ?? "Ismeretlen étel",
+                                              item.name,
                                             );
 
                                             return Container(
@@ -835,20 +842,33 @@ class _CMealPageState extends State<CMealPage> {
                                               );
 
                                               ScaffoldMessenger.of(
+                                                // ignore: use_build_context_synchronously
                                                 context,
                                               ).showSnackBar(
-                                                const SnackBar(
+                                                SnackBar(
                                                   content: Text(
                                                     "Sikeresen mentve!",
                                                   ),
-                                                  showCloseIcon: true,
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                  margin: EdgeInsets.only(
+                                                    bottom: 30,
+                                                    left: 16,
+                                                    right: 16,
+                                                  ),
                                                   duration: Duration(
-                                                    seconds: 1,
+                                                    milliseconds: 1800,
+                                                  ),
+                                                  animation: CurvedAnimation(
+                                                    parent:
+                                                        kAlwaysCompleteAnimation,
+                                                    curve: Curves.easeInOut,
                                                   ),
                                                 ),
                                               );
                                             } catch (e) {
                                               ScaffoldMessenger.of(
+                                                // ignore: use_build_context_synchronously
                                                 context,
                                               ).showSnackBar(
                                                 SnackBar(
@@ -1122,6 +1142,7 @@ class _CMealPageState extends State<CMealPage> {
                                           );
 
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
                                             SnackBar(
@@ -1148,6 +1169,7 @@ class _CMealPageState extends State<CMealPage> {
                                           );
                                         } catch (e) {
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
                                             SnackBar(
@@ -1233,8 +1255,6 @@ class _CMealPageState extends State<CMealPage> {
                                             );
                                           }
 
-                                          print(mealnamecontroller.text);
-
                                           await saveUserMealsS(
                                             userMeals,
                                             mealnamecontroller.text,
@@ -1242,6 +1262,7 @@ class _CMealPageState extends State<CMealPage> {
                                           );
 
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
                                             SnackBar(
@@ -1268,9 +1289,27 @@ class _CMealPageState extends State<CMealPage> {
                                           );
                                         } catch (e) {
                                           ScaffoldMessenger.of(
+                                            // ignore: use_build_context_synchronously
                                             context,
                                           ).showSnackBar(
-                                            SnackBar(content: Text("Hiba: $e")),
+                                            SnackBar(
+                                              content: Text("Hiba: $e"),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              margin: EdgeInsets.only(
+                                                bottom: 30,
+                                                left: 16,
+                                                right: 16,
+                                              ),
+                                              duration: Duration(
+                                                milliseconds: 1800,
+                                              ),
+                                              animation: CurvedAnimation(
+                                                parent:
+                                                    kAlwaysCompleteAnimation,
+                                                curve: Curves.easeInOut,
+                                              ),
+                                            ),
                                           );
                                         }
                                         if (_debounce?.isActive ?? false) {

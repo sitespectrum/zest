@@ -9,6 +9,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
 import '../constants.dart';
+import 'custom_meal_page.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -24,15 +25,12 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getUserMeals"), // s || l
+    Uri.parse("$apiUrl/api/meals/getUserMeals"),
     headers: {"Authorization": "Bearer $token"},
   );
 
-  print("RESPONSE BODY: ${response.body}");
-
   if (response.statusCode == 200) {
     final List<dynamic> data = jsonDecode(response.body);
-    print('szia, $token');
     return data.map((e) => UserMealDto.fromJson(e)).toList();
   } else {
     throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
@@ -48,7 +46,6 @@ Future<Map<String, double>> fetchMacroGoals() async {
     Uri.parse("$apiUrl/api/auth/getUser"),
     headers: {"Authorization": "Bearer $token"},
   );
-  print("szia, ${response.body}");
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -68,10 +65,9 @@ Future<Map<String, double>> fetchTodayNutrients() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$apiUrl/api/Meals/getTodayNutrients"), // s || l
+    Uri.parse("$apiUrl/api/Meals/getTodayNutrients"),
     headers: {"Authorization": "Bearer $token"},
   );
-  print("szia, ${response.body}");
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -129,6 +125,7 @@ class _HealthPageState extends State<HealthPage>
         nutrients = fetched;
       });
     } catch (e) {
+      // ignore: avoid_print
       print("Hiba a fetchnél: $e");
     }
   }
@@ -140,6 +137,7 @@ class _HealthPageState extends State<HealthPage>
         macros = fetched;
       });
     } catch (e) {
+      // ignore: avoid_print
       print("Hiba a fetchnél: $e");
     }
   }
@@ -178,8 +176,6 @@ class _HealthPageState extends State<HealthPage>
             );
           }
 
-          final meals = snapshot.data ?? [];
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -215,6 +211,7 @@ class _HealthPageState extends State<HealthPage>
                       border: Border.all(color: Colors.white24),
                       boxShadow: [
                         BoxShadow(
+                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.5),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -279,6 +276,8 @@ class _HealthPageState extends State<HealthPage>
 
                         if (!context.mounted) return;
 
+                        DateTime tempSelectedDay = _selectedDay ?? DateTime.now();
+
                         showDialog(
                           context: context,
                           builder: (context) {
@@ -312,6 +311,8 @@ class _HealthPageState extends State<HealthPage>
                                           setState(() {
                                             _selectedDay = newDay;
                                             _focusedDay = newDay;
+                                            selectedDay =
+                                                newDay;
                                           });
                                         },
                                         itemBuilder: (context, index) {
@@ -369,8 +370,7 @@ class _HealthPageState extends State<HealthPage>
                                                                 mealsForDay[i];
                                                             final cleanName =
                                                                 stripHtmlTags(
-                                                                  meal.mealName ??
-                                                                      "Ismeretlen étel",
+                                                                  meal.mealName,
                                                                 );
 
                                                             return Container(
@@ -433,6 +433,45 @@ class _HealthPageState extends State<HealthPage>
                                                             );
                                                           },
                                                         ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                ElevatedButton.icon(
+                                                  onPressed: () async {
+                                                    await Navigator.of(
+                                                      context,
+                                                    ).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            CMealPage(
+                                                              selectedDay:
+                                                                  tempSelectedDay,
+                                                            ),
+                                                      ),
+                                                    );
+
+                                                    setState(() {
+                                                      selectedDay =
+                                                          DateTime.now();
+                                                      _selectedDay =
+                                                          DateTime.now();
+                                                      _focusedDay =
+                                                          DateTime.now();
+                                                    });
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.add,
+                                                    color: Colors.white,
+                                                  ),
+                                                  label: const Text(
+                                                    "Új étkezés hozzáadása",
+                                                  ),
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                      ),
                                                 ),
                                               ],
                                             ),
@@ -505,6 +544,7 @@ class _HealthPageState extends State<HealthPage>
                       border: Border.all(color: Colors.white24),
                       boxShadow: [
                         BoxShadow(
+                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.5),
                           blurRadius: 4,
                           offset: const Offset(0, 2),

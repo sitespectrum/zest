@@ -25,6 +25,7 @@ class _DetailsPageState extends State<DetailsPage>
   int _gselectedIndex = 3;
   int _aselectedIndex = 5;
   double multiplier = 1;
+  // ignore: non_constant_identifier_names
   int IncreaseOrDecreaseCalories = 0;
 
   final List _goals = ["Tömegelés", "Szintentartás", "Fogyás"];
@@ -39,7 +40,6 @@ class _DetailsPageState extends State<DetailsPage>
   @override
   bool get wantKeepAlive => true;
 
-  @override
   Future<void> _selectDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -66,7 +66,7 @@ class _DetailsPageState extends State<DetailsPage>
       setState(() {
         selectedBirth = picked;
         birthcontroller.text = DateFormat('yyyy-MM-dd', 'hu').format(picked);
-        final age = _calcAge(picked);
+        _calcAge(picked);
       });
     }
   }
@@ -124,6 +124,7 @@ class _DetailsPageState extends State<DetailsPage>
 
     final age = _calcAge(selectedBirth!);
 
+    // ignore: non_constant_identifier_names
     double BMR = 10 * weight + 6.25 * height - 5 * age + 5;
     double calorieGoal = BMR * multiplier + IncreaseOrDecreaseCalories;
     double proteinGoal = 0.2 * calorieGoal / 4;
@@ -164,32 +165,34 @@ class _DetailsPageState extends State<DetailsPage>
       }),
     );
 
-    print("$calorieGoal : $proteinGoal");
-
     if (response.statusCode == 200 || response.statusCode == 201) {
       if (context.mounted) {
         showDialog(
+          // ignore: use_build_context_synchronously
           context: context,
           builder: (_) => AlertDialog(
             title: const Text("Siker"),
             content: const Text("Sikeres regisztráció"),
           ),
         );
+        // ignore: use_build_context_synchronously
         Navigator.popUntil(context, (route) => route.isFirst);
       }
     } else {
       if (context.mounted) {
         showDialog(
+          // ignore: use_build_context_synchronously
           context: context,
           builder: (_) => AlertDialog(
             title: const Text("Hiba"),
-            content: Text("${response.body}"),
+            content: Text(response.body),
           ),
         );
       }
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     const appTitle = "Adataim";
@@ -557,7 +560,6 @@ class _DetailsPageState extends State<DetailsPage>
                             setState(() {
                               _gselectedIndex = 1;
                               goalcontroller.text = _goals[_gselectedIndex];
-                              print(goalcontroller.text);
                             });
                           },
                           child: Container(
@@ -671,7 +673,6 @@ class _DetailsPageState extends State<DetailsPage>
                               _aselectedIndex = 0;
                               activitycontroller.text =
                                   _activity[_aselectedIndex];
-                              print(activitycontroller.text);
                               multiplier = 1.375;
                             });
                           },
@@ -731,7 +732,6 @@ class _DetailsPageState extends State<DetailsPage>
                               _aselectedIndex = 1;
                               activitycontroller.text =
                                   _activity[_aselectedIndex];
-                              print(activitycontroller.text);
                               multiplier = 1.55;
                             });
                           },
@@ -791,7 +791,6 @@ class _DetailsPageState extends State<DetailsPage>
                               _aselectedIndex = 2;
                               activitycontroller.text =
                                   _activity[_aselectedIndex];
-                              print(activitycontroller.text);
                               multiplier = 1.725;
                             });
                           },
@@ -851,7 +850,6 @@ class _DetailsPageState extends State<DetailsPage>
                               _aselectedIndex = 3;
                               activitycontroller.text =
                                   _activity[_aselectedIndex];
-                              print(activitycontroller.text);
                               multiplier = 1.9;
                             });
                           },
@@ -928,7 +926,6 @@ class _DetailsPageState extends State<DetailsPage>
         padding: EdgeInsetsGeometry.fromLTRB(20, 20, 20, 20),
         child: FilledButton(
           onPressed: () async {
-            print("szea");
             submitDetails();
           },
           style: FilledButton.styleFrom(

@@ -47,8 +47,9 @@ class _PagesState extends State<Pages> {
     });
   }
 
+  @override
   Widget build(BuildContext context) {
-    final appTitle = 'Üdv, $username!';
+    'Üdv, $username!';
 
     return Scaffold(
       body: PageView(
@@ -196,7 +197,8 @@ class _PagesState extends State<Pages> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const CMealPage(),
+                                    builder: (context) =>
+                                        CMealPage(selectedDay: DateTime.now()),
                                   ),
                                 );
                               },
