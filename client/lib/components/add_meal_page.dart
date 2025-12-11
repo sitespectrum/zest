@@ -10,7 +10,10 @@ import '../constants.dart';
 import 'dart:math';
 
 class AddMealPage extends StatefulWidget {
-  const AddMealPage({super.key});
+  final bool addToTemplate;
+  final int? templateId;
+
+  const AddMealPage({super.key, this.addToTemplate = false, this.templateId});
 
   @override
   State<AddMealPage> createState() => _AddMealPageState();
@@ -31,6 +34,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Timer? _debounce;
 
   List<MealDto> userMeals = [];
+  List<MealDto> templateMeals = [];
 
   void addMeal(MealDto meal) {
     setState(() {
@@ -83,7 +87,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
       final units = List<Map<String, dynamic>>.from(data);
       return units;
-    // ignore: unused_catch_stack
+      // ignore: unused_catch_stack
     } catch (e, st) {
       return [];
     }
@@ -114,7 +118,7 @@ class _AddMealPageState extends State<AddMealPage> {
       );
 
       return [meal];
-    // ignore: unused_catch_stack
+      // ignore: unused_catch_stack
     } catch (e, st) {
       return [];
     }
@@ -136,6 +140,48 @@ class _AddMealPageState extends State<AddMealPage> {
       return data.map((e) => UserMealDto.fromJson(e)).toList();
     } else {
       throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+    }
+  }
+
+  Future<int?> addFoodToTemplate(
+    int templateId,
+    int userId,
+    MealDto meal,
+  ) async {
+    final url = Uri.parse("$apiUrl/api/Meals/AddFoodToTemplate");
+
+    final body = jsonEncode({
+      "templateId": templateId,
+      "userId": userId,
+      "foodId": meal.foodId,
+      "name": meal.name,
+      "quantity": meal.quantity,
+      "calories": meal.calories,
+      "protein": meal.protein,
+      "carbs": meal.carbs,
+      "fat": meal.fat,
+      "unit": meal.unit,
+      "baseWeight": meal.baseWeight,
+    });
+    print("templateId: ${templateId}");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['id'];
+      } else {
+        print("Nem sikerült hozzáadni: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      print("Hiba: $e");
+      return null;
     }
   }
 
@@ -224,7 +270,7 @@ class _AddMealPageState extends State<AddMealPage> {
           .toList();
 
       setState(() => searchResults = results);
-    // ignore: unused_catch_stack
+      // ignore: unused_catch_stack
     } catch (e, st) {
       setState(() => searchResults = []);
     } finally {
@@ -246,7 +292,11 @@ class _AddMealPageState extends State<AddMealPage> {
         // ignore: deprecated_member_use
         return WillPopScope(
           onWillPop: () async {
-            Navigator.pop(context, userMeals);
+            if (widget.addToTemplate) {
+              Navigator.pop(context, templateMeals);
+            } else {
+              Navigator.pop(context, userMeals);
+            }
             return false;
           },
           child: Scaffold(
@@ -421,9 +471,7 @@ class _AddMealPageState extends State<AddMealPage> {
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
                             final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(
-                              meal.name,
-                            );
+                            final cleanName = stripHtmlTags(meal.name);
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -447,13 +495,29 @@ class _AddMealPageState extends State<AddMealPage> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(12),
                                   onTap: () async {
-                                    setState(() {
-                                      userMeals.add(meal);
-                                    });
-
-                                    final cleanName = stripHtmlTags(
-                                      meal.name,
-                                    );
+                                    if (widget.addToTemplate) {
+                                      final prefs =
+                                          await SharedPreferences.getInstance();
+                                      final userId = prefs.getInt("userId");
+                                      print("userId: ${userId}");
+                                      if (userId != null &&
+                                          widget.templateId != null) {
+                                        await addFoodToTemplate(
+                                          widget.templateId!,
+                                          userId,
+                                          meal,
+                                        );
+                                        print(widget.templateId);
+                                        setState(() {
+                                          templateMeals.add(meal);
+                                        });
+                                      }
+                                    } else {
+                                      setState(() {
+                                        userMeals.add(meal);
+                                      });
+                                    }
+                                    final cleanName = stripHtmlTags(meal.name);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -536,9 +600,7 @@ class _AddMealPageState extends State<AddMealPage> {
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
                             final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(
-                              meal.name,
-                            );
+                            final cleanName = stripHtmlTags(meal.name);
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -827,9 +889,37 @@ class _AddMealPageState extends State<AddMealPage> {
                                     },
                                   );
                                   if (updatedMeal != null) {
-                                    setState(() {
-                                      userMeals.add(updatedMeal);
-                                    });
+                                    if (widget.addToTemplate) {
+                                      final prefs =
+                                          await SharedPreferences.getInstance();
+                                      final userId = prefs.getInt("userId");
+
+                                      if (userId != null &&
+                                          widget.templateId != null) {
+                                        final newId = await addFoodToTemplate(
+                                          widget.templateId!,
+                                          userId,
+                                          updatedMeal,
+                                        );
+
+                                        if (newId != null) {
+                                          final mealWithId = updatedMeal
+                                              .copyWith(id: newId);
+
+                                          setState(() {
+                                            templateMeals.add(mealWithId);
+                                          });
+                                        }
+                                      } else {
+                                        print(
+                                          "HIBA: UserId vagy TemplateId null! User: $userId, Template: ${widget.templateId}",
+                                        );
+                                      }
+                                    } else {
+                                      setState(() {
+                                        userMeals.add(updatedMeal);
+                                      });
+                                    }
 
                                     final cleanName = stripHtmlTags(
                                       updatedMeal.name,

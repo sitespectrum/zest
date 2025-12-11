@@ -46,6 +46,7 @@ class UserDto {
 }
 
 class MealDto {
+  final int? Id;
   final String foodId;
   final String name;
   final String? piece;
@@ -60,6 +61,7 @@ class MealDto {
   int? cmultiplier;
 
   MealDto({
+    this.Id,
     required this.foodId,
     required this.name,
     this.piece,
@@ -94,6 +96,7 @@ class MealDto {
   }
 
   factory MealDto.fromJson(Map<String, dynamic> json) {
+    final id = json['id'];
     final fid = _firstNonNull(json, ['foodId', 'food_id', 'id', 'obj_id']);
     final name = _firstNonNull(json, ['name', 'title']);
     String unit = _firstNonNull(json, ['unit']);
@@ -111,6 +114,7 @@ class MealDto {
     int quantity = int.tryParse(quantityRaw) ?? 1;
 
     return MealDto(
+      Id: id,
       foodId: fid,
       name: name,
       piece: _firstNonNull(json, ['piece', 'unit', 'pictitle']).isEmpty
@@ -128,6 +132,7 @@ class MealDto {
   }
 
   Map<String, dynamic> toJson() => {
+    "Id": Id,
     "foodId": foodId,
     "name": name,
     "piece": piece ?? "",
@@ -140,6 +145,23 @@ class MealDto {
     "baseWeight": baseWeight,
     "multiplier": multiplier,
   };
+
+  MealDto copyWith({int? id}) {
+    return MealDto(
+      Id: id ?? this.Id,
+      foodId: this.foodId,
+      name: this.name,
+      piece: this.piece,
+      calories: this.calories,
+      protein: this.protein,
+      carbs: this.carbs,
+      fat: this.fat,
+      quantity: this.quantity,
+      unit: this.unit,
+      baseWeight: this.baseWeight,
+      multiplier: this.multiplier,
+    );
+  }
 }
 
 class UserMealDto {
