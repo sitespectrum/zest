@@ -14,6 +14,7 @@ using Zest.Api.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json.Serialization;
 using server.Migrations;
+using System.Runtime.CompilerServices;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -317,6 +318,7 @@ public class MealsController : ControllerBase
                 m.IsCustom,
                 Meals = m.Meals.Select(mi => new
                 {
+                    mi.Id,
                     mi.FoodId,
                     mi.Name,
                     mi.Calories,
@@ -407,6 +409,67 @@ public class MealsController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("DeleteCustomMeal")]
+    [Authorize]
+    public async Task<IActionResult> DeleteCustomMeal([FromQuery] int id)
+    {
+        var meal = await _context.Meals.FindAsync(id);
+
+        if (meal == null)
+            return NotFound("Nincs ilyen étel a custom sablonban");
+
+        _context.Meals.Remove(meal);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Étel törlés sikeres" });
+    }
+
+    [HttpPost("AddFoodToTemplate")]
+    public async Task<IActionResult> AddFoodToTemplate([FromBody] AddFoodToTemplateDto dto)
+    {
+        var template = await _context.UserMeals
+            .Include(x => x.Meals)
+            .FirstOrDefaultAsync(x => x.Id == dto.TemplateId && x.UserId == dto.UserId);
+
+        if (template == null)
+            return NotFound("Nincs ilyen sablonod, főnök.");
+
+        var newMeal = new Meals
+        {
+            UserMealId = template.Id,
+            FoodId = dto.FoodId,
+            Name = dto.Name,
+            Quantity = dto.Quantity,
+            Calories = dto.Calories,
+            Proteins = dto.Protein,
+            Carbs = dto.Carbs,
+            Fat = dto.Fat,
+            Unit = dto.Unit,
+            BaseWeight = dto.BaseWeight
+        };
+
+        template.Meals.Add(newMeal);
+        await _context.SaveChangesAsync();
+
+        return Ok(new {id = newMeal.Id});
+    }
+
+
+}
+
+public class AddFoodToTemplateDto
+{
+    public int TemplateId { get; set; }
+    public int UserId { get; set; }
+    public string? FoodId { get; set; }
+    public string? Name { get; set; }
+    public int Quantity { get; set; }
+    public int Calories { get; set; }
+    public double Protein { get; set; }
+    public double Carbs { get; set; }
+    public double Fat { get; set; }
+    public string? Unit { get; set; }
+    public double? BaseWeight { get; set; }
 }
 
 public class UserMealDto
