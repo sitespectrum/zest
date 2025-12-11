@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage>
   late Future<double> _calorieGoal;
 
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => false;
 
   @override
   void didChangeDependencies() {
