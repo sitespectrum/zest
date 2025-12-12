@@ -37,21 +37,28 @@ public class MealsController : ControllerBase
         {
             using var client = new HttpClient();
 
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+
             var uri = new UriBuilder("https://kaloriabazis.hu/getfood.php");
             var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
             query["q"] = q;
             query["p"] = "1";
-            query["s"] = "1000";
+            query["s"] = "8";
             query["expropsearch_id"] = "0";
             query["expropsearch_inc"] = "0";
             query["all_public_food"] = "0";
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML;");
+
+            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML");
+
+            request.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine($"Keresés válasz ({response.StatusCode}): {content.Substring(0, Math.Min(content.Length, 200))}...");
 
             if (!response.IsSuccessStatusCode)
                 return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
@@ -61,8 +68,9 @@ public class MealsController : ControllerBase
                 var parsed = System.Text.Json.JsonSerializer.Deserialize<object>(content);
                 return Ok(parsed);
             }
-            catch
+            catch (System.Text.Json.JsonException)
             {
+                Console.WriteLine("HIBA: A válasz nem JSON volt! Valószínűleg lejárt a Cookie vagy hiányzik a header.");
                 return Ok(new List<object>());
             }
         }
@@ -92,7 +100,7 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML;");
+            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
@@ -145,7 +153,7 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML;");
+            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
@@ -451,7 +459,7 @@ public class MealsController : ControllerBase
         template.Meals.Add(newMeal);
         await _context.SaveChangesAsync();
 
-        return Ok(new {id = newMeal.Id});
+        return Ok(new { id = newMeal.Id });
     }
 
 
