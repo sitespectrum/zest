@@ -1057,6 +1057,55 @@ class _CMealPageState extends State<CMealPage> {
                                               child: Text("Hozzáadás"),
                                             ),
                                           ),
+                                          Center(
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  userMeals.addAll(meal.meals);
+                                                });
+                                                Navigator.pop(context);
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      "${meal.customName} hozzáadva a listához!",
+                                                    ),
+                                                    duration: const Duration(
+                                                      milliseconds: 1500,
+                                                    ),
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                  ),
+                                                );
+                                              },
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor:
+                                                    const Color.fromARGB(
+                                                      255,
+                                                      30,
+                                                      30,
+                                                      30,
+                                                    ),
+                                                side: const BorderSide(
+                                                  color: Colors.white24,
+                                                  width: 1,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                "Étkezés folytatása",
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),

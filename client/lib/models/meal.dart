@@ -96,7 +96,13 @@ class MealDto {
   }
 
   factory MealDto.fromJson(Map<String, dynamic> json) {
-    final id = json['id'];
+    final idVal = json['id'];
+    int? id;
+    if (idVal is int) {
+      id = idVal;
+    } else if (idVal is String) {
+      id = int.tryParse(idVal);
+    }
     final fid = _firstNonNull(json, ['foodId', 'food_id', 'id', 'obj_id']);
     final name = _firstNonNull(json, ['name', 'title']);
     String unit = _firstNonNull(json, ['unit']);

@@ -237,41 +237,54 @@ class _AddMealPageState extends State<AddMealPage> {
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {
+        print("Hiba: Státuszkód ${response.statusCode}");
         setState(() => searchResults = []);
         return;
       }
 
       final body = response.body.trim();
-
-      dynamic decoded;
-      try {
-        decoded = jsonDecode(body);
-      } catch (e) {
+      if (body.isEmpty || body.startsWith("<")) {
+        print("Hiba: Érvénytelen válasz (üres vagy HTML).");
         setState(() => searchResults = []);
         return;
       }
 
+      dynamic decoded = jsonDecode(body);
       List items = [];
+
       if (decoded is List) {
         items = decoded;
       } else if (decoded is Map<String, dynamic>) {
-        if (decoded['results2'] is List) {
+        if (decoded['results2'] is List)
           items = decoded['results2'];
-        } else if (decoded['results'] is List) {
+        else if (decoded['results'] is List)
           items = decoded['results'];
-        } else if (decoded['data'] is List) {
+        else if (decoded['data'] is List)
           items = decoded['data'];
+        else if (decoded['food_list'] is List)
+          items = decoded['food_list'];
+        else {
+          print(
+            "Hiba: Nem találtam listát a JSON objektumban. Kulcsok: ${decoded.keys}",
+          );
         }
       }
 
       final results = items
-          .whereType<Map<String, dynamic>>()
-          .map((e) => MealDto.fromJson(e))
+          .map((e) {
+            try {
+              return MealDto.fromJson(e);
+            } catch (error) {
+              return null;
+            }
+          })
+          .where((e) => e != null)
+          .cast<MealDto>()
           .toList();
 
       setState(() => searchResults = results);
-      // ignore: unused_catch_stack
-    } catch (e, st) {
+    } catch (e) {
+      print("Kritikus hiba a keresés közben: $e");
       setState(() => searchResults = []);
     } finally {
       if (mounted) setState(() => isLoading = false);
