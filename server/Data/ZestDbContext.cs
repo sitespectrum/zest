@@ -8,7 +8,10 @@ public class ZestDbContext : DbContext
     public ZestDbContext(DbContextOptions<ZestDbContext> options) : base(options) { }
 
     public DbSet<User> Users { get; set; }
-    public DbSet<Workout> Workouts { get; set; }
+    public DbSet<Exercise> Exercises { get; set; }
+    public DbSet<UserWorkouts> UserWorkouts { get; set; }
+    public DbSet<WorkoutExercise> WorkoutExercises { get; set; }
+    public DbSet<WorkoutSet> WorkoutSets { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Meals> Meals { get; set; }
     public DbSet<UserMeal> UserMeals { get; set; }

@@ -58,6 +58,138 @@ namespace server.Migrations
                     b.ToTable("UserMeals");
                 });
 
+            modelBuilder.Entity("UserWorkouts", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CustomName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsCustom")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalBurntCalories")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("TotalLiftedWeight")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("WorkoutName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserWorkouts");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.Exercise", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CategoryHu")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Equipment")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EquipmentHu")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Force")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ForceHu")
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("InstructionsHu")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LevelHu")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Mechanic")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MechanicHu")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("MetValue")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NameHu")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("PrimaryMuscles")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("PrimaryMusclesHu")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("SecondaryMuscles")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("SecondaryMusclesHu")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("UserWorkoutsId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WorkoutId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserWorkoutsId");
+
+                    b.ToTable("Exercises");
+                });
+
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
                 {
                     b.Property<int>("Id")
@@ -183,31 +315,53 @@ namespace server.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Zest.Api.Models.Workout", b =>
+            modelBuilder.Entity("Zest.Api.Models.WorkoutExercise", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CaloriesBurned")
+                    b.Property<int>("ExerciseId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("DurationMinutes")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("UserId")
+                    b.Property<int>("UserWorkoutId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Workouts");
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("UserWorkoutId");
+
+                    b.ToTable("WorkoutExercises");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.WorkoutSet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsWarmup")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Reps")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Weight")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("WorkoutId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkoutId");
+
+                    b.ToTable("WorkoutSets");
                 });
 
             modelBuilder.Entity("UserMeal", b =>
@@ -221,6 +375,24 @@ namespace server.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("UserWorkouts", b =>
+                {
+                    b.HasOne("Zest.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.Exercise", b =>
+                {
+                    b.HasOne("UserWorkouts", null)
+                        .WithMany("Exercises")
+                        .HasForeignKey("UserWorkoutsId");
+                });
+
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
                 {
                     b.HasOne("UserMeal", "UserMeal")
@@ -232,14 +404,54 @@ namespace server.Migrations
                     b.Navigation("UserMeal");
                 });
 
+            modelBuilder.Entity("Zest.Api.Models.WorkoutExercise", b =>
+                {
+                    b.HasOne("Zest.Api.Models.Exercise", "Exercise")
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("UserWorkouts", "UserWorkout")
+                        .WithMany()
+                        .HasForeignKey("UserWorkoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exercise");
+
+                    b.Navigation("UserWorkout");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.WorkoutSet", b =>
+                {
+                    b.HasOne("Zest.Api.Models.WorkoutExercise", "WorkoutExercise")
+                        .WithMany("Sets")
+                        .HasForeignKey("WorkoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WorkoutExercise");
+                });
+
             modelBuilder.Entity("UserMeal", b =>
                 {
                     b.Navigation("Meals");
                 });
 
+            modelBuilder.Entity("UserWorkouts", b =>
+                {
+                    b.Navigation("Exercises");
+                });
+
             modelBuilder.Entity("Zest.Api.Models.User", b =>
                 {
                     b.Navigation("UserMeals");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.WorkoutExercise", b =>
+                {
+                    b.Navigation("Sets");
                 });
 #pragma warning restore 612, 618
         }

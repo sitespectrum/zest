@@ -13,6 +13,6 @@ public class MealDto
 public class MealSearchResponse
 {
     public int Total2 { get; set; }
-    public List<MealDto> Results2 { get; set; }
+    public List<MealDto>? Results2 { get; set; }
 }
 
