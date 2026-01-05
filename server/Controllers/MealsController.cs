@@ -51,7 +51,7 @@ public class MealsController : ControllerBase
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
 
-            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML");
+            request.Headers.Add("Cookie", "myPHP83SESSID=mZWfTItWvFpUzpjbmc43NA2tyM");
 
             request.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
@@ -100,7 +100,7 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML");
+            request.Headers.Add("Cookie", "myPHP83SESSID=mZWfTItWvFpUzpjbmc43NA2tyM");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
@@ -153,7 +153,7 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=ulykbq9PDsxviRD5d-5jcPzUML");
+            request.Headers.Add("Cookie", "myPHP83SESSID=mZWfTItWvFpUzpjbmc43NA2tyM");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
