@@ -177,15 +177,10 @@ namespace server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("UserWorkoutsId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("WorkoutId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserWorkoutsId");
 
                     b.ToTable("Exercises");
                 });
@@ -386,13 +381,6 @@ namespace server.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Zest.Api.Models.Exercise", b =>
-                {
-                    b.HasOne("UserWorkouts", null)
-                        .WithMany("Exercises")
-                        .HasForeignKey("UserWorkoutsId");
-                });
-
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
                 {
                     b.HasOne("UserMeal", "UserMeal")
@@ -413,7 +401,7 @@ namespace server.Migrations
                         .IsRequired();
 
                     b.HasOne("UserWorkouts", "UserWorkout")
-                        .WithMany()
+                        .WithMany("Exercises")
                         .HasForeignKey("UserWorkoutId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

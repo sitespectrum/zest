@@ -14,7 +14,7 @@ class CWorkoutPage extends StatefulWidget {
 }
 
 class _CWorkoutPageState extends State<CWorkoutPage> {
-  List<ExerciseDto> userWorkouts = [];
+  List<WorkoutExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
 
   @override
@@ -98,8 +98,11 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: userWorkouts.length,
                         itemBuilder: (context, index) {
-                          final exercise = userWorkouts[index];
-                          final cleanName = stripHtmlTags(exercise.name);
+                          final exerciseItem = userWorkouts[index];
+                          final name =
+                              exerciseItem.exercise?.name ??
+                              "Ismeretlen gyakorlat";
+                          final cleanName = stripHtmlTags(name);
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,
@@ -145,7 +148,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         child: TextButton(
                                           onPressed: () => {
                                             setState(() {
-                                              userWorkouts.remove(exercise);
+                                              userWorkouts.removeAt(index);
                                             }),
                                           },
                                           child: const Text(
@@ -213,41 +216,153 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     itemCount: exercises.length,
                     itemBuilder: (context, index) {
                       final exercise = exercises[index];
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 6,
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 45, 45, 45),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  exercise.customWorkoutName.isNotEmpty
-                                      ? exercise.customWorkoutName
-                                      : "Ismeretlen sablon",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: exercises.length,
+                        itemBuilder: (context, index) {
+                          final template = exercises[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 6,
+                            ),
+                            child: InkWell(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      backgroundColor: const Color.fromARGB(
+                                        255,
+                                        30,
+                                        30,
+                                        30,
+                                      ),
+                                      title: Text(
+                                        template.customWorkoutName,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      content: SizedBox(
+                                        width: double.maxFinite,
+                                        child: ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: template.exercises.length,
+                                          itemBuilder: (ctx, i) {
+                                            final ex = template.exercises[i];
+                                            return ListTile(
+                                              title: Text(
+                                                ex.exercise?.name ??
+                                                    "Gyakorlat",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              subtitle: Text(
+                                                "${ex.sets.length} sorozat",
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text(
+                                            "Mégse",
+                                            style: TextStyle(
+                                              color: Colors.white54,
+                                            ),
+                                          ),
+                                        ),
+                                        FilledButton(
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                  255,
+                                                  85,
+                                                  173,
+                                                  78,
+                                                ),
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              userWorkouts.addAll(
+                                                template.exercises,
+                                              );
+                                            });
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  "${template.customWorkoutName} betöltve!",
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text("Betöltés"),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(255, 45, 45, 45),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            template
+                                                    .customWorkoutName
+                                                    .isNotEmpty
+                                                ? template.customWorkoutName
+                                                : "Ismeretlen sablon",
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            '${template.exercises.length} gyakorlat',
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Icon(
+                                        Icons.chevron_right,
+                                        color: Colors.white54,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  '${exercise.durationMinutes} perc | ${exercise.totalBurntCalories} kalória | ${exercise.exercises.length} gyakorlat',
-                                  style: const TextStyle(color: Colors.white70),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       );
                     },
                   );
