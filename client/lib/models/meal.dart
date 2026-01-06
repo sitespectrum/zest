@@ -245,8 +245,6 @@ class CustomUserMealDto {
     required this.meals,
   });
 
-
-
   factory CustomUserMealDto.fromJson(Map<String, dynamic> json) {
     return CustomUserMealDto(
       id: json['id'],

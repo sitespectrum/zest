@@ -14,9 +14,9 @@ namespace server.Migrations
                 name: "FK_Exercises_UserWorkouts_UserWorkoutsId",
                 table: "Exercises");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Exercises_UserWorkoutsId",
-                table: "Exercises");
+            //migrationBuilder.DropIndex(
+            //   name: "IX_Exercises_UserWorkoutsId",
+            //    table: "Exercises");
 
             migrationBuilder.DropColumn(
                 name: "UserWorkoutsId",

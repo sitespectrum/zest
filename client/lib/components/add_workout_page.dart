@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:client/models/workout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -8,14 +9,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 import 'dart:math';
 
-class AddMealPage extends StatefulWidget {
+class AddWorkoutPage extends StatefulWidget {
   final bool addToTemplate;
   final int? templateId;
 
-  const AddMealPage({super.key, this.addToTemplate = false, this.templateId});
+  const AddWorkoutPage({
+    super.key,
+    this.addToTemplate = false,
+    this.templateId,
+  });
 
   @override
-  State<AddMealPage> createState() => _AddMealPageState();
+  State<AddWorkoutPage> createState() => _AddMealPageState();
 }
 
 String stripHtmlTags(String htmlText) {
@@ -23,23 +28,23 @@ String stripHtmlTags(String htmlText) {
   return htmlText.replaceAll(exp, '');
 }
 
-class _AddMealPageState extends State<AddMealPage> {
+class _AddMealPageState extends State<AddWorkoutPage> {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController quantitycontroller = TextEditingController();
   final barcodeController = TextEditingController();
-  List<MealDto> searchResults = [];
+  List<ExerciseDto> searchResults = [];
   bool isLoading = false;
   bool anyResults = false;
   Timer? _debounce;
 
-  List<MealDto> userMeals = [];
-  List<MealDto> templateMeals = [];
+  List<ExerciseDto> userWorkouts = [];
+  List<ExerciseDto> templateWorkouts = [];
 
-  void addMeal(MealDto meal) {
+  void addMeal(ExerciseDto exercise) {
     setState(() {
-      userMeals.add(meal);
+      userWorkouts.add(exercise);
     });
-    final cleanName = stripHtmlTags(meal.name);
+    final cleanName = stripHtmlTags(exercise.name);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -57,13 +62,13 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   final ScrollController _scrollController = ScrollController();
-  late Future<List<UserMealDto>> futureMeals;
+  late Future<List<UserWorkoutDto>> futureExercises;
 
   @override
   void initState() {
     super.initState();
-    futureMeals = fetchUserMeals();
-    loadTopMeals();
+    futureExercises = fetchUserWorkouts();
+    loadTopExercises();
   }
 
   @override
@@ -72,46 +77,38 @@ class _AddMealPageState extends State<AddMealPage> {
     super.dispose();
   }
 
-  Future<List<UserMealDto>> fetchUserMeals() async {
+  Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
     if (token == null) throw Exception("Nincs token");
 
     final response = await http.get(
-      Uri.parse("$apiUrl/api/meals/getUserMeals"),
+      Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
       headers: {"Authorization": "Bearer $token"},
     );
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => UserMealDto.fromJson(e)).toList();
+      return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
     } else {
       throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
     }
   }
 
-  Future<int?> addFoodToTemplate(
+  Future<int?> addExerciseToTemplate(
     int templateId,
     int userId,
-    MealDto meal,
+    ExerciseDto exercise,
   ) async {
-    final url = Uri.parse("$apiUrl/api/Meals/AddFoodToTemplate");
+    final url = Uri.parse("$apiUrl/api/Workout/AddExerciseToTemplate");
 
     final body = jsonEncode({
       "templateId": templateId,
-      "userId": userId,
-      "foodId": meal.foodId,
-      "name": meal.name,
-      "quantity": meal.quantity,
-      "calories": meal.calories,
-      "protein": meal.protein,
-      "carbs": meal.carbs,
-      "fat": meal.fat,
-      "unit": meal.unit,
-      "baseWeight": meal.baseWeight,
+      "exerciseId": exercise.id,
     });
-    print("templateId: ${templateId}");
+
+    print("Adding exercise ${exercise.id} to template $templateId");
 
     try {
       final response = await http.post(
@@ -133,45 +130,56 @@ class _AddMealPageState extends State<AddMealPage> {
     }
   }
 
-  Future<void> loadTopMeals() async {
-    final meals = await fetchUserMeals();
+  Future<void> loadTopExercises() async {
+    try {
+      final workouts = await fetchUserWorkouts();
 
-    final Map<String, int> foodCounts = {};
+      final Map<int, int> exerciseCounts = {};
 
-    for (final userMeal in meals) {
-      for (final meal in userMeal.meals) {
-        foodCounts[meal.foodId] = (foodCounts[meal.foodId] ?? 0) + 1;
-      }
-    }
-
-    final sorted = foodCounts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final topIds = sorted
-        .take(min(10, sorted.length))
-        .map((e) => e.key)
-        .toList();
-
-    final List<MealDto> topMeals = [];
-
-    for (final userMeal in meals) {
-      for (final meal in userMeal.meals) {
-        if (topIds.contains(meal.foodId) &&
-            !topMeals.any((m) => m.foodId == meal.foodId)) {
-          topMeals.add(meal);
+      for (final workout in workouts) {
+        for (final workoutExercise in workout.exercises) {
+          exerciseCounts[workoutExercise.exerciseId] =
+              (exerciseCounts[workoutExercise.exerciseId] ?? 0) + 1;
         }
       }
-    }
 
-    setState(() {
-      searchResults = topMeals;
-    });
+      final sorted = exerciseCounts.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      final topIds = sorted
+          .take(min(10, sorted.length))
+          .map((e) => e.key)
+          .toSet();
+
+      final List<ExerciseDto> topList = [];
+      final Set<int> addedIds = {};
+
+      for (final workout in workouts) {
+        for (final we in workout.exercises) {
+          if (topIds.contains(we.exerciseId) &&
+              !addedIds.contains(we.exerciseId)) {
+            if (we.exercise != null) {
+              topList.add(we.exercise!);
+              addedIds.add(we.exerciseId);
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          searchResults = topList;
+        });
+      }
+    } catch (e) {
+      print("Hiba a top gyakorlatok betöltésekor: $e");
+    }
   }
 
-  Future<void> _searchMeals(String query) async {
+  Future<void> _searchExercises(String query) async {
     final q = query.trim();
     if (q.isEmpty) {
-      setState(() => searchResults = []);
+      loadTopExercises();
       return;
     }
 
@@ -181,7 +189,7 @@ class _AddMealPageState extends State<AddMealPage> {
     });
 
     try {
-      final uri = Uri.parse('$apiUrl/api/meals/search?q=$q');
+      final uri = Uri.parse('$apiUrl/api/Exercises/search?q=$q');
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {
@@ -190,49 +198,13 @@ class _AddMealPageState extends State<AddMealPage> {
         return;
       }
 
-      final body = response.body.trim();
-      if (body.isEmpty || body.startsWith("<")) {
-        print("Hiba: Érvénytelen válasz (üres vagy HTML).");
-        setState(() => searchResults = []);
-        return;
-      }
+      final List<dynamic> decoded = jsonDecode(response.body);
 
-      dynamic decoded = jsonDecode(body);
-      List items = [];
-
-      if (decoded is List) {
-        items = decoded;
-      } else if (decoded is Map<String, dynamic>) {
-        if (decoded['results2'] is List)
-          items = decoded['results2'];
-        else if (decoded['results'] is List)
-          items = decoded['results'];
-        else if (decoded['data'] is List)
-          items = decoded['data'];
-        else if (decoded['food_list'] is List)
-          items = decoded['food_list'];
-        else {
-          print(
-            "Hiba: Nem találtam listát a JSON objektumban. Kulcsok: ${decoded.keys}",
-          );
-        }
-      }
-
-      final results = items
-          .map((e) {
-            try {
-              return MealDto.fromJson(e);
-            } catch (error) {
-              return null;
-            }
-          })
-          .where((e) => e != null)
-          .cast<MealDto>()
-          .toList();
+      final results = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
 
       setState(() => searchResults = results);
     } catch (e) {
-      print("Kritikus hiba a keresés közben: $e");
+      print("Keresési hiba: $e");
       setState(() => searchResults = []);
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -241,8 +213,8 @@ class _AddMealPageState extends State<AddMealPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<UserMealDto>>(
-      future: futureMeals,
+    return FutureBuilder<List<UserWorkoutDto>>(
+      future: futureExercises,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -254,9 +226,9 @@ class _AddMealPageState extends State<AddMealPage> {
         return WillPopScope(
           onWillPop: () async {
             if (widget.addToTemplate) {
-              Navigator.pop(context, templateMeals);
+              Navigator.pop(context, templateWorkouts);
             } else {
-              Navigator.pop(context, userMeals);
+              Navigator.pop(context, userWorkouts);
             }
             return false;
           },
@@ -286,7 +258,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                     _debounce = Timer(
                                       const Duration(milliseconds: 600),
                                       () {
-                                        _searchMeals(value);
+                                        _searchExercises(value);
                                       },
                                     );
                                   },
@@ -354,8 +326,8 @@ class _AddMealPageState extends State<AddMealPage> {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
-                            final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(meal.name);
+                            final exercise = searchResults[index];
+                            final cleanName = stripHtmlTags(exercise.name);
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -386,22 +358,24 @@ class _AddMealPageState extends State<AddMealPage> {
                                       print("userId: ${userId}");
                                       if (userId != null &&
                                           widget.templateId != null) {
-                                        await addFoodToTemplate(
+                                        await addExerciseToTemplate(
                                           widget.templateId!,
                                           userId,
-                                          meal,
+                                          exercise,
                                         );
                                         print(widget.templateId);
                                         setState(() {
-                                          templateMeals.add(meal);
+                                          templateWorkouts.add(exercise);
                                         });
                                       }
                                     } else {
                                       setState(() {
-                                        userMeals.add(meal);
+                                        userWorkouts.add(exercise);
                                       });
                                     }
-                                    final cleanName = stripHtmlTags(meal.name);
+                                    final cleanName = stripHtmlTags(
+                                      exercise.name,
+                                    );
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -459,7 +433,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.quantity} ${meal.piece}',
+                                                  '${exercise.category} | ${exercise.equipment} | ${exercise.force} | ${exercise.level} | ${exercise.mechanic}',
                                                   style: const TextStyle(
                                                     color: Colors.white70,
                                                   ),
@@ -483,8 +457,8 @@ class _AddMealPageState extends State<AddMealPage> {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
-                            final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(meal.name);
+                            final exercise = searchResults[index];
+                            final cleanName = stripHtmlTags(exercise.name);
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -494,60 +468,61 @@ class _AddMealPageState extends State<AddMealPage> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: () async {
-                                    if (widget.addToTemplate) {
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      final userId = prefs.getInt("userId");
+                                  if (widget.addToTemplate) {
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    final userId = prefs.getInt("userId");
 
-                                      if (userId != null &&
-                                          widget.templateId != null) {
-                                        final newId = await addFoodToTemplate(
-                                          widget.templateId!,
-                                          userId,
-                                          meal,
+                                    if (userId != null &&
+                                        widget.templateId != null) {
+                                      final newId = await addExerciseToTemplate(
+                                        widget.templateId!,
+                                        userId,
+                                        exercise,
+                                      );
+
+                                      if (newId != null) {
+                                        final mealWithId = exercise.copyWith(
+                                          id: newId,
                                         );
 
-                                        if (newId != null) {
-                                          final mealWithId = meal
-                                              .copyWith(id: newId);
-
-                                          setState(() {
-                                            templateMeals.add(mealWithId);
-                                          });
-                                        }
-                                      } else {
-                                        print(
-                                          "HIBA: UserId vagy TemplateId null! User: $userId, Template: ${widget.templateId}",
-                                        );
+                                        setState(() {
+                                          templateWorkouts.add(mealWithId);
+                                        });
                                       }
                                     } else {
-                                      setState(() {
-                                        userMeals.add(meal);
-                                      });
+                                      print(
+                                        "HIBA: UserId vagy TemplateId null! User: $userId, Template: ${widget.templateId}",
+                                      );
                                     }
+                                  } else {
+                                    setState(() {
+                                      userWorkouts.add(exercise);
+                                    });
+                                  }
 
-                                    final cleanName = stripHtmlTags(
-                                      meal.name,
-                                    );
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '$cleanName hozzáadva a listádhoz!',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
-                                        ),
+                                  final cleanName = stripHtmlTags(
+                                    exercise.name,
+                                  );
+                                  // ignore: use_build_context_synchronously
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '$cleanName hozzáadva a listádhoz!',
                                       ),
-                                    );
+                                      behavior: SnackBarBehavior.floating,
+                                      margin: EdgeInsets.only(
+                                        bottom: 30,
+                                        left: 16,
+                                        right: 16,
+                                      ),
+                                      duration: Duration(milliseconds: 1800),
+                                      animation: CurvedAnimation(
+                                        parent: kAlwaysCompleteAnimation,
+                                        curve: Curves.easeInOut,
+                                      ),
+                                    ),
+                                  );
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
@@ -587,7 +562,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.piece}',
+                                                '${exercise.category} | ${exercise.equipment} | ${exercise.force} | ${exercise.level} | ${exercise.mechanic}',
                                                 style: const TextStyle(
                                                   color: Colors.white70,
                                                 ),

@@ -30,6 +30,57 @@ public class WorkoutController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("getUserWorkouts")]
+    [Authorize]
+    public async Task<IActionResult> GetUserWorkouts()
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized();
+
+        var userId = int.Parse(userIdClaim);
+
+        var workouts = await _context.UserWorkouts
+            .Where(w => w.UserId == userId)
+            .Include(w => w.Exercises)
+                .ThenInclude(e => e.Exercise)
+            .Include(w => w.Exercises)
+                .ThenInclude(e => e.Sets)
+            .OrderByDescending(w => w.Date)
+            .Select(w => new
+            {
+                w.Id,
+                CustomName = w.WorkoutName,
+                w.TotalBurntCalories,
+                w.TotalLiftedWeight,
+                w.DurationMinutes,
+                w.Date,
+                w.IsCustom,
+
+                Exercises = w.Exercises.Select(we => new
+                {
+                    we.Id,
+                    we.ExerciseId,
+
+                    Name = we.Exercise != null ? we.Exercise.Name : "Ismeretlen gyakorlat",
+                    Images = we.Exercise != null ? we.Exercise.Images : new List<string>(),
+
+                    Sets = we.Sets.OrderBy(s => s.Order).Select(s => new
+                    {
+                        s.Id,
+                        s.Order,
+                        s.Weight,
+                        s.Reps,
+                        s.IsWarmup
+                    }).ToList()
+                }).ToList()
+            })
+            .ToListAsync();
+
+        Console.WriteLine($"Talált {workouts.Count} edzés sablont a UserId={userId}-hez");
+
+        return Ok(workouts);
+    }
+
     [HttpGet("getCustomUserWorkouts")]
     [Authorize]
     public async Task<IActionResult> GetCustomUserWorkouts()
