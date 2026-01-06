@@ -86,8 +86,7 @@ class ExerciseDto {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'name': name,
       'nameHu': nameHu,
@@ -109,7 +108,31 @@ class ExerciseDto {
       'instructionsHu': instructionsHu,
       'images': images,
       'metValue': metValue,
-    };
+  };
+  ExerciseDto copyWith({int? id}) {
+    return ExerciseDto(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameHu: nameHu ?? this.nameHu,
+      force: force ?? this.force,
+      forceHu: forceHu ?? this.forceHu,
+      level: level ?? this.level,
+      levelHu: levelHu ?? this.levelHu,
+      mechanic: mechanic ?? this.mechanic,
+      mechanicHu: mechanicHu ?? this.mechanicHu,
+      equipment: equipment ?? this.equipment,
+      equipmentHu: equipmentHu ?? this.equipmentHu,
+      category: category ?? this.category,
+      categoryHu: categoryHu ?? this.categoryHu,
+      primaryMuscles: primaryMuscles ?? this.primaryMuscles,
+      primaryMusclesHu: primaryMusclesHu ?? this.primaryMusclesHu,
+      secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
+      secondaryMusclesHu: secondaryMusclesHu ?? this.secondaryMusclesHu,
+      instructions: instructions ?? this.instructions,
+      instructionsHu: instructionsHu ?? this.instructionsHu,
+      images: images ?? this.images,
+      metValue: metValue ?? this.metValue,
+    );
   }
 }
 

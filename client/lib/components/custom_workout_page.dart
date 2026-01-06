@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:client/models/workout.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'add_meal_page.dart';
+import 'add_workout_page.dart';
 
 class CWorkoutPage extends StatefulWidget {
   const CWorkoutPage({super.key});
@@ -14,7 +14,7 @@ class CWorkoutPage extends StatefulWidget {
 }
 
 class _CWorkoutPageState extends State<CWorkoutPage> {
-  List<WorkoutExerciseDto> userWorkouts = [];
+  List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
 
   @override
@@ -100,9 +100,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                         itemBuilder: (context, index) {
                           final exerciseItem = userWorkouts[index];
                           final name =
-                              exerciseItem.exercise?.name ??
+                              exerciseItem.name ??
                               "Ismeretlen gyakorlat";
-                          final cleanName = stripHtmlTags(name);
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,
@@ -131,7 +130,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        cleanName,
+                                        name,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -182,7 +181,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                 ),
               ),
 
-              FutureBuilder<List<CustomUserWorkoutDto>>(
+FutureBuilder<List<CustomUserWorkoutDto>>(
                 future: futureCustomWorkouts,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -199,9 +198,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     );
                   }
 
-                  final exercises = snapshot.data ?? [];
+                  final templates = snapshot.data ?? []; // Ezek a sablonok
 
-                  if (exercises.isEmpty) {
+                  if (templates.isEmpty) {
                     return const Center(
                       child: Text(
                         "Nincs sablon létrehozva.",
@@ -210,159 +209,134 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     );
                   }
 
+                  // 1. JAVÍTÁS: Kivettem a felesleges belső ListView.builder-t
                   return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: exercises.length,
+                    itemCount: templates.length,
                     itemBuilder: (context, index) {
-                      final exercise = exercises[index];
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: exercises.length,
-                        itemBuilder: (context, index) {
-                          final template = exercises[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 6,
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      backgroundColor: const Color.fromARGB(
-                                        255,
-                                        30,
-                                        30,
-                                        30,
-                                      ),
-                                      title: Text(
-                                        template.customWorkoutName,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      content: SizedBox(
-                                        width: double.maxFinite,
-                                        child: ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: template.exercises.length,
-                                          itemBuilder: (ctx, i) {
-                                            final ex = template.exercises[i];
-                                            return ListTile(
-                                              title: Text(
-                                                ex.exercise?.name ??
-                                                    "Gyakorlat",
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              subtitle: Text(
-                                                "${ex.sets.length} sorozat",
-                                                style: const TextStyle(
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text(
-                                            "Mégse",
-                                            style: TextStyle(
-                                              color: Colors.white54,
-                                            ),
-                                          ),
-                                        ),
-                                        FilledButton(
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  85,
-                                                  173,
-                                                  78,
-                                                ),
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              userWorkouts.addAll(
-                                                template.exercises,
-                                              );
-                                            });
-                                            Navigator.pop(context);
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "${template.customWorkoutName} betöltve!",
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          child: const Text("Betöltés"),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 45, 45, 45),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white24),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            template
-                                                    .customWorkoutName
-                                                    .isNotEmpty
-                                                ? template.customWorkoutName
-                                                : "Ismeretlen sablon",
+                      final template = templates[index];
+                      
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 6,
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+                                  title: Text(
+                                    template.customWorkoutName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  content: SizedBox(
+                                    width: double.maxFinite,
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: template.exercises.length,
+                                      itemBuilder: (ctx, i) {
+                                        final ex = template.exercises[i];
+                                        return ListTile(
+                                          title: Text(
+                                            ex.exercise?.name ?? "Gyakorlat",
                                             style: const TextStyle(
                                               color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            '${template.exercises.length} gyakorlat',
+                                          subtitle: Text(
+                                            "${ex.sets.length} sorozat",
                                             style: const TextStyle(
                                               color: Colors.white70,
                                             ),
                                           ),
-                                        ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text(
+                                        "Mégse",
+                                        style: TextStyle(color: Colors.white54),
                                       ),
-                                      const Icon(
-                                        Icons.chevron_right,
-                                        color: Colors.white54,
+                                    ),
+                                    FilledButton(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          // 2. JAVÍTÁS: A sablon elemeit (WorkoutExerciseDto) átalakítjuk ExerciseDto-vá
+                                          // és kiszűrjük a null értékeket.
+                                          final exercisesFromTemplate = template.exercises
+                                              .map((we) => we.exercise)
+                                              .where((e) => e != null)
+                                              .cast<ExerciseDto>()
+                                              .toList();
+                                          
+                                          userWorkouts.addAll(exercisesFromTemplate);
+                                        });
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text("${template.customWorkoutName} betöltve!"),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text("Betöltés"),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 45, 45, 45),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        template.customWorkoutName.isNotEmpty
+                                            ? template.customWorkoutName
+                                            : "Ismeretlen sablon",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${template.exercises.length} gyakorlat',
+                                        style: const TextStyle(color: Colors.white70),
                                       ),
                                     ],
                                   ),
-                                ),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.white54,
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       );
                     },
                   );
@@ -377,7 +351,20 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               FilledButton(
-                onPressed: () {},
+                onPressed: () async {
+                  final result = await Navigator.push<List<ExerciseDto>>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddWorkoutPage(),
+                    ),
+                  );
+
+                  if (result != null) {
+                    setState(() {
+                      userWorkouts.addAll(result);
+                    });
+                  }
+                },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 85, 173, 78),
                   fixedSize: Size(
