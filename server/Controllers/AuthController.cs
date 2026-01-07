@@ -109,6 +109,27 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Kalóriacél frissítve!", newGoal = user.CalorieGoal });
     }
 
+    [HttpPut("updatePassword")]
+    [Authorize]
+    public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequest request)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized("Nincs token.");
+
+        var userId = int.Parse(userIdClaim);
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null) return NotFound("Felhasználó nem található.");
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+            return BadRequest("Az új jelszó nem lehet üres!");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new { Message = "Jelszó sikeresen megváltoztatva!" });
+    }
+
     [HttpPost("details")]
     public async Task<IActionResult> Details([FromBody] DetailsRequest request)
     {
@@ -127,6 +148,14 @@ public class AuthController : ControllerBase
 
         if (!Enum.TryParse<Activity>(request.Activity, out var activityEnum))
             return BadRequest("Érvénytelen aktivitás!");
+
+        if (!string.IsNullOrWhiteSpace(request.UserName))
+        {
+            if (user.UserName != request.UserName && await _dbContext.Users.AnyAsync(u => u.UserName == request.UserName))
+                return BadRequest("Ez a felhasználónév már foglalt!");
+
+            user.UserName = request.UserName;
+        }
 
         user.Height = request.Height.Value;
         user.Weight = request.Weight.Value;
@@ -280,6 +309,7 @@ public class RegisterRequest
 public class DetailsRequest
 {
     public int? UserId { get; set; }
+    public string? UserName { get; set; }
     public int? Height { get; set; }
     public int? Weight { get; set; }
     public DateTime? Birth { get; set; }
@@ -301,4 +331,9 @@ public class LoginRequest
 public class UpdateCalorieGoalRequest
 {
     public double CalorieGoal { get; set; }
+}
+
+public class UpdatePasswordRequest
+{
+    public string NewPassword { get; set; } = "";
 }

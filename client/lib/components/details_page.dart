@@ -130,7 +130,7 @@ class _DetailsPageState extends State<DetailsPage>
     double proteinGoal = 0.2 * calorieGoal / 4;
     double carbsGoal = 0.5 * calorieGoal / 4;
     double fatGoal = 0.3 * calorieGoal / 9;
-
+    
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
