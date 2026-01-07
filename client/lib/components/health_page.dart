@@ -92,7 +92,7 @@ class _HealthPageState extends State<HealthPage>
   late Future<List<UserMealDto>> _futureMeals;
 
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => false;
 
   @override
   void initState() {
