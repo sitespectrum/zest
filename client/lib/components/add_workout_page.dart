@@ -189,7 +189,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
     });
 
     try {
-      final uri = Uri.parse('$apiUrl/api/Exercises/search?q=$q');
+      final uri = Uri.parse('$apiUrl/api/Workout/search?q=$q');
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {

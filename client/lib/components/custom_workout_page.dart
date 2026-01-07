@@ -100,8 +100,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                         itemBuilder: (context, index) {
                           final exerciseItem = userWorkouts[index];
                           final name =
-                              exerciseItem.name ??
-                              "Ismeretlen gyakorlat";
+                              exerciseItem.name ?? "Ismeretlen gyakorlat";
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,
@@ -140,7 +139,83 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                       const SizedBox(height: 6),
                                       Row(
                                         children: [
-                                          Expanded(child: Text("szia")),
+                                          Expanded(
+                                            child: Text.rich(
+                                              TextSpan(
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 14,
+                                                ),
+                                                children: [
+                                                  const TextSpan(
+                                                    text: 'Category: ',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        '${exerciseItem.category} | ',
+                                                  ),
+
+                                                  const TextSpan(
+                                                    text: 'Equipment: ',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+
+                                                  TextSpan(
+                                                    text:
+                                                        '${exerciseItem.equipment} | ',
+                                                  ),
+
+                                                  const TextSpan(
+                                                    text: 'Force: ',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        '${exerciseItem.force ?? "-"} | ',
+                                                  ),
+
+                                                  const TextSpan(
+                                                    text: 'Level: ',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        '${exerciseItem.level} | ',
+                                                  ),
+
+                                                  const TextSpan(
+                                                    text: 'Mechanic: ',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        '${exerciseItem.mechanic ?? "-"}',
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                       Center(
@@ -181,7 +256,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                 ),
               ),
 
-FutureBuilder<List<CustomUserWorkoutDto>>(
+              FutureBuilder<List<CustomUserWorkoutDto>>(
                 future: futureCustomWorkouts,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -198,7 +273,7 @@ FutureBuilder<List<CustomUserWorkoutDto>>(
                     );
                   }
 
-                  final templates = snapshot.data ?? []; // Ezek a sablonok
+                  final templates = snapshot.data ?? [];
 
                   if (templates.isEmpty) {
                     return const Center(
@@ -209,14 +284,13 @@ FutureBuilder<List<CustomUserWorkoutDto>>(
                     );
                   }
 
-                  // 1. JAVÍTÁS: Kivettem a felesleges belső ListView.builder-t
                   return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: templates.length,
                     itemBuilder: (context, index) {
                       final template = templates[index];
-                      
+
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
@@ -228,12 +302,15 @@ FutureBuilder<List<CustomUserWorkoutDto>>(
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    30,
+                                    30,
+                                    30,
+                                  ),
                                   title: Text(
                                     template.customWorkoutName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                   content: SizedBox(
                                     width: double.maxFinite,
@@ -269,24 +346,34 @@ FutureBuilder<List<CustomUserWorkoutDto>>(
                                     ),
                                     FilledButton(
                                       style: FilledButton.styleFrom(
-                                        backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                                        backgroundColor: const Color.fromARGB(
+                                          255,
+                                          85,
+                                          173,
+                                          78,
+                                        ),
                                       ),
                                       onPressed: () {
                                         setState(() {
-                                          // 2. JAVÍTÁS: A sablon elemeit (WorkoutExerciseDto) átalakítjuk ExerciseDto-vá
-                                          // és kiszűrjük a null értékeket.
-                                          final exercisesFromTemplate = template.exercises
+                                          final exercisesFromTemplate = template
+                                              .exercises
                                               .map((we) => we.exercise)
                                               .where((e) => e != null)
                                               .cast<ExerciseDto>()
                                               .toList();
-                                          
-                                          userWorkouts.addAll(exercisesFromTemplate);
+
+                                          userWorkouts.addAll(
+                                            exercisesFromTemplate,
+                                          );
                                         });
                                         Navigator.pop(context);
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
-                                            content: Text("${template.customWorkoutName} betöltve!"),
+                                            content: Text(
+                                              "${template.customWorkoutName} betöltve!",
+                                            ),
                                           ),
                                         );
                                       },
@@ -306,10 +393,12 @@ FutureBuilder<List<CustomUserWorkoutDto>>(
                             child: Padding(
                               padding: const EdgeInsets.all(12),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         template.customWorkoutName.isNotEmpty
@@ -324,7 +413,9 @@ FutureBuilder<List<CustomUserWorkoutDto>>(
                                       const SizedBox(height: 6),
                                       Text(
                                         '${template.exercises.length} gyakorlat',
-                                        style: const TextStyle(color: Colors.white70),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
                                       ),
                                     ],
                                   ),

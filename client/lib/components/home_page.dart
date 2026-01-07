@@ -72,7 +72,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin {
+  with AutomaticKeepAliveClientMixin {
   late Future<List<UserMealDto>> _futureMeals;
   late Future<double> _todaycalories;
   late Future<double> _calorieGoal;

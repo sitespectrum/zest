@@ -99,86 +99,100 @@ namespace server.Migrations
             modelBuilder.Entity("Zest.Api.Models.Exercise", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasAnnotation("Relational:JsonPropertyName", "id");
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "category");
 
                     b.Property<string>("CategoryHu")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "category_hu");
 
                     b.Property<string>("Equipment")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "equipment");
 
                     b.Property<string>("EquipmentHu")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "equipment_hu");
 
                     b.Property<string>("Force")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "force");
 
                     b.Property<string>("ForceHu")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "force_hu");
 
-                    b.PrimitiveCollection<string>("Images")
+                    b.Property<string>("Images")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "images");
 
-                    b.PrimitiveCollection<string>("Instructions")
+                    b.Property<string>("Instructions")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "instructions");
 
-                    b.PrimitiveCollection<string>("InstructionsHu")
+                    b.Property<string>("InstructionsHu")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "instructions_hu");
 
                     b.Property<string>("Level")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "level");
 
                     b.Property<string>("LevelHu")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "level_hu");
 
                     b.Property<string>("Mechanic")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "mechanic");
 
                     b.Property<string>("MechanicHu")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "mechanic_hu");
 
                     b.Property<double>("MetValue")
                         .HasColumnType("REAL");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "name");
 
                     b.Property<string>("NameHu")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "name_hu");
 
-                    b.PrimitiveCollection<string>("PrimaryMuscles")
+                    b.Property<string>("PrimaryMuscles")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "primaryMuscles");
 
-                    b.PrimitiveCollection<string>("PrimaryMusclesHu")
+                    b.Property<string>("PrimaryMusclesHu")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "primaryMuscles_hu");
 
-                    b.PrimitiveCollection<string>("SecondaryMuscles")
+                    b.Property<string>("SecondaryMuscles")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "secondaryMuscles");
 
-                    b.PrimitiveCollection<string>("SecondaryMusclesHu")
+                    b.Property<string>("SecondaryMusclesHu")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("WorkoutId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "secondaryMuscles_hu");
 
                     b.HasKey("Id");
 
