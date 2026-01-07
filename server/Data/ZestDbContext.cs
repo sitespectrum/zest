@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Zest.Api.Models;
+using System.Text.Json;
 
 namespace Zest.Api.Data;
 
@@ -18,6 +20,30 @@ public class ZestDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var listComparer = new ValueComparer<List<string>>(
+                    (c1, c2) => c1.SequenceEqual(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList());
+
+        void ConfigureStringList(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Exercise> entity,
+                                 System.Linq.Expressions.Expression<Func<Exercise, List<string>>> propertyExpression)
+        {
+            entity.Property(propertyExpression)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>())
+                .Metadata.SetValueComparer(listComparer);
+        }
+
+        // Minden listás mezőre beállítjuk a konverziót
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.Instructions);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.InstructionsHu);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.PrimaryMuscles);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.PrimaryMusclesHu);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.SecondaryMuscles);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.SecondaryMusclesHu);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.Images);
+
         modelBuilder
             .Entity<User>()
             .Property(u => u.Gender)

@@ -434,6 +434,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                     if (results.isNotEmpty) {
                                       setState(() {
                                         searchResults = results;
+                                        anyResults = true;
                                       });
                                     } else {
                                       ScaffoldMessenger.of(
