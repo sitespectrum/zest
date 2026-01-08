@@ -62,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (userData == null) return;
 
     final nameController = TextEditingController(text: username);
-    final passwordController = TextEditingController(); // Új jelszó kontroller
+    final passwordController = TextEditingController();
     final heightController = TextEditingController(
       text: userData!['height'].toString(),
     );
@@ -99,7 +99,6 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           child: Column(
             children: [
-              // Popup fejléc
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -126,7 +125,7 @@ class _ProfilePageState extends State<ProfilePage>
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Column(
                     children: [
-                      _buildSectionHeader("Személyes adatok"),
+                      Center(child: _buildSectionHeader("Személyes adatok")),
                       _buildProfessionalInput(
                         context,
                         "Felhasználónév",
@@ -200,7 +199,7 @@ class _ProfilePageState extends State<ProfilePage>
                         ],
                       ),
 
-                      _buildSectionHeader("Cél"),
+                      Center(child: _buildSectionHeader("Cél")),
                       Column(
                         children: List.generate(
                           3,
@@ -212,20 +211,23 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
 
-                      _buildSectionHeader("Aktivitás"),
-                      Column(
-                        children: List.generate(
-                          4,
-                          (index) => _buildSelectionCard(
-                            activities[index].replaceAll('_', ' '),
-                            aSelectedIndex == index,
-                            () => setPopupState(() => aSelectedIndex = index),
-                            subText: [
-                              "Napi séta, heti 1-3 könnyű edzés.",
-                              "Heti 3-5 edzés, ülőmunka.",
-                              "Napi edzés, aktív, fizikai munka.",
-                              "Napi 2 edzés, például sportkarrier.",
-                            ][index],
+                      Center(child: _buildSectionHeader("Aktivitás")),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Column(
+                          children: List.generate(
+                            4,
+                            (index) => _buildSelectionCard(
+                              activities[index].replaceAll('_', ' '),
+                              aSelectedIndex == index,
+                              () => setPopupState(() => aSelectedIndex = index),
+                              subText: [
+                                "Napi séta, heti 1-3 könnyű edzés.",
+                                "Heti 3-5 edzés, ülőmunka.",
+                                "Napi edzés, aktív, fizikai munka.",
+                                "Napi 2 edzés, például sportkarrier.",
+                              ][index],
+                            ),
                           ),
                         ),
                       ),
@@ -250,6 +252,7 @@ class _ProfilePageState extends State<ProfilePage>
                     gSelectedIndex,
                     aSelectedIndex,
                   );
+                  // ignore: use_build_context_synchronously
                   Navigator.pop(context);
                 }),
               ),
@@ -277,10 +280,10 @@ class _ProfilePageState extends State<ProfilePage>
     final today = DateTime.now();
     int age = today.year - birth.year;
     if (today.month < birth.month ||
-        (today.month == birth.month && today.day < birth.day))
+        (today.month == birth.month && today.day < birth.day)) {
       age--;
+    }
 
-    // Details számítás
     double multiplier = [1.375, 1.55, 1.725, 1.9][aIdx];
     int calorieMod = (gIdx == 0) ? 500 : (gIdx == 2 ? -500 : 0);
     double bmr = 10 * weight + 6.25 * height - 5 * age + 5;
@@ -293,7 +296,6 @@ class _ProfilePageState extends State<ProfilePage>
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
-    // Jelszó módosítás ha meg lett adva
     if (newPassword.isNotEmpty) {
       await http.put(
         Uri.parse("$apiUrl/api/auth/updatePassword"),
@@ -305,7 +307,6 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
-    // Profil adatok mentése
     final response = await http.post(
       Uri.parse("$apiUrl/api/auth/details"),
       headers: {
@@ -333,17 +334,16 @@ class _ProfilePageState extends State<ProfilePage>
       setState(() => username = name);
       await _fetchUserData();
       ProfilePage.refreshNotifier.value++;
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Adatok sikeresen frissítve!"),
             backgroundColor: Colors.green,
           ),
         );
+      }
     }
   }
-
-  // --- UI Komponensek ---
 
   Widget _buildProfessionalInput(
     BuildContext context,
@@ -357,9 +357,9 @@ class _ProfilePageState extends State<ProfilePage>
       children: [
         Container(
           width: MediaQuery.of(context).size.width * widthFactor,
-          height: 70,
-          margin: const EdgeInsets.symmetric(vertical: 10),
-          padding: const EdgeInsets.fromLTRB(10, 15, 8, 5),
+          height: MediaQuery.of(context).size.height * 0.092,
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          padding: const EdgeInsets.fromLTRB(12, 11, 12, 5),
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 72, 72, 72),
             borderRadius: BorderRadius.circular(12),
@@ -376,8 +376,8 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ),
         Positioned(
-          top: 5,
-          left: 15,
+          top: MediaQuery.of(context).size.height * -0.003,
+          left: MediaQuery.of(context).size.width * 0.03,
           child: Text(
             label,
             style: const TextStyle(
@@ -398,34 +398,51 @@ class _ProfilePageState extends State<ProfilePage>
     VoidCallback onTap,
   ) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Container(
           width: MediaQuery.of(context).size.width * 0.43,
-          height: 70,
-          margin: const EdgeInsets.symmetric(vertical: 10),
+          height: MediaQuery.of(context).size.height * 0.092,
+          margin: const EdgeInsets.only(right: 6),
+          padding: const EdgeInsets.fromLTRB(5, 7, 0.5, 2),
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 72, 72, 72),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: TextField(
-            controller: controller,
-            readOnly: true,
-            onTap: onTap,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              prefixIcon: Icon(
-                Icons.calendar_today,
-                color: Colors.white,
-                size: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.075,
+                child: TextField(
+                  readOnly: true,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    filled: false,
+                    prefixIcon: Icon(Icons.calendar_today),
+                    prefixIconColor: Colors.white,
+                    prefixIconConstraints: BoxConstraints(
+                      minWidth: 35,
+                      minHeight: 35,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onTap: onTap,
+                ),
               ),
-              contentPadding: EdgeInsets.only(top: 15),
-            ),
+            ],
           ),
         ),
         Positioned(
-          top: 5,
-          left: 15,
+          top: MediaQuery.of(context).size.height * -0.016,
+          left: MediaQuery.of(context).size.width * 0.015,
           child: Text(
             label,
             style: const TextStyle(
@@ -449,9 +466,9 @@ class _ProfilePageState extends State<ProfilePage>
       children: [
         Container(
           width: MediaQuery.of(context).size.width * 0.43,
-          height: 70,
-          margin: const EdgeInsets.symmetric(vertical: 10),
-          padding: const EdgeInsets.only(top: 10),
+          height: MediaQuery.of(context).size.height * 0.092,
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+          padding: const EdgeInsets.fromLTRB(1, 9, 8, 5),
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 72, 72, 72),
             borderRadius: BorderRadius.circular(12),
@@ -483,8 +500,8 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ),
         Positioned(
-          top: 5,
-          left: 15,
+          top: MediaQuery.of(context).size.height * -0.003,
+          left: MediaQuery.of(context).size.width * 0.015,
           child: Text(
             label,
             style: const TextStyle(
@@ -508,8 +525,8 @@ class _ProfilePageState extends State<ProfilePage>
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 15),
-        padding: const EdgeInsets.all(15),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           color: isSelected
               ? const Color.fromARGB(255, 85, 173, 78)
@@ -542,9 +559,9 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildSectionHeader(String title) => Padding(
-    padding: const EdgeInsets.only(top: 20, left: 25, bottom: 5),
+    padding: const EdgeInsets.only(top: 10, bottom: 5),
     child: Align(
-      alignment: Alignment.centerLeft,
+      alignment: Alignment.center,
       child: Text(
         title,
         style: const TextStyle(
@@ -598,7 +615,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -755,7 +772,7 @@ class _ProfilePageState extends State<ProfilePage>
                     child: _buildZestButton("Kijelentkezés", () async {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.clear();
-                      if (mounted)
+                      if (mounted) {
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
@@ -763,6 +780,7 @@ class _ProfilePageState extends State<ProfilePage>
                           ),
                           (route) => false,
                         );
+                      }
                     }, color: const Color.fromARGB(255, 45, 45, 45)),
                   ),
                   const SizedBox(height: 30),
