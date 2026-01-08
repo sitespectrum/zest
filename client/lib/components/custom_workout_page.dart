@@ -101,139 +101,377 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                           final exerciseItem = userWorkouts[index];
                           final name =
                               exerciseItem.name ?? "Ismeretlen gyakorlat";
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 6,
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 45, 45, 45),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      // ignore: deprecated_member_use
-                                      color: Colors.black.withOpacity(0.5),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        name,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+
+                          return GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return StatefulBuilder(
+                                    builder: (context, setStateDialog) {
+                                      return Dialog(
+                                        insetPadding: const EdgeInsets.all(20),
+                                        backgroundColor: const Color.fromARGB(
+                                          255,
+                                          30,
+                                          30,
+                                          30,
                                         ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text.rich(
-                                              TextSpan(
-                                                style: const TextStyle(
-                                                  color: Colors.white70,
-                                                  fontSize: 14,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(
+                                              255,
+                                              40,
+                                              40,
+                                              40,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.white24,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              SingleChildScrollView(
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    if (exerciseItem
+                                                        .images
+                                                        .isNotEmpty)
+                                                      Container(
+                                                        height:
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).size.height *
+                                                            0.5,
+                                                        width: double.infinity,
+                                                        margin: EdgeInsets.only(
+                                                          bottom: 16,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                          border: Border.all(
+                                                            color:
+                                                                Colors.white24,
+                                                          ),
+                                                        ),
+                                                        child: ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                          child: Image.network(
+                                                            "https://raw.githubusercontent.com/sitespectrum/zest_exercises/main/exercises/${exerciseItem.images[0]}",
+                                                            fit: BoxFit.contain,
+                                                            loadingBuilder:
+                                                                (
+                                                                  context,
+                                                                  child,
+                                                                  loadingProgress,
+                                                                ) {
+                                                                  if (loadingProgress ==
+                                                                      null)
+                                                                    return child;
+                                                                  return const Center(
+                                                                    child:
+                                                                        CircularProgressIndicator(),
+                                                                  );
+                                                                },
+                                                            errorBuilder:
+                                                                (
+                                                                  context,
+                                                                  error,
+                                                                  stackTrace,
+                                                                ) {
+                                                                  return const Center(
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .fitness_center,
+                                                                      color: Colors
+                                                                          .white24,
+                                                                      size: 50,
+                                                                    ),
+                                                                  );
+                                                                },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    Text(
+                                                      name,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 16),
+                                                    const Text(
+                                                      "Leírás",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        decoration:
+                                                            TextDecoration
+                                                                .underline,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Flexible(
+                                                      child: SingleChildScrollView(
+                                                        child: Container(
+                                                          width:
+                                                              double.infinity,
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                12,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                const Color.fromARGB(
+                                                                  255,
+                                                                  30,
+                                                                  30,
+                                                                  30,
+                                                                ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                            border: Border.all(
+                                                              color: Colors
+                                                                  .white24,
+                                                            ),
+                                                          ),
+                                                          child: Text(
+                                                            exerciseItem
+                                                                .instructions
+                                                                .join('\n\n'),
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 15,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 16),
+                                                  ],
                                                 ),
-                                                children: [
-                                                  const TextSpan(
-                                                    text: 'Category: ',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white,
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor:
+                                                      const Color.fromARGB(
+                                                        255,
+                                                        30,
+                                                        30,
+                                                        30,
+                                                      ),
+                                                  side: const BorderSide(
+                                                    color: Colors.white24,
+                                                    width: 1,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: const Text(
+                                                  "Bezárás",
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 6,
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(
+                                      255,
+                                      45,
+                                      45,
+                                      45,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.white24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        // ignore: deprecated_member_use
+                                        color: Colors.black.withOpacity(0.5),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text.rich(
+                                                TextSpan(
+                                                  style: const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 14,
+                                                  ),
+                                                  children: [
+                                                    const TextSpan(
+                                                      text: 'Category: ',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  TextSpan(
-                                                    text:
-                                                        '${exerciseItem.category} | ',
-                                                  ),
-
-                                                  const TextSpan(
-                                                    text: 'Equipment: ',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white,
+                                                    TextSpan(
+                                                      text:
+                                                          '${exerciseItem.category} | ',
                                                     ),
-                                                  ),
 
-                                                  TextSpan(
-                                                    text:
-                                                        '${exerciseItem.equipment} | ',
-                                                  ),
-
-                                                  const TextSpan(
-                                                    text: 'Force: ',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white,
+                                                    const TextSpan(
+                                                      text: 'Equipment: ',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  TextSpan(
-                                                    text:
-                                                        '${exerciseItem.force ?? "-"} | ',
-                                                  ),
 
-                                                  const TextSpan(
-                                                    text: 'Level: ',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white,
+                                                    TextSpan(
+                                                      text:
+                                                          '${exerciseItem.equipment} | ',
                                                     ),
-                                                  ),
-                                                  TextSpan(
-                                                    text:
-                                                        '${exerciseItem.level} | ',
-                                                  ),
 
-                                                  const TextSpan(
-                                                    text: 'Mechanic: ',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white,
+                                                    const TextSpan(
+                                                      text: 'Force: ',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  TextSpan(
-                                                    text:
-                                                        '${exerciseItem.mechanic ?? "-"}',
-                                                  ),
-                                                ],
+                                                    TextSpan(
+                                                      text:
+                                                          '${exerciseItem.force ?? "-"} | ',
+                                                    ),
+
+                                                    const TextSpan(
+                                                      text: 'Level: ',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text:
+                                                          '${exerciseItem.level} | ',
+                                                    ),
+
+                                                    const TextSpan(
+                                                      text: 'Mechanic: ',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text:
+                                                          '${exerciseItem.mechanic ?? "-"} | ',
+                                                    ),
+
+                                                    const TextSpan(
+                                                      text: 'Primary muscle: ',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text: exerciseItem
+                                                          .primaryMuscles
+                                                          .join(", "),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Center(
+                                          child: TextButton(
+                                            onPressed: () => {
+                                              setState(() {
+                                                userWorkouts.removeAt(index);
+                                              }),
+                                            },
+                                            child: const Text(
+                                              "Törlés",
+                                              style: TextStyle(
+                                                color: Colors.redAccent,
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      Center(
-                                        child: TextButton(
-                                          onPressed: () => {
-                                            setState(() {
-                                              userWorkouts.removeAt(index);
-                                            }),
-                                          },
-                                          child: const Text(
-                                            "Törlés",
-                                            style: TextStyle(
-                                              color: Colors.redAccent,
-                                            ),
-                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

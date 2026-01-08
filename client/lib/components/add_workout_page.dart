@@ -433,7 +433,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  '${exercise.category} | ${exercise.equipment} | ${exercise.force} | ${exercise.level} | ${exercise.mechanic}',
+                                                  '${exercise.category} | ${exercise.equipment} | ${exercise.force} | ${exercise.level} | ${exercise.mechanic} | ${exercise.primaryMuscles.join(", ")}',
                                                   style: const TextStyle(
                                                     color: Colors.white70,
                                                   ),
