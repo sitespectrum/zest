@@ -10,6 +10,7 @@ import '../models/meal.dart';
 import 'add_meal_page.dart';
 import '../constants.dart';
 import 'custom_meal_page.dart';
+import 'profile_page.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -101,6 +102,20 @@ class _HealthPageState extends State<HealthPage>
     initializeDateFormatting('hu_HU', null);
     loadNutrients();
     loadMacros();
+
+    ProfilePage.refreshNotifier.addListener(_handleProfileUpdate);
+  }
+
+  @override
+  void dispose() {
+    ProfilePage.refreshNotifier.removeListener(_handleProfileUpdate);
+    super.dispose();
+  }
+
+  void _handleProfileUpdate() {
+    loadMacros();
+    loadNutrients();
+    _loadUser();
   }
 
   @override

@@ -31,7 +31,7 @@ class _CMealPageState extends State<CMealPage> {
       (sum, meal) => sum + meal.calories,
     );
     final totalProtein = meals.fold<double>(
-      0.0,
+      0.0, 
       (sum, meal) => sum + meal.protein,
     );
     final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
