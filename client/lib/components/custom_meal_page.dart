@@ -920,6 +920,7 @@ class _CMealPageState extends State<CMealPage> {
                                                 try {
                                                   final prefs =
                                                       await SharedPreferences.getInstance();
+                                                  print(prefs);
                                                   final userId = prefs.getInt(
                                                     'userId',
                                                   );

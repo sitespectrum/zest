@@ -141,117 +141,21 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                           ),
                                           child: Column(
                                             children: [
-                                              SingleChildScrollView(
-                                                child: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    if (exerciseItem
-                                                        .images
-                                                        .isNotEmpty)
-                                                      Container(
-                                                        height:
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).size.height *
-                                                            0.5,
-                                                        width: double.infinity,
-                                                        margin: EdgeInsets.only(
-                                                          bottom: 16,
-                                                        ),
-                                                        decoration: BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                          border: Border.all(
-                                                            color:
-                                                                Colors.white24,
-                                                          ),
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                          child: Image.network(
-                                                            "https://raw.githubusercontent.com/sitespectrum/zest_exercises/main/exercises/${exerciseItem.images[0]}",
-                                                            fit: BoxFit.contain,
-                                                            loadingBuilder:
-                                                                (
-                                                                  context,
-                                                                  child,
-                                                                  loadingProgress,
-                                                                ) {
-                                                                  if (loadingProgress ==
-                                                                      null)
-                                                                    return child;
-                                                                  return const Center(
-                                                                    child:
-                                                                        CircularProgressIndicator(),
-                                                                  );
-                                                                },
-                                                            errorBuilder:
-                                                                (
-                                                                  context,
-                                                                  error,
-                                                                  stackTrace,
-                                                                ) {
-                                                                  return const Center(
-                                                                    child: Icon(
-                                                                      Icons
-                                                                          .fitness_center,
-                                                                      color: Colors
-                                                                          .white24,
-                                                                      size: 50,
-                                                                    ),
-                                                                  );
-                                                                },
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    Text(
-                                                      name,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 16),
-                                                    const Text(
-                                                      "Leírás",
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 17,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        decoration:
-                                                            TextDecoration
-                                                                .underline,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 12),
-                                                    Flexible(
-                                                      child: SingleChildScrollView(
-                                                        child: Container(
+                                              Expanded(
+                                                child: SingleChildScrollView(
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      if (exerciseItem
+                                                          .images
+                                                          .isNotEmpty)
+                                                        Container(
                                                           width:
                                                               double.infinity,
-                                                          padding:
-                                                              const EdgeInsets.all(
-                                                                12,
-                                                              ),
+                                                          clipBehavior:
+                                                              Clip.hardEdge,
                                                           decoration: BoxDecoration(
-                                                            color:
-                                                                const Color.fromARGB(
-                                                                  255,
-                                                                  30,
-                                                                  30,
-                                                                  30,
-                                                                ),
                                                             borderRadius:
                                                                 BorderRadius.circular(
                                                                   12,
@@ -261,22 +165,130 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                   .white24,
                                                             ),
                                                           ),
-                                                          child: Text(
-                                                            exerciseItem
-                                                                .instructions
-                                                                .join('\n\n'),
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 15,
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
                                                                 ),
+                                                            child: Transform.scale(
+                                                              scale: 1,
+                                                              child: Image.network(
+                                                                "https://raw.githubusercontent.com/sitespectrum/zest_exercises/main/exercises/${exerciseItem.images[0]}",
+                                                                fit: BoxFit
+                                                                    .contain,
+                                                                loadingBuilder:
+                                                                    (
+                                                                      context,
+                                                                      child,
+                                                                      loadingProgress,
+                                                                    ) {
+                                                                      if (loadingProgress ==
+                                                                          null)
+                                                                        return child;
+                                                                      return const Center(
+                                                                        child:
+                                                                            CircularProgressIndicator(),
+                                                                      );
+                                                                    },
+                                                                errorBuilder:
+                                                                    (
+                                                                      context,
+                                                                      error,
+                                                                      stackTrace,
+                                                                    ) {
+                                                                      return const Center(
+                                                                        child: Icon(
+                                                                          Icons
+                                                                              .fitness_center,
+                                                                          color:
+                                                                              Colors.white24,
+                                                                          size:
+                                                                              50,
+                                                                        ),
+                                                                      );
+                                                                    },
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      const SizedBox(
+                                                        height: 20,
+                                                      ),
+                                                      Text(
+                                                        name,
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 16,
+                                                      ),
+                                                      const Text(
+                                                        "Leírás",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .underline,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 20,
+                                                      ),
+                                                      Flexible(
+                                                        child: SingleChildScrollView(
+                                                          child: Container(
+                                                            width:
+                                                                double.infinity,
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  12,
+                                                                ),
+                                                            decoration: BoxDecoration(
+                                                              color:
+                                                                  const Color.fromARGB(
+                                                                    255,
+                                                                    30,
+                                                                    30,
+                                                                    30,
+                                                                  ),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                              border: Border.all(
+                                                                color: Colors
+                                                                    .white24,
+                                                              ),
+                                                            ),
+                                                            child: Text(
+                                                              exerciseItem
+                                                                  .instructions
+                                                                  .join('\n\n'),
+                                                              style:
+                                                                  const TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        15,
+                                                                  ),
+                                                            ),
                                                           ),
                                                         ),
                                                       ),
-                                                    ),
-                                                    const SizedBox(height: 16),
-                                                  ],
+                                                      const SizedBox(
+                                                        height: 16,
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                               ElevatedButton(
