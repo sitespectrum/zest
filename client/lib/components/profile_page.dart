@@ -21,6 +21,7 @@ class _ProfilePageState extends State<ProfilePage>
   bool loggedIn = false;
   Map<String, dynamic>? userData;
   bool isLoading = true;
+  String currentLanguage = "Magyar";
 
   @override
   bool get wantKeepAlive => true;
@@ -75,6 +76,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     DateTime selectedBirth = DateTime.parse(userData!['birth']);
     String selectedGender = userData!['gender'] == 0 ? "Férfi" : "Nő";
+    String selectedLanguage = currentLanguage;
     int gSelectedIndex = userData!['goal'];
     int aSelectedIndex = userData!['activity'];
 
@@ -125,6 +127,14 @@ class _ProfilePageState extends State<ProfilePage>
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Column(
                     children: [
+                      Center(
+                        child: _buildProfessionalLanguageInput(
+                          context,
+                          "Nyelv",
+                          selectedLanguage,
+                          (val) => setPopupState(() => selectedLanguage = val!),
+                        ),
+                      ),
                       Center(child: _buildSectionHeader("Személyes adatok")),
                       _buildProfessionalInput(
                         context,
@@ -231,7 +241,6 @@ class _ProfilePageState extends State<ProfilePage>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -240,7 +249,11 @@ class _ProfilePageState extends State<ProfilePage>
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: _buildZestButton("Módosítások mentése", () async {
-                  await _saveAndCalculate(
+                  setState(() {
+                    currentLanguage = selectedLanguage;
+                  });
+
+                  bool shouldClose = await _saveAndCalculate(
                     nameController.text,
                     passwordController.text,
                     heightController.text,
@@ -252,8 +265,10 @@ class _ProfilePageState extends State<ProfilePage>
                     gSelectedIndex,
                     aSelectedIndex,
                   );
-                  // ignore: use_build_context_synchronously
-                  Navigator.pop(context);
+
+                  if (shouldClose && context.mounted) {
+                    Navigator.pop(context);
+                  }
                 }),
               ),
             ],
@@ -263,7 +278,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Future<void> _saveAndCalculate(
+  Future<bool> _saveAndCalculate(
     String name,
     String newPassword,
     String h,
@@ -296,17 +311,6 @@ class _ProfilePageState extends State<ProfilePage>
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
-    if (newPassword.isNotEmpty) {
-      await http.put(
-        Uri.parse("$apiUrl/api/auth/updatePassword"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"newPassword": newPassword}),
-      );
-    }
-
     final response = await http.post(
       Uri.parse("$apiUrl/api/auth/details"),
       headers: {
@@ -334,14 +338,80 @@ class _ProfilePageState extends State<ProfilePage>
       setState(() => username = name);
       await _fetchUserData();
       ProfilePage.refreshNotifier.value++;
+
+      if (newPassword.isNotEmpty) {
+        await http.put(
+          Uri.parse("$apiUrl/api/auth/updatePassword"),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token",
+          },
+          body: jsonEncode({"newPassword": newPassword}),
+        );
+        await _logout();
+        return false;
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text("Adatok sikeresen frissítve!"),
-            backgroundColor: Colors.green,
+            showCloseIcon: true,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
+            duration: Duration(milliseconds: 1800),
+            animation: CurvedAnimation(
+              parent: kAlwaysCompleteAnimation,
+              curve: Curves.easeInOut,
+            ),
           ),
         );
       }
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    try {
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/auth/logout"),
+        headers: {
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint("Sikeres kijelentkezés a szerveren.");
+      } else {
+        debugPrint(
+          "Sikertelen kijelentkezés: ${response.statusCode} ${response.body}",
+        );
+      }
+    } catch (e) {
+      debugPrint("Hiba a kijelentkezés során: $e");
+    }
+
+    await prefs.remove("username");
+    await prefs.remove("jwt_token");
+    await prefs.remove("accessToken");
+    await prefs.remove("refreshToken");
+
+    setState(() {
+      loggedIn = false;
+      username = null;
+    });
+
+    if (context.mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainPage()),
+        (route) => false,
+      );
     }
   }
 
@@ -492,6 +562,65 @@ class _ProfilePageState extends State<ProfilePage>
                 value: "Nő",
                 child: Text(
                   "Nő",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+            ],
+            onChanged: onChange,
+          ),
+        ),
+        Positioned(
+          top: MediaQuery.of(context).size.height * -0.003,
+          left: MediaQuery.of(context).size.width * 0.015,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfessionalLanguageInput(
+    BuildContext context,
+    String label,
+    String value,
+    ValueChanged<String?> onChange,
+  ) {
+    return Stack(
+      children: [
+        Container(
+          width: MediaQuery.of(context).size.width * 0.43,
+          height: MediaQuery.of(context).size.height * 0.092,
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+          padding: const EdgeInsets.fromLTRB(1, 9, 8, 5),
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 72, 72, 72),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: value,
+            dropdownColor: const Color.fromARGB(255, 72, 72, 72),
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 10),
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: "Magyar",
+                child: Text(
+                  "Magyar",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+              DropdownMenuItem(
+                value: "English",
+                child: Text(
+                  "English",
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
@@ -676,117 +805,104 @@ class _ProfilePageState extends State<ProfilePage>
       backgroundColor: const Color.fromARGB(255, 58, 58, 58),
       body: isLoading
           ? const Center(
-              child: CircularProgressIndicator(
-                color: Color.fromARGB(255, 85, 173, 78),
-              ),
-            )
+            child: CircularProgressIndicator(
+              color: Color.fromARGB(255, 85, 173, 78),
+            ),
+          )
           : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  PreferredSize(
-                    preferredSize: const Size.fromHeight(60),
-                    child: Container(
-                      margin: const EdgeInsets.all(6),
-                      child: AppBar(
-                        title: const Text(
-                          "Profil",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                          ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PreferredSize(
+                  preferredSize: const Size.fromHeight(60),
+                  child: Container(
+                    margin: const EdgeInsets.all(6),
+                    child: AppBar(
+                      title: const Text(
+                        "Profil",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
                         ),
-                        automaticallyImplyLeading: false,
-                        backgroundColor: Colors.transparent,
                       ),
+                      automaticallyImplyLeading: false,
+                      backgroundColor: Colors.transparent,
                     ),
                   ),
-                  if (userData != null) ...[
-                    _buildDisplayCard(
-                      title: "Személyes adatok",
-                      rows: [
-                        _buildInfoRow(
-                          Icons.person_outline,
-                          "Felhasználó",
-                          username ?? "",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.height,
-                          "Magasság",
-                          "${userData!['height']} cm",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.fitness_center,
-                          "Súly",
-                          "${userData!['weight']} kg",
-                        ),
-                      ],
-                    ),
-                    _buildDisplayCard(
-                      title: "Napi célok",
-                      rows: [
-                        _buildInfoRow(
-                          Icons.local_fire_department,
-                          "Kalória",
-                          "${userData!['calorieGoal'].toInt()} kcal",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.egg_alt,
-                          "Fehérje",
-                          "${userData!['proteinGoal'].toInt()} g",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.bakery_dining,
-                          "Szénhidrát",
-                          "${userData!['carbsGoal'].toInt()} g",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.opacity,
-                          "Zsír",
-                          "${userData!['fatGoal'].toInt()} g",
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
+                ),
+                if (userData != null) ...[
+                  _buildDisplayCard(
+                    title: "Személyes adatok",
+                    rows: [
+                      _buildInfoRow(
+                        Icons.person_outline,
+                        "Felhasználó",
+                        username ?? "",
                       ),
-                      child: _buildZestButton(
-                        "Adatok módosítása",
-                        _showEditPopup,
+                      const Divider(color: Colors.white12),
+                      _buildInfoRow(
+                        Icons.height,
+                        "Magasság",
+                        "${userData!['height']} cm",
                       ),
-                    ),
-                  ],
+                      const Divider(color: Colors.white12),
+                      _buildInfoRow(
+                        Icons.fitness_center,
+                        "Súly",
+                        "${userData!['weight']} kg",
+                      ),
+                    ],
+                  ),
+                  _buildDisplayCard(
+                    title: "Napi célok",
+                    rows: [
+                      _buildInfoRow(
+                        Icons.local_fire_department,
+                        "Kalória",
+                        "${userData!['calorieGoal'].toInt()} kcal",
+                      ),
+                      const Divider(color: Colors.white12),
+                      _buildInfoRow(
+                        Icons.egg_alt,
+                        "Fehérje",
+                        "${userData!['proteinGoal'].toInt()} g",
+                      ),
+                      const Divider(color: Colors.white12),
+                      _buildInfoRow(
+                        Icons.bakery_dining,
+                        "Szénhidrát",
+                        "${userData!['carbsGoal'].toInt()} g",
+                      ),
+                      const Divider(color: Colors.white12),
+                      _buildInfoRow(
+                        Icons.opacity,
+                        "Zsír",
+                        "${userData!['fatGoal'].toInt()} g",
+                      ),
+                    ],
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 10,
                     ),
-                    child: _buildZestButton("Kijelentkezés", () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.clear();
-                      if (mounted) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MainPage(),
-                          ),
-                          (route) => false,
-                        );
-                      }
-                    }, color: const Color.fromARGB(255, 45, 45, 45)),
+                    child: _buildZestButton("Adatok módosítása", _showEditPopup),
                   ),
-                  const SizedBox(height: 30),
                 ],
-              ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: _buildZestButton("Kijelentkezés", () async {
+                    await _logout();
+                  }, color: const Color.fromARGB(255, 45, 45, 45)),
+                ),
+                const SizedBox(height: 30),
+              ],
             ),
+          ),
     );
   }
 }
