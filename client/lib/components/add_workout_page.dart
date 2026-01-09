@@ -36,6 +36,10 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   bool isLoading = false;
   bool anyResults = false;
   Timer? _debounce;
+  String? selectedFilter;
+  List<String> muscleFilters = [];
+  bool isFilterLoading = true;
+  Set<int> _topExerciseIds = {};
 
   List<ExerciseDto> userWorkouts = [];
   List<ExerciseDto> templateWorkouts = [];
@@ -69,12 +73,128 @@ class _AddMealPageState extends State<AddWorkoutPage> {
     super.initState();
     futureExercises = fetchUserWorkouts();
     loadTopExercises();
+    fetchMuscleGroups();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> fetchMuscleGroups() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/Workout/muscle-groups"),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          muscleFilters = data.cast<String>().toList();
+          isFilterLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Hiba az izomcsoportok betöltésekor");
+      setState(() {
+        isFilterLoading = false;
+      });
+    }
+  }
+
+  Future<void> _filterByMuscle(String muscle) async {
+    setState(() {
+      anyResults = true;
+      isLoading = true;
+    });
+
+    try {
+      final uri = Uri.parse(
+        '$apiUrl/api/Workout/filter-by-muscle?muscle=$muscle',
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> decoded = jsonDecode(response.body);
+        final rawResults = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
+
+        final sortedResults = _sortWithTopPriority(rawResults);
+
+        setState(() {
+          searchResults = sortedResults;
+        });
+      } else {
+        setState(() {
+          searchResults = [];
+        });
+      }
+    } catch (e) {
+      print("Szűrési hiba: $e");
+      setState(() => searchResults = []);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Widget _buildFilterList() {
+    if (isFilterLoading) {
+      return const SizedBox(
+        height: 50,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    if (muscleFilters.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: muscleFilters.length,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemBuilder: (context, index) {
+          final filterName = muscleFilters[index];
+          final isSelected = selectedFilter == filterName;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(filterName),
+              selected: isSelected,
+              onSelected: (bool selected) {
+                setState(() {
+                  if (isSelected) {
+                    selectedFilter = null;
+                    _controller.clear();
+                    loadTopExercises();
+                    anyResults = false;
+                  } else {
+                    selectedFilter = filterName;
+                    _controller.clear();
+                    _filterByMuscle(filterName);
+                  }
+                });
+              },
+              backgroundColor: const Color.fromARGB(255, 45, 45, 45),
+              selectedColor: const Color.fromARGB(255, 85, 173, 78),
+              checkmarkColor: Colors.white,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected ? Colors.transparent : Colors.white24,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
@@ -146,10 +266,12 @@ class _AddMealPageState extends State<AddWorkoutPage> {
       final sorted = exerciseCounts.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
 
-      final topIds = sorted
+      _topExerciseIds = sorted
           .take(min(10, sorted.length))
           .map((e) => e.key)
           .toSet();
+
+      final topIds = _topExerciseIds;
 
       final List<ExerciseDto> topList = [];
       final Set<int> addedIds = {};
@@ -176,10 +298,31 @@ class _AddMealPageState extends State<AddWorkoutPage> {
     }
   }
 
+  List<ExerciseDto> _sortWithTopPriority(List<ExerciseDto> exercises) {
+    List<ExerciseDto> topPart = [];
+    List<ExerciseDto> otherPart = [];
+
+    for (var ex in exercises) {
+      if (_topExerciseIds.contains(ex.id)) {
+        topPart.add(ex);
+      } else {
+        otherPart.add(ex);
+      }
+    }
+
+    otherPart.sort((a, b) => a.name.compareTo(b.name));
+
+    return [...topPart, ...otherPart];
+  }
+
   Future<void> _searchExercises(String query) async {
     final q = query.trim();
     if (q.isEmpty) {
-      loadTopExercises();
+      if (selectedFilter != null) {
+        _filterByMuscle(selectedFilter!);
+      } else {
+        loadTopExercises();
+      }
       return;
     }
 
@@ -193,16 +336,21 @@ class _AddMealPageState extends State<AddWorkoutPage> {
       final response = await http.get(uri);
 
       if (response.statusCode != 200) {
-        print("Hiba: Státuszkód ${response.statusCode}");
+        final List<dynamic> decoded = jsonDecode(response.body);
+        var results = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
+
+        if (selectedFilter != null) {
+          results = results.where((ex) {
+            return ex.primaryMusclesHu.any(
+              (m) => m.trim().toLowerCase() == selectedFilter!.toLowerCase(),
+            );
+          }).toList();
+        }
+
+        setState(() => searchResults = results);
+      } else {
         setState(() => searchResults = []);
-        return;
       }
-
-      final List<dynamic> decoded = jsonDecode(response.body);
-
-      final results = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
-
-      setState(() => searchResults = results);
     } catch (e) {
       print("Keresési hiba: $e");
       setState(() => searchResults = []);
@@ -319,6 +467,8 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                       iconTheme: const IconThemeData(color: Colors.white),
                     ),
                   ),
+
+                  _buildFilterList(),
 
                   !anyResults
                       ? ListView.builder(

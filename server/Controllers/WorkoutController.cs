@@ -239,4 +239,36 @@ public class WorkoutController : ControllerBase
 
         return Ok(workouts);
     }
+
+    [HttpGet("muscle-groups")]
+    public async Task<IActionResult> GetMuscleGroups()
+    {
+        var exercises = await _context.Exercises.ToListAsync();
+
+        var muscles = exercises
+            .Where(e => e.PrimaryMuscles != null)
+            .SelectMany(e => e.PrimaryMuscles)
+            .Select(m => m.Trim())
+            .Distinct()
+            .OrderBy(m => m)
+            .ToList();
+
+        return Ok(muscles);
+    }
+
+    [HttpGet("filter-by-muscle")]
+    public async Task<IActionResult> FilterByMuscle([FromQuery] string muscle)
+    {
+        if(string.IsNullOrWhiteSpace(muscle))
+            return BadRequest("Adj meg egy izomcsoportot!");
+        
+        var muscleLower = muscle.ToLower().Trim();
+
+        var exercises = await _context.Exercises.ToListAsync();
+
+        var filtered = exercises
+            .Where(e => e.PrimaryMuscles != null && e.PrimaryMuscles.Any(m => m.ToLower().Trim() == muscleLower)).ToList();
+
+        return Ok(filtered);
+    }
 }
