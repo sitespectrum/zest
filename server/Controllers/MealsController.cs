@@ -15,6 +15,9 @@ using Microsoft.AspNetCore.Authorization;
 using System.Text.Json.Serialization;
 using server.Migrations;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
+
+namespace ZestApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -22,152 +25,255 @@ public class MealsController : ControllerBase
 {
     private readonly ZestDbContext _context;
 
+    private static string? _huSessionCookie;
+    private static string? _enSessionCookie;
+
     public MealsController(ZestDbContext context)
     {
         _context = context;
     }
 
-    [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string q)
+    private async Task<string> GetFreshSessionCookie(string baseUrl)
     {
-        if (string.IsNullOrWhiteSpace(q))
-            return Ok(new List<object>());
+        try
+        {
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var client = new HttpClient(handler);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
+            var response = await client.GetAsync(baseUrl);
+
+            if (response.Headers.TryGetValues("Set-Cookie", out var cookies))
+            {
+                foreach (var cookie in cookies)
+                {
+                    var match = Regex.Match(cookie, @"myPHP83SESSID=([^;]+)");
+                    if (match.Success)
+                    {
+                        var sessionId = match.Groups[1].Value;
+                        Console.WriteLine($"[MealsController] Új session ID szerezve innen: {baseUrl} -> {sessionId}");
+                        return $"myPHP83SESSID={sessionId}";
+                    }
+                }
+            }
+            Console.WriteLine($"[MealsController] Nem sikerült sütit szerezni innen: {baseUrl}");
+            return "";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MealsController] Hiba a süti lekérésekor: {ex.Message}");
+            return "";
+        }
+    }
+
+    private async Task ForceLanguage(string baseUrl, string lang, string cookie)
+    {
+        if (string.IsNullOrEmpty(cookie)) return;
 
         try
         {
-            using var client = new HttpClient();
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var client = new HttpClient(handler);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+            var url = $"{baseUrl}/log_lang.php?lang={lang}";
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+            request.Headers.Add("Cookie", $"{cookie}; kb_lang={lang}");
+
+            await client.SendAsync(request);
+            Console.WriteLine($"[MealsController] Nyelv kényszerítve ({lang}) a sütihez: {cookie}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Nyelvváltási hiba: {ex.Message}");
+        }
+    }
+
+    private async Task<string> GetValidCookieForLang(string lang)
+    {
+        if (lang == "hu")
+        {
+            if (string.IsNullOrEmpty(_huSessionCookie))
+            {
+                _huSessionCookie = await GetFreshSessionCookie("https://kaloriabazis.hu");
+                await ForceLanguage("https://kaloriabazis.hu", "hu", _huSessionCookie);
+            }
+            return _huSessionCookie;
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(_enSessionCookie))
+            {
+                _enSessionCookie = await GetFreshSessionCookie("https://caloriebase.com");
+                await ForceLanguage("https://caloriebase.com", "en", _enSessionCookie);
+            }
+            return _enSessionCookie;
+        }
+    }
+
+    [HttpGet("husearch")]
+    public async Task<IActionResult> HUSearch([FromQuery] string q)
+    {
+        if (string.IsNullOrWhiteSpace(q)) return Ok(new List<object>());
+
+        try
+        {
+            var cookie = await GetValidCookieForLang("hu");
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            client.DefaultRequestHeaders.Add("Accept-Language", "hu-HU,hu;q=0.9");
 
             var uri = new UriBuilder("https://kaloriabazis.hu/getfood.php");
             var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
             query["q"] = q;
             query["p"] = "1";
             query["s"] = "8";
-            query["expropsearch_id"] = "0";
-            query["expropsearch_inc"] = "0";
-            query["all_public_food"] = "0";
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-
-            request.Headers.Add("Cookie", "myPHP83SESSID=mZWfTItWvFpUzpjbmc43NA2tyM");
-
+            request.Headers.Add("Cookie", $"{cookie}; kb_lang=hu");
             request.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
 
-            Console.WriteLine($"Keresés válasz ({response.StatusCode}): {content.Substring(0, Math.Min(content.Length, 200))}...");
+            if (!response.IsSuccessStatusCode) return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
 
-            if (!response.IsSuccessStatusCode)
-                return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
-
-            try
-            {
-                var parsed = System.Text.Json.JsonSerializer.Deserialize<object>(content);
-                return Ok(parsed);
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                Console.WriteLine("HIBA: A válasz nem JSON volt! Valószínűleg lejárt a Cookie vagy hiányzik a header.");
-                return Ok(new List<object>());
-            }
+            try { return Ok(JsonSerializer.Deserialize<object>(content)); }
+            catch { return Ok(new List<object>()); }
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Szerver hiba: {ex.Message}");
-        }
+        catch (Exception ex) { return StatusCode(500, $"Szerver hiba: {ex.Message}"); }
     }
 
-    [HttpGet("get-units")]
-    public async Task<IActionResult> GetUnits([FromQuery] string foodId)
+    [HttpGet("ensearch")]
+    public async Task<IActionResult> ENSearch([FromQuery] string q)
     {
-        if (string.IsNullOrWhiteSpace(foodId))
-            return BadRequest(new { error = "foodId kötelező." });
+        if (string.IsNullOrWhiteSpace(q)) return Ok(new List<object>());
 
         try
         {
-            using var client = new HttpClient();
+            var cookie = await GetValidCookieForLang("en");
 
-            var uri = new UriBuilder("https://kaloriabazis.hu/food.php");
-            Console.WriteLine($"[DEBUG] Hívott URL: {uri}");
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+
+            var uri = new UriBuilder("https://caloriebase.com/getfood.php");
             var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
-            query["show"] = "getmenew";
-            query["id"] = foodId;
-            query["food_id_special"] = "0";
-            query["food_id_directly"] = "1";
+            query["q"] = q;
+            query["p"] = "1";
+            query["s"] = "8";
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=mZWfTItWvFpUzpjbmc43NA2tyM");
+            request.Headers.Add("Cookie", $"{cookie}; kb_lang=en");
+            request.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
 
-            if (!response.IsSuccessStatusCode)
-                return StatusCode((int)response.StatusCode, new { error = "Hiba a külső API-nál." });
+            if (!response.IsSuccessStatusCode) return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
 
-            if (content.TrimStart().StartsWith("<"))
-            {
-                return StatusCode(500, new { error = "A külső API nem JSON-t adott vissza (valószínűleg lejárt a session cookie)." });
-            }
+            try { return Ok(JsonSerializer.Deserialize<object>(content)); }
+            catch { return Ok(new List<object>()); }
+        }
+        catch (Exception ex) { return StatusCode(500, $"Szerver hiba: {ex.Message}"); }
+    }
 
-            using var jsonDoc = System.Text.Json.JsonDocument.Parse(content);
+    [HttpGet("hu-get-units")]
+    public async Task<IActionResult> HUGetUnits([FromQuery] string foodId)
+    {
+        var cookie = await GetValidCookieForLang("hu");
+        return await GetUnitsInternal("https://kaloriabazis.hu", foodId, cookie, "hu");
+    }
+
+    [HttpGet("en-get-units")]
+    public async Task<IActionResult> ENGetUnits([FromQuery] string foodId)
+    {
+        var cookie = await GetValidCookieForLang("en");
+        return await GetUnitsInternal("https://caloriebase.com", foodId, cookie, "en");
+    }
+
+    private async Task<IActionResult> GetUnitsInternal(string baseUrl, string foodId, string cookie, string lang)
+    {
+        if (string.IsNullOrWhiteSpace(foodId)) return BadRequest(new { error = "foodId kötelező." });
+        try
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            client.DefaultRequestHeaders.Add("Accept-Language", lang == "hu" ? "hu-HU,hu;q=0.9" : "en-US,en;q=0.9");
+
+            var uri = new UriBuilder($"{baseUrl}/food.php");
+            var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+            query["show"] = "getmenew";
+            query["id"] = foodId;
+            query["food_id_directly"] = "1";
+            uri.Query = query.ToString();
+
+            var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
+            request.Headers.Add("Cookie", $"{cookie}; kb_lang={lang}");
+
+            var response = await client.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode) return StatusCode((int)response.StatusCode, new { error = "API Hiba" });
+            if (content.TrimStart().StartsWith("<")) return StatusCode(500, new { error = "Nem JSON válasz" });
+
+            using var jsonDoc = JsonDocument.Parse(content);
             var root = jsonDoc.RootElement;
 
             if (root.TryGetProperty("getme", out var getmeElement))
-            {
-                var list = System.Text.Json.JsonSerializer.Deserialize<List<object>>(getmeElement.GetRawText());
-                return Ok(list);
-            }
+                return Ok(JsonSerializer.Deserialize<List<object>>(getmeElement.GetRawText()));
 
-            if (root.ValueKind == System.Text.Json.JsonValueKind.Array)
-            {
-                var list = System.Text.Json.JsonSerializer.Deserialize<List<object>>(root.GetRawText());
-                return Ok(list);
-            }
+            if (root.ValueKind == JsonValueKind.Array)
+                return Ok(JsonSerializer.Deserialize<List<object>>(root.GetRawText()));
 
             return Ok(new { raw = root });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { error = $"Szerver hiba: {ex.Message}" });
-        }
+        catch (Exception ex) { return StatusCode(500, new { error = ex.Message }); }
     }
 
-    [HttpGet("get-by-barcode")]
-    public async Task<IActionResult> GetByBarcode([FromQuery] string code)
+    [HttpGet("hu-get-by-barcode")]
+    public async Task<IActionResult> HUGetByBarcode([FromQuery] string code)
     {
-        if (string.IsNullOrWhiteSpace(code))
-            return BadRequest("code kötelező.");
+        var cookie = await GetValidCookieForLang("hu");
+        return await GetByBarcodeInternal("https://kaloriabazis.hu", code, cookie, "hu");
+    }
+
+    [HttpGet("en-get-by-barcode")]
+    public async Task<IActionResult> ENGetByBarcode([FromQuery] string code)
+    {
+        var cookie = await GetValidCookieForLang("en");
+        return await GetByBarcodeInternal("https://caloriebase.com", code, cookie, "en");
+    }
+
+    private async Task<IActionResult> GetByBarcodeInternal(string baseUrl, string code, string cookie, string lang)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return BadRequest("code kötelező.");
 
         try
         {
             using var client = new HttpClient();
-
-            var uri = new UriBuilder("https://kaloriabazis.hu/barcode_ajax.php");
+            var uri = new UriBuilder($"{baseUrl}/barcode_ajax.php");
             var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
             query["show"] = "get_food_info_from_bcode";
             query["bcode"] = code;
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", "myPHP83SESSID=mZWfTItWvFpUzpjbmc43NA2tyM");
+            request.Headers.Add("Cookie", $"{cookie}; kb_lang={lang}");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
 
-            if (!response.IsSuccessStatusCode)
-                return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
+            if (!response.IsSuccessStatusCode) return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
 
-            var parsed = System.Text.Json.JsonSerializer.Deserialize<object>(content);
+            var parsed = JsonSerializer.Deserialize<object>(content);
             return Ok(parsed);
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Szerver hiba: {ex.Message}");
-        }
+        catch (Exception ex) { return StatusCode(500, $"Szerver hiba: {ex.Message}"); }
     }
 
     [HttpPost("addGroup")]

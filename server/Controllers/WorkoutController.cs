@@ -119,21 +119,51 @@ public class WorkoutController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchExercises([FromQuery] string q)
+    public async Task<IActionResult> SearchExercises([FromQuery] string q, [FromQuery] string? muscle)
     {
         if (string.IsNullOrWhiteSpace(q))
-            return Ok(new List<Exercise>());
+            return Ok(new List<object>());
 
         var qLower = q.ToLower().Trim();
 
-        var allExercises = await _context.Exercises.ToListAsync();
-
-        var results = await _context.Exercises
+        var query = _context.Exercises
             .Where(e => e.Name.ToLower().Contains(qLower) ||
-                        e.NameHu.ToLower().Contains(qLower))
-                        //e.PrimaryMusclesHu.Any(m => m.ToLower().Contains(qLower)))
-            .Take(20)
-            .ToListAsync();
+                        e.NameHu.ToLower().Contains(qLower));
+
+        var matches = await query.ToListAsync();
+
+        if (!string.IsNullOrWhiteSpace(muscle))
+        {
+            var muscleLower = muscle.ToLower().Trim();
+            matches = matches.Where(e =>
+                (e.PrimaryMuscles != null && e.PrimaryMuscles.Any(m => m.ToLower().Trim() == muscleLower)) ||
+                (e.PrimaryMusclesHu != null && e.PrimaryMusclesHu.Any(m => m.ToLower().Trim() == muscleLower))
+            ).ToList();
+        }
+
+        var results = matches.Take(20).Select(e => new
+        {
+            id = e.Id,
+            name = e.Name,
+            nameHu = e.NameHu,
+            primaryMuscles = e.PrimaryMuscles,
+            primaryMusclesHu = e.PrimaryMusclesHu,
+            secondaryMuscles = e.SecondaryMuscles,
+            secondaryMusclesHu = e.SecondaryMusclesHu,
+            force = e.Force,
+            forceHu = e.ForceHu,
+            level = e.Level,
+            levelHu = e.LevelHu,
+            mechanic = e.Mechanic,
+            mechanicHu = e.MechanicHu,
+            equipment = e.Equipment,
+            equipmentHu = e.EquipmentHu,
+            category = e.Category,
+            categoryHu = e.CategoryHu,
+            instructions = e.Instructions,
+            instructionsHu = e.InstructionsHu,
+            images = e.Images
+        }).ToList();
 
         return Ok(results);
     }
@@ -149,42 +179,48 @@ public class WorkoutController : ControllerBase
 
         var workouts = await _context.UserWorkouts
             .Where(w => w.UserId == userId)
-            .Include(w => w.Exercises)
-                .ThenInclude(e => e.Exercise)
-            .Include(w => w.Exercises)
-                .ThenInclude(e => e.Sets)
             .OrderByDescending(w => w.Date)
             .Select(w => new
             {
-                w.Id,
-                CustomName = w.WorkoutName,
-                w.TotalBurntCalories,
-                w.TotalLiftedWeight,
-                w.DurationMinutes,
-                w.Date,
-                w.IsCustom,
+                id = w.Id,
+                workoutName = w.WorkoutName,
+                totalBurntCalories = w.TotalBurntCalories,
+                totalLiftedWeight = w.TotalLiftedWeight,
+                durationMinutes = w.DurationMinutes,
+                date = w.Date,
+                isCustom = w.IsCustom,
 
-                Exercises = w.Exercises.Select(we => new
+                exercises = w.Exercises.Select(we => new
                 {
-                    we.Id,
-                    we.ExerciseId,
+                    id = we.Id,
+                    exerciseId = we.ExerciseId,
 
-                    Name = we.Exercise != null ? we.Exercise.Name : "Ismeretlen gyakorlat",
-                    Images = we.Exercise != null ? we.Exercise.Images : new List<string>(),
-
-                    Sets = we.Sets.OrderBy(s => s.Order).Select(s => new
+                    exercise = we.Exercise == null ? null : new
                     {
-                        s.Id,
-                        s.Order,
-                        s.Weight,
-                        s.Reps,
-                        s.IsWarmup
+                        id = we.Exercise.Id,
+                        name = we.Exercise.Name,
+                        nameHu = we.Exercise.NameHu,
+                        primaryMuscles = we.Exercise.PrimaryMuscles,
+                        primaryMusclesHu = we.Exercise.PrimaryMusclesHu,
+                        category = we.Exercise.Category,
+                        equipment = we.Exercise.Equipment,
+                        force = we.Exercise.Force,
+                        level = we.Exercise.Level,
+                        mechanic = we.Exercise.Mechanic,
+                        images = we.Exercise.Images
+                    },
+
+                    sets = we.Sets.OrderBy(s => s.Order).Select(s => new
+                    {
+                        id = s.Id,
+                        order = s.Order,
+                        weight = s.Weight,
+                        reps = s.Reps,
+                        isWarmup = s.IsWarmup
                     }).ToList()
                 }).ToList()
             })
             .ToListAsync();
-
-        Console.WriteLine($"Talált {workouts.Count} edzés sablont a UserId={userId}-hez");
 
         return Ok(workouts);
     }
@@ -200,15 +236,11 @@ public class WorkoutController : ControllerBase
 
         var workouts = await _context.UserWorkouts
             .Where(w => w.UserId == userId && w.IsCustom == true)
-            .Include(w => w.Exercises)
-                .ThenInclude(e => e.Exercise)
-            .Include(w => w.Exercises)
-                .ThenInclude(e => e.Sets)
             .OrderByDescending(w => w.Date)
             .Select(w => new
             {
                 w.Id,
-                CustomName = w.WorkoutName,
+                WorkoutName = w.WorkoutName,
                 w.TotalBurntCalories,
                 w.TotalLiftedWeight,
                 w.DurationMinutes,
@@ -220,8 +252,20 @@ public class WorkoutController : ControllerBase
                     we.Id,
                     we.ExerciseId,
 
-                    Name = we.Exercise != null ? we.Exercise.Name : "Ismeretlen gyakorlat",
-                    Images = we.Exercise != null ? we.Exercise.Images : new List<string>(),
+                    Exercise = we.Exercise == null ? null : new
+                    {
+                        we.Exercise.Id,
+                        we.Exercise.Name,
+                        we.Exercise.NameHu,
+                        we.Exercise.PrimaryMuscles,
+                        we.Exercise.PrimaryMusclesHu,
+                        we.Exercise.Category,
+                        we.Exercise.Equipment,
+                        we.Exercise.Force,
+                        we.Exercise.Level,
+                        we.Exercise.Mechanic,
+                        we.Exercise.Images
+                    },
 
                     Sets = we.Sets.OrderBy(s => s.Order).Select(s => new
                     {
@@ -235,23 +279,38 @@ public class WorkoutController : ControllerBase
             })
             .ToListAsync();
 
-        Console.WriteLine($"Talált {workouts.Count} edzés sablont a UserId={userId}-hez");
-
         return Ok(workouts);
     }
 
     [HttpGet("muscle-groups")]
-    public async Task<IActionResult> GetMuscleGroups()
+    public async Task<IActionResult> GetMuscleGroups([FromQuery] string lang = "hu")
     {
         var exercises = await _context.Exercises.ToListAsync();
 
-        var muscles = exercises
-            .Where(e => e.PrimaryMuscles != null)
-            .SelectMany(e => e.PrimaryMuscles)
-            .Select(m => m.Trim())
-            .Distinct()
-            .OrderBy(m => m)
-            .ToList();
+        List<string> muscles = new List<string>();
+
+        if (lang == "en")
+        {
+            muscles = exercises
+                .Where(e => e.PrimaryMuscles != null)
+                .SelectMany(e => e.PrimaryMuscles)
+                .Where(m => !string.IsNullOrWhiteSpace(m))
+                .Select(m => m.Trim())
+                .Distinct()
+                .OrderBy(m => m)
+                .ToList();
+        }
+        else
+        {
+            muscles = exercises
+                .Where(e => e.PrimaryMusclesHu != null)
+                .SelectMany(e => e.PrimaryMusclesHu)
+                .Where(m => !string.IsNullOrWhiteSpace(m))
+                .Select(m => m.Trim())
+                .Distinct()
+                .OrderBy(m => m)
+                .ToList();
+        }
 
         return Ok(muscles);
     }
@@ -259,16 +318,42 @@ public class WorkoutController : ControllerBase
     [HttpGet("filter-by-muscle")]
     public async Task<IActionResult> FilterByMuscle([FromQuery] string muscle)
     {
-        if(string.IsNullOrWhiteSpace(muscle))
+        if (string.IsNullOrWhiteSpace(muscle))
             return BadRequest("Adj meg egy izomcsoportot!");
-        
-        var muscleLower = muscle.ToLower().Trim();
 
+        var muscleLower = muscle.ToLower().Trim();
         var exercises = await _context.Exercises.ToListAsync();
 
-        var filtered = exercises
-            .Where(e => e.PrimaryMuscles != null && e.PrimaryMuscles.Any(m => m.ToLower().Trim() == muscleLower)).ToList();
+        var filteredMatches = exercises
+            .Where(e =>
+                (e.PrimaryMusclesHu != null && e.PrimaryMusclesHu.Any(m => m.ToLower().Trim() == muscleLower)) ||
+                (e.PrimaryMuscles != null && e.PrimaryMuscles.Any(m => m.ToLower().Trim() == muscleLower))
+            ).ToList();
 
-        return Ok(filtered);
+        var results = filteredMatches.Select(e => new
+        {
+            id = e.Id,
+            name = e.Name,
+            nameHu = e.NameHu,
+            primaryMuscles = e.PrimaryMuscles,
+            primaryMusclesHu = e.PrimaryMusclesHu,
+            secondaryMuscles = e.SecondaryMuscles,
+            secondaryMusclesHu = e.SecondaryMusclesHu,
+            force = e.Force,
+            forceHu = e.ForceHu,
+            level = e.Level,
+            levelHu = e.LevelHu,
+            mechanic = e.Mechanic,
+            mechanicHu = e.MechanicHu,
+            equipment = e.Equipment,
+            equipmentHu = e.EquipmentHu,
+            category = e.Category,
+            categoryHu = e.CategoryHu,
+            instructions = e.Instructions,
+            instructionsHu = e.InstructionsHu,
+            images = e.Images
+        }).ToList();
+
+        return Ok(results);
     }
 }

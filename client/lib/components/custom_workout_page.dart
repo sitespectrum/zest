@@ -3,7 +3,9 @@ import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:client/models/workout.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../Providers/language_provider.dart';
 import 'add_workout_page.dart';
 
 class CWorkoutPage extends StatefulWidget {
@@ -46,7 +48,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    const appTitle = "Új edzés";
+    final lang = Provider.of<LanguageProvider>(context);
+    final langCode = Provider.of<LanguageProvider>(context).languageCode;
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, userWorkouts);
@@ -62,8 +65,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                 child: Container(
                   margin: const EdgeInsets.all(6),
                   child: AppBar(
-                    title: const Text(
-                      appTitle,
+                    title: Text(
+                      lang.getText("new_workout"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
@@ -80,10 +83,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     ? Center(
                         child: Column(
                           children: [
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.all(20),
                               child: Text(
-                                'Nincsenek hozzáadott gyakorlatok',
+                                lang.getText("no_added_exercise_yet"),
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 18,
@@ -99,8 +102,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                         itemCount: userWorkouts.length,
                         itemBuilder: (context, index) {
                           final exerciseItem = userWorkouts[index];
-                          final name =
-                              exerciseItem.name ?? "Ismeretlen gyakorlat";
+                          final name = exerciseItem.getName(langCode);
 
                           return GestureDetector(
                             onTap: () {
@@ -228,8 +230,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                       const SizedBox(
                                                         height: 16,
                                                       ),
-                                                      const Text(
-                                                        "Leírás",
+                                                      Text(
+                                                        lang.getText(
+                                                          "description",
+                                                        ),
                                                         style: TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 20,
@@ -271,7 +275,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                             ),
                                                             child: Text(
                                                               exerciseItem
-                                                                  .instructions
+                                                                  .getInstructions(
+                                                                    langCode,
+                                                                  )
                                                                   .join('\n\n'),
                                                               style:
                                                                   const TextStyle(
@@ -313,8 +319,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                         ),
                                                   ),
                                                 ),
-                                                child: const Text(
-                                                  "Bezárás",
+                                                child: Text(
+                                                  lang.getText("close"),
                                                   style: TextStyle(
                                                     color: Colors.red,
                                                     fontSize: 16,
@@ -382,8 +388,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                     fontSize: 14,
                                                   ),
                                                   children: [
-                                                    const TextSpan(
-                                                      text: 'Category: ',
+                                                    TextSpan(
+                                                      text:
+                                                          '${lang.getText("category")}: ',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -392,11 +399,12 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                     ),
                                                     TextSpan(
                                                       text:
-                                                          '${exerciseItem.category} | ',
+                                                          '${exerciseItem.getCategory(langCode)} | ',
                                                     ),
 
-                                                    const TextSpan(
-                                                      text: 'Equipment: ',
+                                                    TextSpan(
+                                                      text:
+                                                          '${lang.getText("equipment")}: ',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -406,11 +414,12 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
                                                     TextSpan(
                                                       text:
-                                                          '${exerciseItem.equipment} | ',
+                                                          '${exerciseItem.getEquipment(langCode)} | ',
                                                     ),
 
-                                                    const TextSpan(
-                                                      text: 'Force: ',
+                                                    TextSpan(
+                                                      text:
+                                                          '${lang.getText("force")}: ',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -419,11 +428,12 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                     ),
                                                     TextSpan(
                                                       text:
-                                                          '${exerciseItem.force ?? "-"} | ',
+                                                          '${exerciseItem.getForce(langCode)} | ',
                                                     ),
 
-                                                    const TextSpan(
-                                                      text: 'Level: ',
+                                                    TextSpan(
+                                                      text:
+                                                          '${lang.getText("level")}: ',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -432,24 +442,12 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                     ),
                                                     TextSpan(
                                                       text:
-                                                          '${exerciseItem.level} | ',
+                                                          '${exerciseItem.getLevel(langCode)} | ',
                                                     ),
 
-                                                    const TextSpan(
-                                                      text: 'Mechanic: ',
-                                                      style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
                                                     TextSpan(
                                                       text:
-                                                          '${exerciseItem.mechanic ?? "-"} | ',
-                                                    ),
-
-                                                    const TextSpan(
-                                                      text: 'Primary muscle: ',
+                                                          '${lang.getText("primary_muscles")}: ',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -458,7 +456,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                     ),
                                                     TextSpan(
                                                       text: exerciseItem
-                                                          .primaryMuscles
+                                                          .getPMuscles(langCode)
                                                           .join(", "),
                                                     ),
                                                   ],
@@ -474,8 +472,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                 userWorkouts.removeAt(index);
                                               }),
                                             },
-                                            child: const Text(
-                                              "Törlés",
+                                            child: Text(
+                                              lang.getText("delete"),
                                               style: TextStyle(
                                                 color: Colors.redAccent,
                                               ),
@@ -497,7 +495,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
               Center(
                 child: Text(
-                  "Sablonjaim",
+                  lang.getText("my_templates"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 30,
@@ -526,9 +524,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                   final templates = snapshot.data ?? [];
 
                   if (templates.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        "Nincs sablon létrehozva.",
+                        lang.getText("no_added_template_yet"),
                         style: TextStyle(color: Colors.white70, fontSize: 18),
                       ),
                     );
@@ -571,13 +569,14 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         final ex = template.exercises[i];
                                         return ListTile(
                                           title: Text(
-                                            ex.exercise?.name ?? "Gyakorlat",
+                                            ex.exercise?.name ??
+                                                lang.getText("exercise"),
                                             style: const TextStyle(
                                               color: Colors.white,
                                             ),
                                           ),
                                           subtitle: Text(
-                                            "${ex.sets.length} sorozat",
+                                            "${ex.sets.length} ${lang.getText("set(s)")}",
                                             style: const TextStyle(
                                               color: Colors.white70,
                                             ),
@@ -589,8 +588,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
-                                      child: const Text(
-                                        "Mégse",
+                                      child: Text(
+                                        lang.getText("cancel"),
                                         style: TextStyle(color: Colors.white54),
                                       ),
                                     ),
@@ -627,7 +626,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                           ),
                                         );
                                       },
-                                      child: const Text("Betöltés"),
+                                      child: Text(lang.getText("loading")),
                                     ),
                                   ],
                                 );
@@ -662,7 +661,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        '${template.exercises.length} gyakorlat',
+                                        '${template.exercises.length} ${lang.getText("exercise").toLowerCase()}',
                                         style: const TextStyle(
                                           color: Colors.white70,
                                         ),
@@ -716,8 +715,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     borderRadius: BorderRadius.circular(11),
                   ),
                 ),
-                child: const Text(
-                  'Hozzáadás',
+                child: Text(
+                  lang.getText("add"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -737,8 +736,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     borderRadius: BorderRadius.circular(11),
                   ),
                 ),
-                child: const Text(
-                  'Kezdés',
+                child: Text(
+                  lang.getText("start"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,

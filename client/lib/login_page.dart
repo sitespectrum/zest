@@ -1,5 +1,7 @@
+import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'pages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -44,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _userNameController,
                 decoration: InputDecoration(
                   fillColor: Color.fromARGB(255, 72, 72, 72),
-                  labelText: 'Felhasználónév / Email',
+                  labelText: lang.getText("username_and_email_hint"),
                   labelStyle: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -74,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: true,
                 decoration: InputDecoration(
                   fillColor: Color.fromARGB(255, 72, 72, 72),
-                  labelText: "Jelszó",
+                  labelText: lang.getText("password_hint"),
                   labelStyle: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -151,8 +154,8 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(11),
                   ),
                 ),
-                child: const Text(
-                  "Bejelentkezés",
+                child: Text(
+                  lang.getText("login"),
                   style: TextStyle(fontSize: 18, color: Colors.white),
                   textAlign: TextAlign.center,
                 ),

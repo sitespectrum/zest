@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:client/models/meal.dart';
 import 'dart:async';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 import 'dart:math';
@@ -75,7 +77,20 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
-      final uri = Uri.parse('$apiUrl/api/meals/get-units?foodId=$foodId');
+      var uri;
+      final lang = Provider.of<LanguageProvider>(
+        context,
+        listen: false,
+      ).languageCode;
+      if (lang == "hu") {
+        setState(() {
+          uri = Uri.parse('$apiUrl/api/meals/hu-get-units?foodId=$foodId');
+        });
+      } else if (lang == "en") {
+        setState(() {
+          uri = Uri.parse('$apiUrl/api/meals/en-get-units?foodId=$foodId');
+        });
+      }
       final response = await http.get(uri);
 
       if (response.statusCode != 200) throw Exception('HTTP hiba');
@@ -95,7 +110,20 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
-      final uri = Uri.parse('$apiUrl/api/meals/get-by-barcode?code=$code');
+      var uri;
+      final lang = Provider.of<LanguageProvider>(
+        context,
+        listen: false,
+      ).languageCode;
+      if (lang == "hu") {
+        setState(() {
+          uri = Uri.parse('$apiUrl/api/meals/hu-get-by-barcode?code=$code');
+        });
+      } else if (lang == "en") {
+        setState(() {
+          uri = Uri.parse('$apiUrl/api/meals/en-get-by-barcode?code=$code');
+        });
+      }
       final response = await http.get(uri);
 
       if (response.statusCode != 200) throw Exception('HTTP hiba');
@@ -221,6 +249,10 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   Future<void> _searchMeals(String query) async {
+    final lang = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    ).languageCode;
     final q = query.trim();
     if (q.isEmpty) {
       setState(() => searchResults = []);
@@ -233,8 +265,18 @@ class _AddMealPageState extends State<AddMealPage> {
     });
 
     try {
-      final uri = Uri.parse('$apiUrl/api/meals/search?q=$q');
+      var uri;
+      if (lang == "hu") {
+        setState(() {
+          uri = Uri.parse('$apiUrl/api/meals/husearch?q=$q');
+        });
+      } else if (lang == "en") {
+        setState(() {
+          uri = Uri.parse('$apiUrl/api/meals/ensearch?q=$q');
+        });
+      }
       final response = await http.get(uri);
+      print("URI: ${uri}");
 
       if (response.statusCode != 200) {
         print("Hiba: Státuszkód ${response.statusCode}");
@@ -293,6 +335,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return FutureBuilder<List<UserMealDto>>(
       future: futureMeals,
       builder: (context, snapshot) {
@@ -355,7 +398,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                       45,
                                       45,
                                     ),
-                                    hintText: 'Keresés',
+                                    hintText: lang.getText("search_hint"),
                                     hintStyle: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 16,
@@ -589,7 +632,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.quantity} ${meal.piece}',
+                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | ${lang.getText("portion")}: ${meal.quantity} ${meal.piece}',
                                                   style: const TextStyle(
                                                     color: Colors.white70,
                                                   ),
@@ -687,8 +730,10 @@ class _AddMealPageState extends State<AddMealPage> {
                                                     mainAxisSize:
                                                         MainAxisSize.min,
                                                     children: [
-                                                      const Text(
-                                                        "Válassz mennyiséget!",
+                                                      Text(
+                                                        lang.getText(
+                                                          "choose_quantity",
+                                                        ),
                                                         style: TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 20,
@@ -888,8 +933,8 @@ class _AddMealPageState extends State<AddMealPage> {
                                                               foregroundColor:
                                                                   Colors.black,
                                                             ),
-                                                        child: const Text(
-                                                          "Hozzáadás",
+                                                        child: Text(
+                                                          lang.getText("add"),
                                                         ),
                                                       ),
                                                     ],
@@ -997,7 +1042,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | adag: ${meal.piece}',
+                                                '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | adag: ${meal.quantity} ${meal.piece}',
                                                 style: const TextStyle(
                                                   color: Colors.white70,
                                                 ),

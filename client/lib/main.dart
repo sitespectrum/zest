@@ -1,6 +1,8 @@
+import "package:client/Providers/language_provider.dart";
 import 'package:flutter/material.dart';
 import "package:flutter/services.dart";
 import 'package:flutter_hooks/flutter_hooks.dart';
+import "package:provider/provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
 import "login_page.dart";
 import "pages.dart";
@@ -12,7 +14,12 @@ void main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final prefs = await SharedPreferences.getInstance();
   final savedUsername = prefs.getString('username');
-  runApp(Myapp(initialUsername: savedUsername));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => LanguageProvider(),
+      child: Myapp(initialUsername: savedUsername),
+    ),
+  );
 }
 
 class Myapp extends StatelessWidget {
@@ -21,8 +28,20 @@ class Myapp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      locale: lang.currentLocale,
+      localeResolutionCallback: (deviceLocale, supportedLocales) {
+        if (deviceLocale != null) {
+          for (var locale in supportedLocales) {
+            if (locale.languageCode == deviceLocale.languageCode) {
+              return deviceLocale;
+            }
+          }
+        }
+        return supportedLocales.first;
+      },
       supportedLocales: const [Locale('en'), Locale('hu')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -48,6 +67,7 @@ class MainPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -83,13 +103,13 @@ class MainPage extends HookWidget {
                       borderRadius: BorderRadius.circular(11),
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
+                      horizontal: 20,
                       vertical: 12,
                     ),
                   ),
-                  child: const Text(
-                    "Még nincs fiókod? Regisztráció",
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  child: Text(
+                    lang.getText('register_button_main'),
+                    style: TextStyle(fontSize: 17, color: Colors.white),
                   ),
                 ),
 
@@ -112,8 +132,8 @@ class MainPage extends HookWidget {
                       vertical: 12,
                     ),
                   ),
-                  child: const Text(
-                    "Már van fiókod? Bejelentkezés",
+                  child: Text(
+                    lang.getText('login_button_main'),
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),

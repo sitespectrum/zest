@@ -1,5 +1,7 @@
+import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'components/details_page.dart';
@@ -19,6 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -43,7 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 style: TextStyle(color: Colors.white, fontSize: 15),
                 controller: userNameController,
                 decoration: InputDecoration(
-                  labelText: 'Felhasználónév',
+                  labelText: lang.getText('username_hint'),
                   labelStyle: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -71,7 +74,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 style: TextStyle(color: Colors.white, fontSize: 15),
                 controller: emailController,
                 decoration: InputDecoration(
-                  labelText: 'Email',
+                  labelText: lang.getText('email_hint'),
                   labelStyle: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -100,7 +103,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: "Jelszó",
+                  labelText: lang.getText('password_hint'),
                   labelStyle: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -128,7 +131,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () async {
                   print("szia");
                   final response = await http.post(
-                    Uri.parse("$apiUrl/api/auth/register"), // s || l
+                    Uri.parse("$apiUrl/api/auth/register"),
                     headers: {"Content-Type": "application/json"},
                     body: jsonEncode({
                       "username": userNameController.text,
@@ -172,8 +175,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     borderRadius: BorderRadius.circular(11),
                   ),
                 ),
-                child: const Text(
-                  "Regisztráció folytatása",
+                child: Text(
+                  lang.getText('continue_register'),
                   style: TextStyle(fontSize: 18, color: Colors.white),
                   textAlign: TextAlign.center,
                 ),

@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -100,6 +103,7 @@ class _HealthPageState extends State<HealthPage>
     super.initState();
     _loadUser();
     initializeDateFormatting('hu_HU', null);
+    initializeDateFormatting('en_US', null);
     loadNutrients();
     loadMacros();
 
@@ -194,8 +198,11 @@ class _HealthPageState extends State<HealthPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final appTitle = "Egészség";
-
+    final lang = Provider.of<LanguageProvider>(context);
+    final String calendarLocale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
+    final StartingDayOfWeek startDay = lang.languageCode == 'hu'
+        ? StartingDayOfWeek.monday
+        : StartingDayOfWeek.sunday;
     return SingleChildScrollView(
       child: FutureBuilder<List<UserMealDto>>(
         future: _futureMeals,
@@ -220,7 +227,7 @@ class _HealthPageState extends State<HealthPage>
                   margin: const EdgeInsets.all(6),
                   child: AppBar(
                     title: Text(
-                      appTitle,
+                      lang.getText("health_page"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
@@ -254,7 +261,8 @@ class _HealthPageState extends State<HealthPage>
                       ],
                     ),
                     child: TableCalendar(
-                      locale: 'hu_HU',
+                      locale: calendarLocale,
+                      startingDayOfWeek: startDay,
                       firstDay: DateTime.utc(2020, 1, 1),
                       lastDay: DateTime.utc(2030, 12, 31),
                       focusedDay: _focusedDay,
@@ -368,7 +376,9 @@ class _HealthPageState extends State<HealthPage>
                                                 child: Column(
                                                   children: [
                                                     Text(
-                                                      "${day.year}.${day.month}.${day.day}",
+                                                      DateFormat.yMd(
+                                                        calendarLocale,
+                                                      ).format(day),
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 18,
@@ -384,7 +394,7 @@ class _HealthPageState extends State<HealthPage>
                                                                 mainAxisSize:
                                                                     MainAxisSize
                                                                         .min,
-                                                                children: const [
+                                                                children: [
                                                                   Icon(
                                                                     Icons
                                                                         .calendar_month,
@@ -396,7 +406,9 @@ class _HealthPageState extends State<HealthPage>
                                                                     height: 8,
                                                                   ),
                                                                   Text(
-                                                                    "Ezen a napon nincs adat",
+                                                                    lang.getText(
+                                                                      "no_data_on_this_day",
+                                                                    ),
                                                                     style: TextStyle(
                                                                       color: Colors
                                                                           .white70,
@@ -502,10 +514,10 @@ class _HealthPageState extends State<HealthPage>
                                                                       ),
 
                                                                       Text(
-                                                                        "${meal.totalCalories.toStringAsFixed(2)} kcal  |  "
-                                                                        "${meal.totalProtein.toStringAsFixed(2)}g fehérje  |  "
-                                                                        "${meal.totalCarbs.toStringAsFixed(2)}g szénhidrát  |  "
-                                                                        "${meal.totalFat.toStringAsFixed(2)}g zsír",
+                                                                        "${meal.totalCalories.toStringAsFixed(2)} kcal | "
+                                                                        "${meal.totalProtein.toStringAsFixed(2)}g ${lang.getText("protein").toLowerCase()} | "
+                                                                        "${meal.totalCarbs.toStringAsFixed(2)}g ${lang.getText("carbs").toLowerCase()} | "
+                                                                        "${meal.totalFat.toStringAsFixed(2)}g ${lang.getText("fat").toLowerCase()}",
                                                                         style: const TextStyle(
                                                                           color:
                                                                               Colors.white70,
@@ -547,8 +559,10 @@ class _HealthPageState extends State<HealthPage>
                                                         Icons.add,
                                                         color: Colors.white,
                                                       ),
-                                                      label: const Text(
-                                                        "Új étkezés hozzáadása",
+                                                      label: Text(
+                                                        lang.getText(
+                                                          "add_new_meal",
+                                                        ),
                                                       ),
                                                       style:
                                                           ElevatedButton.styleFrom(
@@ -587,8 +601,8 @@ class _HealthPageState extends State<HealthPage>
                                                     BorderRadius.circular(12),
                                               ),
                                             ),
-                                            child: const Text(
-                                              "Bezárás",
+                                            child: Text(
+                                              lang.getText("close"),
                                               style: TextStyle(
                                                 color: Colors.red,
                                               ),
@@ -610,7 +624,7 @@ class _HealthPageState extends State<HealthPage>
                     top: MediaQuery.of(context).size.height * 0.005,
                     left: MediaQuery.of(context).size.width * 0.09,
                     child: Text(
-                      "Korábbi étkezések",
+                      lang.getText("previous_meals"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -652,7 +666,7 @@ class _HealthPageState extends State<HealthPage>
                                       Stack(
                                         children: [
                                           Text(
-                                            'Kalória: ${nutrients!['calories']!.toStringAsFixed(0)} kcal \n',
+                                            '${lang.getText("calories")}: ${nutrients!['calories']!.toStringAsFixed(0)} kcal \n',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
@@ -678,7 +692,7 @@ class _HealthPageState extends State<HealthPage>
                                             animationDuration: 1000,
                                             lineHeight: 20.0,
                                             leading: Text(
-                                              "Fehérje:",
+                                              "${lang.getText("protein")}: ",
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 20,
@@ -726,12 +740,12 @@ class _HealthPageState extends State<HealthPage>
                                                 MediaQuery.of(
                                                   context,
                                                 ).size.width *
-                                                0.5,
+                                                0.38,
                                             animation: true,
                                             animationDuration: 1000,
                                             lineHeight: 20.0,
                                             leading: Text(
-                                              "Szénhidrát:",
+                                              "${lang.getText("carbs")}: ",
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 20,
@@ -784,7 +798,7 @@ class _HealthPageState extends State<HealthPage>
                                             animationDuration: 1000,
                                             lineHeight: 20.0,
                                             leading: Text(
-                                              "Zsír:",
+                                              "${lang.getText("fat")}: ",
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 20,
@@ -831,7 +845,7 @@ class _HealthPageState extends State<HealthPage>
                     top: MediaQuery.of(context).size.height * 0.005,
                     left: MediaQuery.of(context).size.width * 0.09,
                     child: Text(
-                      "Bevitt tápanyagok",
+                      lang.getText("nutrients_consumed"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,

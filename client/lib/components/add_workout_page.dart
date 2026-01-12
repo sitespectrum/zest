@@ -4,8 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:client/models/meal.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../Providers/language_provider.dart';
 import '../constants.dart';
 import 'dart:math';
 
@@ -84,22 +86,31 @@ class _AddMealPageState extends State<AddWorkoutPage> {
 
   Future<void> fetchMuscleGroups() async {
     try {
+      final langCode = Provider.of<LanguageProvider>(
+        context,
+        listen: false,
+      ).languageCode;
+
       final response = await http.get(
-        Uri.parse("$apiUrl/api/Workout/muscle-groups"),
+        Uri.parse("$apiUrl/api/Workout/muscle-groups?lang=$langCode"),
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            muscleFilters = data.cast<String>().toList();
+            isFilterLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print("Hiba az izomcsoportok betöltésekor: $e");
+      if (mounted) {
         setState(() {
-          muscleFilters = data.cast<String>().toList();
           isFilterLoading = false;
         });
       }
-    } catch (e) {
-      print("Hiba az izomcsoportok betöltésekor");
-      setState(() {
-        isFilterLoading = false;
-      });
     }
   }
 
@@ -111,26 +122,42 @@ class _AddMealPageState extends State<AddWorkoutPage> {
 
     try {
       final uri = Uri.parse(
-        '$apiUrl/api/Workout/filter-by-muscle?muscle=$muscle',
+        '$apiUrl/api/Workout/filter-by-muscle?muscle=${Uri.encodeQueryComponent(muscle)}',
       );
+
+      print("DEBUG: Keresés indítása erre: $uri");
+
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
-        final List<dynamic> decoded = jsonDecode(response.body);
-        final rawResults = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
+        final dynamic decoded = jsonDecode(response.body);
 
+        if (decoded == null) {
+          setState(() => searchResults = []);
+          return;
+        }
+
+        if (decoded is! List) {
+          print("Hiba: A szerver nem listát küldött: $decoded");
+          setState(() => searchResults = []);
+          return;
+        }
+
+        final rawResults = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
         final sortedResults = _sortWithTopPriority(rawResults);
 
         setState(() {
           searchResults = sortedResults;
         });
       } else {
+        print("Szerver hiba kód: ${response.statusCode}");
         setState(() {
           searchResults = [];
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print("Szűrési hiba: $e");
+      print(stackTrace);
       setState(() => searchResults = []);
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -332,20 +359,17 @@ class _AddMealPageState extends State<AddWorkoutPage> {
     });
 
     try {
-      final uri = Uri.parse('$apiUrl/api/Workout/search?q=$q');
+      String url = '$apiUrl/api/Workout/search?q=$q';
+      if (selectedFilter != null) {
+        url += '&muscle=$selectedFilter';
+      }
+      final uri = Uri.parse(url);
+
       final response = await http.get(uri);
 
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
         final List<dynamic> decoded = jsonDecode(response.body);
         var results = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
-
-        if (selectedFilter != null) {
-          results = results.where((ex) {
-            return ex.primaryMusclesHu.any(
-              (m) => m.trim().toLowerCase() == selectedFilter!.toLowerCase(),
-            );
-          }).toList();
-        }
 
         setState(() => searchResults = results);
       } else {
@@ -361,6 +385,8 @@ class _AddMealPageState extends State<AddWorkoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+    final langCode = Provider.of<LanguageProvider>(context).languageCode;
     return FutureBuilder<List<UserWorkoutDto>>(
       future: futureExercises,
       builder: (context, snapshot) {
@@ -423,7 +449,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                       45,
                                       45,
                                     ),
-                                    hintText: 'Keresés',
+                                    hintText: lang.getText("search_hint"),
                                     hintStyle: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 16,
@@ -477,7 +503,9 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
                             final exercise = searchResults[index];
-                            final cleanName = stripHtmlTags(exercise.name);
+                            final cleanName = stripHtmlTags(
+                              exercise.getName(langCode),
+                            );
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -583,7 +611,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  '${exercise.category} | ${exercise.equipment} | ${exercise.force} | ${exercise.level} | ${exercise.mechanic} | ${exercise.primaryMuscles.join(", ")}',
+                                                  '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)} | ${exercise.getPMuscles(langCode).join(", ")}',
                                                   style: const TextStyle(
                                                     color: Colors.white70,
                                                   ),
@@ -608,7 +636,9 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
                             final exercise = searchResults[index];
-                            final cleanName = stripHtmlTags(exercise.name);
+                            final cleanName = stripHtmlTags(
+                              exercise.getName(langCode),
+                            );
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -652,7 +682,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                   }
 
                                   final cleanName = stripHtmlTags(
-                                    exercise.name,
+                                    exercise.getName(langCode),
                                   );
                                   // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -712,7 +742,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                '${exercise.category} | ${exercise.equipment} | ${exercise.force} | ${exercise.level} | ${exercise.mechanic}',
+                                                '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)}',
                                                 style: const TextStyle(
                                                   color: Colors.white70,
                                                 ),

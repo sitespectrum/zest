@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:client/Providers/language_provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -61,7 +64,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   void _showEditPopup() {
     if (userData == null) return;
-
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     final nameController = TextEditingController(text: username);
     final passwordController = TextEditingController();
     final heightController = TextEditingController(
@@ -92,9 +95,11 @@ class _ProfilePageState extends State<ProfilePage>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      elevation: 0,
       builder: (context) => StatefulBuilder(
         builder: (context, setPopupState) => Container(
           height: MediaQuery.of(context).size.height * 0.9,
+          clipBehavior: Clip.hardEdge,
           decoration: const BoxDecoration(
             color: Color.fromARGB(255, 35, 35, 35),
             borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
@@ -106,8 +111,8 @@ class _ProfilePageState extends State<ProfilePage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Adatok módosítása",
+                    Text(
+                      lang.getText("modify_details"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -130,21 +135,25 @@ class _ProfilePageState extends State<ProfilePage>
                       Center(
                         child: _buildProfessionalLanguageInput(
                           context,
-                          "Nyelv",
+                          lang.getText("language"),
                           selectedLanguage,
                           (val) => setPopupState(() => selectedLanguage = val!),
                         ),
                       ),
-                      Center(child: _buildSectionHeader("Személyes adatok")),
+                      Center(
+                        child: _buildSectionHeader(
+                          lang.getText("personal_details"),
+                        ),
+                      ),
                       _buildProfessionalInput(
                         context,
-                        "Felhasználónév",
+                        lang.getText("username_hint"),
                         nameController,
                         isNumber: false,
                       ),
                       _buildProfessionalInput(
                         context,
-                        "Új jelszó (opcionális)",
+                        lang.getText("password_hint"),
                         passwordController,
                         isNumber: false,
                         isPassword: true,
@@ -155,13 +164,13 @@ class _ProfilePageState extends State<ProfilePage>
                         children: [
                           _buildProfessionalInput(
                             context,
-                            "Magasság",
+                            lang.getText("height"),
                             heightController,
                             widthFactor: 0.43,
                           ),
                           _buildProfessionalInput(
                             context,
-                            "Súly",
+                            lang.getText("weight"),
                             weightController,
                             widthFactor: 0.43,
                           ),
@@ -173,7 +182,7 @@ class _ProfilePageState extends State<ProfilePage>
                         children: [
                           _buildProfessionalDateInput(
                             context,
-                            "Szül. idő",
+                            lang.getText("born_in"),
                             birthController,
                             () async {
                               final picked = await showDatePicker(
@@ -185,6 +194,15 @@ class _ProfilePageState extends State<ProfilePage>
                                   data: ThemeData.dark().copyWith(
                                     colorScheme: const ColorScheme.dark(
                                       primary: Colors.green,
+                                      onPrimary: Colors.white,
+                                      surface: Color.fromARGB(255, 72, 72, 72),
+                                      onSurface: Colors.white,
+                                    ),
+                                    dialogBackgroundColor: const Color.fromARGB(
+                                      255,
+                                      72,
+                                      72,
+                                      72,
                                     ),
                                   ),
                                   child: child!,
@@ -202,14 +220,14 @@ class _ProfilePageState extends State<ProfilePage>
                           ),
                           _buildProfessionalGenderInput(
                             context,
-                            "Nem",
+                            lang.getText("gender"),
                             selectedGender,
                             (val) => setPopupState(() => selectedGender = val!),
                           ),
                         ],
                       ),
 
-                      Center(child: _buildSectionHeader("Cél")),
+                      Center(child: _buildSectionHeader(lang.getText("goals"))),
                       Column(
                         children: List.generate(
                           3,
@@ -221,24 +239,34 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
 
-                      Center(child: _buildSectionHeader("Aktivitás")),
+                      Center(
+                        child: _buildSectionHeader(lang.getText("activity")),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Column(
-                          children: List.generate(
-                            4,
-                            (index) => _buildSelectionCard(
-                              activities[index].replaceAll('_', ' '),
+                          children: List.generate(4, (index) {
+                            final titles = [
+                              lang.getText("slightly_active"),
+                              lang.getText("moderately_active"),
+                              lang.getText("very_active"),
+                              lang.getText("extremely_active"),
+                            ];
+
+                            final descriptions = [
+                              lang.getText("slightly_active_desc"),
+                              lang.getText("moderately_active_desc"),
+                              lang.getText("very_active_desc"),
+                              lang.getText("extremely_active_desc"),
+                            ];
+
+                            return _buildSelectionCard(
+                              titles[index],
                               aSelectedIndex == index,
                               () => setPopupState(() => aSelectedIndex = index),
-                              subText: [
-                                "Napi séta, heti 1-3 könnyű edzés.",
-                                "Heti 3-5 edzés, ülőmunka.",
-                                "Napi edzés, aktív, fizikai munka.",
-                                "Napi 2 edzés, például sportkarrier.",
-                              ][index],
-                            ),
-                          ),
+                              subText: descriptions[index],
+                            );
+                          }),
                         ),
                       ),
                     ],
@@ -248,7 +276,7 @@ class _ProfilePageState extends State<ProfilePage>
 
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: _buildZestButton("Módosítások mentése", () async {
+                child: _buildZestButton(lang.getText("save_changes"), () async {
                   setState(() {
                     currentLanguage = selectedLanguage;
                   });
@@ -512,7 +540,7 @@ class _ProfilePageState extends State<ProfilePage>
         ),
         Positioned(
           top: MediaQuery.of(context).size.height * -0.016,
-          left: MediaQuery.of(context).size.width * 0.015,
+          left: MediaQuery.of(context).size.width * 0.02,
           child: Text(
             label,
             style: const TextStyle(
@@ -532,6 +560,7 @@ class _ProfilePageState extends State<ProfilePage>
     String value,
     ValueChanged<String?> onChange,
   ) {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     return Stack(
       children: [
         Container(
@@ -550,18 +579,18 @@ class _ProfilePageState extends State<ProfilePage>
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(horizontal: 10),
             ),
-            items: const [
+            items: [
               DropdownMenuItem(
                 value: "Férfi",
                 child: Text(
-                  "Férfi",
+                  lang.getText("male"),
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
               DropdownMenuItem(
                 value: "Nő",
                 child: Text(
-                  "Nő",
+                  lang.getText("female"),
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
@@ -603,7 +632,7 @@ class _ProfilePageState extends State<ProfilePage>
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            value: Provider.of<LanguageProvider>(context).languageCode,
             dropdownColor: const Color.fromARGB(255, 72, 72, 72),
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -611,21 +640,28 @@ class _ProfilePageState extends State<ProfilePage>
             ),
             items: const [
               DropdownMenuItem(
-                value: "Magyar",
+                value: "hu",
                 child: Text(
                   "Magyar",
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
               DropdownMenuItem(
-                value: "English",
+                value: "en",
                 child: Text(
                   "English",
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
             ],
-            onChanged: onChange,
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                Provider.of<LanguageProvider>(
+                  context,
+                  listen: false,
+                ).changeLanguage(newValue);
+              }
+            },
           ),
         ),
         Positioned(
@@ -801,108 +837,116 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 58, 58, 58),
       body: isLoading
           ? const Center(
-            child: CircularProgressIndicator(
-              color: Color.fromARGB(255, 85, 173, 78),
-            ),
-          )
+              child: CircularProgressIndicator(
+                color: Color.fromARGB(255, 85, 173, 78),
+              ),
+            )
           : SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                PreferredSize(
-                  preferredSize: const Size.fromHeight(60),
-                  child: Container(
-                    margin: const EdgeInsets.all(6),
-                    child: AppBar(
-                      title: const Text(
-                        "Profil",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PreferredSize(
+                    preferredSize: const Size.fromHeight(60),
+                    child: Container(
+                      margin: const EdgeInsets.all(6),
+                      child: AppBar(
+                        title: Text(
+                          lang.getText("profile_page"),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        automaticallyImplyLeading: false,
+                        backgroundColor: Colors.transparent,
                       ),
-                      automaticallyImplyLeading: false,
-                      backgroundColor: Colors.transparent,
                     ),
                   ),
-                ),
-                if (userData != null) ...[
-                  _buildDisplayCard(
-                    title: "Személyes adatok",
-                    rows: [
-                      _buildInfoRow(
-                        Icons.person_outline,
-                        "Felhasználó",
-                        username ?? "",
+                  if (userData != null) ...[
+                    _buildDisplayCard(
+                      title: lang.getText("personal_details"),
+                      rows: [
+                        _buildInfoRow(
+                          Icons.person_outline,
+                          lang.getText("user"),
+                          username ?? "",
+                        ),
+                        const Divider(color: Colors.white12),
+                        _buildInfoRow(
+                          Icons.height,
+                          lang.getText("height"),
+                          "${userData!['height']} cm",
+                        ),
+                        const Divider(color: Colors.white12),
+                        _buildInfoRow(
+                          Icons.fitness_center,
+                          lang.getText("weight"),
+                          "${userData!['weight']} kg",
+                        ),
+                      ],
+                    ),
+                    _buildDisplayCard(
+                      title: lang.getText("daily_goals"),
+                      rows: [
+                        _buildInfoRow(
+                          Icons.local_fire_department,
+                          lang.getText("calories"),
+                          "${userData!['calorieGoal'].toInt()} kcal",
+                        ),
+                        const Divider(color: Colors.white12),
+                        _buildInfoRow(
+                          Icons.egg_alt,
+                          lang.getText("protein"),
+                          "${userData!['proteinGoal'].toInt()} g",
+                        ),
+                        const Divider(color: Colors.white12),
+                        _buildInfoRow(
+                          Icons.bakery_dining,
+                          lang.getText("carbs"),
+                          "${userData!['carbsGoal'].toInt()} g",
+                        ),
+                        const Divider(color: Colors.white12),
+                        _buildInfoRow(
+                          Icons.opacity,
+                          lang.getText("fat"),
+                          "${userData!['fatGoal'].toInt()} g",
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
                       ),
-                      const Divider(color: Colors.white12),
-                      _buildInfoRow(
-                        Icons.height,
-                        "Magasság",
-                        "${userData!['height']} cm",
+                      child: _buildZestButton(
+                        lang.getText("modify_details"),
+                        _showEditPopup,
                       ),
-                      const Divider(color: Colors.white12),
-                      _buildInfoRow(
-                        Icons.fitness_center,
-                        "Súly",
-                        "${userData!['weight']} kg",
-                      ),
-                    ],
-                  ),
-                  _buildDisplayCard(
-                    title: "Napi célok",
-                    rows: [
-                      _buildInfoRow(
-                        Icons.local_fire_department,
-                        "Kalória",
-                        "${userData!['calorieGoal'].toInt()} kcal",
-                      ),
-                      const Divider(color: Colors.white12),
-                      _buildInfoRow(
-                        Icons.egg_alt,
-                        "Fehérje",
-                        "${userData!['proteinGoal'].toInt()} g",
-                      ),
-                      const Divider(color: Colors.white12),
-                      _buildInfoRow(
-                        Icons.bakery_dining,
-                        "Szénhidrát",
-                        "${userData!['carbsGoal'].toInt()} g",
-                      ),
-                      const Divider(color: Colors.white12),
-                      _buildInfoRow(
-                        Icons.opacity,
-                        "Zsír",
-                        "${userData!['fatGoal'].toInt()} g",
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 10,
                     ),
-                    child: _buildZestButton("Adatok módosítása", _showEditPopup),
+                    child: _buildZestButton(
+                      lang.getText("logout"),
+                      () async {
+                        await _logout();
+                      },
+                      color: const Color.fromARGB(255, 45, 45, 45),
+                    ),
                   ),
+                  const SizedBox(height: 30),
                 ],
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  child: _buildZestButton("Kijelentkezés", () async {
-                    await _logout();
-                  }, color: const Color.fromARGB(255, 45, 45, 45)),
-                ),
-                const SizedBox(height: 30),
-              ],
+              ),
             ),
-          ),
     );
   }
 }

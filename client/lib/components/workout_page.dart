@@ -1,4 +1,6 @@
+import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -30,8 +32,11 @@ class _WorkoutPageState extends State<WorkoutPage> {
   }
 
   Widget build(BuildContext context) {
-    final appTitle = "Edzés";
-
+    final lang = Provider.of<LanguageProvider>(context);
+    final String calendarLocale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
+    final StartingDayOfWeek startDay = lang.languageCode == 'hu'
+        ? StartingDayOfWeek.monday
+        : StartingDayOfWeek.sunday;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,7 +47,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               margin: const EdgeInsets.all(6),
               child: AppBar(
                 title: Text(
-                  appTitle,
+                  lang.getText("workout_page"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 30,
@@ -74,7 +79,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
                   ],
                 ),
                 child: TableCalendar(
-                  locale: 'hu_HU',
+                  locale: calendarLocale,
+                  startingDayOfWeek: startDay,
                   firstDay: DateTime.utc(2020, 1, 1),
                   lastDay: DateTime.utc(2030, 12, 31),
                   focusedDay: _focusedDay,
@@ -120,7 +126,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 top: MediaQuery.of(context).size.height * 0.005,
                 left: MediaQuery.of(context).size.width * 0.09,
                 child: Text(
-                  "Korábbi edzések",
+                  lang.getText("previous_workouts"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -133,7 +139,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
 
           Center(
             child: Text(
-              "Sablonjaim",
+              lang.getText("my_templates"),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 30,

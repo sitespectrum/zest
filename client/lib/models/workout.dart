@@ -2,12 +2,12 @@ class ExerciseDto {
   final int id;
   final String name;
   final String nameHu;
-  final String? force;
-  final String? forceHu;
+  final String force;
+  final String forceHu;
   final String level;
   final String levelHu;
-  final String? mechanic;
-  final String? mechanicHu;
+  final String mechanic;
+  final String mechanicHu;
   final String equipment;
   final String equipmentHu;
   final String category;
@@ -21,16 +21,67 @@ class ExerciseDto {
   final List<String> images;
   final double metValue;
 
+  String getName(String langCode) {
+    if (langCode == 'hu') return nameHu.isNotEmpty ? nameHu : name;
+    return name;
+  }
+
+  List<String> getInstructions(String langCode) {
+    if (langCode == 'hu')
+      return instructionsHu.isNotEmpty ? instructionsHu : instructions;
+    return instructions;
+  }
+
+  List<String> getPMuscles(String langCode) {
+    if (langCode == 'hu')
+      return primaryMusclesHu.isNotEmpty ? primaryMusclesHu : primaryMuscles;
+    return primaryMuscles;
+  }
+
+  String getForce(String langCode) {
+    if (langCode == 'hu') return forceHu.isNotEmpty ? forceHu : force;
+    return force;
+  }
+
+  String getLevel(String langCode) {
+    if (langCode == 'hu') return levelHu.isNotEmpty ? levelHu : level;
+    return level;
+  }
+
+  String getMechanic(String langCode) {
+    if (langCode == 'hu') return mechanicHu.isNotEmpty ? mechanicHu : mechanic;
+    return mechanic;
+  }
+
+  String getEquipment(String langCode) {
+    if (langCode == 'hu')
+      return equipmentHu.isNotEmpty ? equipmentHu : equipment;
+    return equipment;
+  }
+
+  String getCategory(String langCode) {
+    if (langCode == 'hu') return categoryHu.isNotEmpty ? categoryHu : category;
+    return category;
+  }
+
+  List<String> getSMuscles(String langCode) {
+    if (langCode == 'hu')
+      return secondaryMusclesHu.isNotEmpty
+          ? secondaryMusclesHu
+          : secondaryMuscles;
+    return secondaryMuscles;
+  }
+
   ExerciseDto({
     required this.id,
     required this.name,
     required this.nameHu,
-    this.force,
-    this.forceHu,
+    required this.force,
+    required this.forceHu,
     required this.level,
     required this.levelHu,
-    this.mechanic,
-    this.mechanicHu,
+    required this.mechanic,
+    required this.mechanicHu,
     required this.equipment,
     required this.equipmentHu,
     required this.category,
@@ -64,12 +115,13 @@ class ExerciseDto {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       nameHu: json['nameHu'] ?? '',
-      force: json['force'],
-      forceHu: json['forceHu'],
+      // JAVÍTÁS: Mindenhova ?? '' került, hogy sose legyen null!
+      force: json['force'] ?? '',
+      forceHu: json['forceHu'] ?? '',
       level: json['level'] ?? '',
       levelHu: json['levelHu'] ?? '',
-      mechanic: json['mechanic'],
-      mechanicHu: json['mechanicHu'],
+      mechanic: json['mechanic'] ?? '',
+      mechanicHu: json['mechanicHu'] ?? '',
       equipment: json['equipment'] ?? '',
       equipmentHu: json['equipmentHu'] ?? '',
       category: json['category'] ?? '',
@@ -81,34 +133,35 @@ class ExerciseDto {
       instructions: parseList(json['instructions']),
       instructionsHu: parseList(json['instructionsHu']),
       images: parseList(json['images']),
-      
+
       metValue: toDoubleSafe(json['metValue'], 3.5),
     );
   }
 
   Map<String, dynamic> toJson() => {
-      'id': id,
-      'name': name,
-      'nameHu': nameHu,
-      'force': force,
-      'forceHu': forceHu,
-      'level': level,
-      'levelHu': levelHu,
-      'mechanic': mechanic,
-      'mechanicHu': mechanicHu,
-      'equipment': equipment,
-      'equipmentHu': equipmentHu,
-      'category': category,
-      'categoryHu': categoryHu,
-      'primaryMuscles': primaryMuscles,
-      'primaryMusclesHu': primaryMusclesHu,
-      'secondaryMuscles': secondaryMuscles,
-      'secondaryMusclesHu': secondaryMusclesHu,
-      'instructions': instructions,
-      'instructionsHu': instructionsHu,
-      'images': images,
-      'metValue': metValue,
+    'id': id,
+    'name': name,
+    'nameHu': nameHu,
+    'force': force,
+    'forceHu': forceHu,
+    'level': level,
+    'levelHu': levelHu,
+    'mechanic': mechanic,
+    'mechanicHu': mechanicHu,
+    'equipment': equipment,
+    'equipmentHu': equipmentHu,
+    'category': category,
+    'categoryHu': categoryHu,
+    'primaryMuscles': primaryMuscles,
+    'primaryMusclesHu': primaryMusclesHu,
+    'secondaryMuscles': secondaryMuscles,
+    'secondaryMusclesHu': secondaryMusclesHu,
+    'instructions': instructions,
+    'instructionsHu': instructionsHu,
+    'images': images,
+    'metValue': metValue,
   };
+
   ExerciseDto copyWith({int? id}) {
     return ExerciseDto(
       id: id ?? this.id,
@@ -158,7 +211,6 @@ class WorkoutSetDto {
       id: json['id'] ?? 0,
       workoutExerciseId: json['workoutExerciseId'] ?? 0,
       order: json['order'] ?? 0,
-      // Biztonságos konverzió: num-ként olvassuk, majd toDouble
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
       reps: json['reps'] ?? 0,
       isWarmup: json['isWarmup'] ?? false,
@@ -197,7 +249,7 @@ class WorkoutExerciseDto {
     List<WorkoutSetDto> parsedSets = setsList != null
         ? setsList.map((i) => WorkoutSetDto.fromJson(i)).toList()
         : [];
-    
+
     parsedSets.sort((a, b) => a.order.compareTo(b.order));
 
     return WorkoutExerciseDto(

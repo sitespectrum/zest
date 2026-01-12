@@ -5,7 +5,10 @@ import 'package:client/components/profile_page.dart';
 import 'package:client/components/custom_workout_page.dart';
 import 'package:client/components/custom_meal_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'Providers/language_provider.dart';
 
 class Pages extends StatefulWidget {
   const Pages({super.key});
@@ -49,7 +52,7 @@ class _PagesState extends State<Pages> {
 
   @override
   Widget build(BuildContext context) {
-    'Üdv, $username!';
+    final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       body: PageView(
@@ -73,28 +76,28 @@ class _PagesState extends State<Pages> {
             padding: EdgeInsets.only(right: 20),
             child: NavigationDestination(
               icon: Icon(Icons.home),
-              label: 'Főoldal',
+              label: lang.getText("home_page"),
             ),
           ),
           Padding(
             padding: EdgeInsets.only(right: 30),
             child: NavigationDestination(
               icon: Icon(Icons.fitness_center),
-              label: 'Edzés',
+              label: lang.getText("workout_page"),
             ),
           ),
           Padding(
             padding: EdgeInsets.only(left: 30),
             child: NavigationDestination(
               icon: Icon(Icons.favorite),
-              label: 'Egészség',
+              label: lang.getText("health_page"),
             ),
           ),
           Padding(
             padding: EdgeInsets.only(left: 20),
             child: NavigationDestination(
               icon: Icon(Icons.person),
-              label: 'Profil',
+              label: lang.getText("profile_page"),
             ),
           ),
         ],
@@ -122,7 +125,7 @@ class _PagesState extends State<Pages> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "Új létrehozása",
+                        lang.getText("create_new"),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -156,7 +159,7 @@ class _PagesState extends State<Pages> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      "Új edzés",
+                                      lang.getText("new_workout"),
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize:
@@ -216,7 +219,7 @@ class _PagesState extends State<Pages> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      "Új étkezés",
+                                      lang.getText("new_meal"),
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize:
@@ -269,7 +272,7 @@ class _PagesState extends State<Pages> {
                                   ),
                                 ),
                                 child: Text(
-                                  "Bezárás",
+                                  lang.getText("close"),
                                   style: TextStyle(color: Colors.red),
                                 ),
                               ),
