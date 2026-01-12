@@ -1,6 +1,8 @@
+import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../constants.dart';
 
@@ -130,7 +132,7 @@ class _DetailsPageState extends State<DetailsPage>
     double proteinGoal = 0.2 * calorieGoal / 4;
     double carbsGoal = 0.5 * calorieGoal / 4;
     double fatGoal = 0.3 * calorieGoal / 9;
-    
+
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -195,7 +197,7 @@ class _DetailsPageState extends State<DetailsPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    const appTitle = "Adataim";
+    final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -207,8 +209,8 @@ class _DetailsPageState extends State<DetailsPage>
               child: Container(
                 margin: const EdgeInsets.all(6),
                 child: AppBar(
-                  title: const Text(
-                    appTitle,
+                  title: Text(
+                    lang.getText('my_details'),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 30,
@@ -273,8 +275,8 @@ class _DetailsPageState extends State<DetailsPage>
                     Positioned(
                       top: MediaQuery.of(context).size.height * 0.008,
                       left: MediaQuery.of(context).size.width * 0.08,
-                      child: const Text(
-                        "Magasság",
+                      child: Text(
+                        lang.getText("height"),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -333,8 +335,8 @@ class _DetailsPageState extends State<DetailsPage>
                     Positioned(
                       top: MediaQuery.of(context).size.height * 0.008,
                       left: MediaQuery.of(context).size.width * 0.04,
-                      child: const Text(
-                        "Súly",
+                      child: Text(
+                        lang.getText("weight"),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -397,8 +399,8 @@ class _DetailsPageState extends State<DetailsPage>
                     Positioned(
                       top: MediaQuery.of(context).size.height * 0.007,
                       left: MediaQuery.of(context).size.width * 0.08,
-                      child: const Text(
-                        "Szül. idő",
+                      child: Text(
+                        lang.getText("born_in"),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -452,11 +454,11 @@ class _DetailsPageState extends State<DetailsPage>
                               72,
                             ),
                             style: const TextStyle(color: Colors.white),
-                            items: const [
+                            items: [
                               DropdownMenuItem(
                                 value: "Férfi",
                                 child: Text(
-                                  "Férfi",
+                                  lang.getText("male"),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -466,7 +468,7 @@ class _DetailsPageState extends State<DetailsPage>
                               DropdownMenuItem(
                                 value: "Nő",
                                 child: Text(
-                                  "Nő",
+                                  lang.getText("female"),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -486,8 +488,8 @@ class _DetailsPageState extends State<DetailsPage>
                     Positioned(
                       top: MediaQuery.of(context).size.height * 0.008,
                       left: MediaQuery.of(context).size.width * 0.04,
-                      child: const Text(
-                        "Nem",
+                      child: Text(
+                        lang.getText("gender"),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -538,7 +540,7 @@ class _DetailsPageState extends State<DetailsPage>
                               children: [
                                 Center(
                                   child: Text(
-                                    "Tömegelés",
+                                    lang.getText("bulking"),
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize:
@@ -577,7 +579,7 @@ class _DetailsPageState extends State<DetailsPage>
                               children: [
                                 Center(
                                   child: Text(
-                                    "Szintentartás",
+                                    lang.getText("level_maintenance"),
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize:
@@ -617,7 +619,7 @@ class _DetailsPageState extends State<DetailsPage>
                               children: [
                                 Center(
                                   child: Text(
-                                    "Fogyás",
+                                    lang.getText("weight_loss"),
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize:
@@ -639,7 +641,7 @@ class _DetailsPageState extends State<DetailsPage>
                   top: MediaQuery.of(context).size.height * 0.007,
                   left: MediaQuery.of(context).size.width * 0.08,
                   child: Text(
-                    "Célok",
+                    lang.getText("goals"),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -695,7 +697,7 @@ class _DetailsPageState extends State<DetailsPage>
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "Enyhén aktív",
+                                      lang.getText("slightly_active"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -706,7 +708,7 @@ class _DetailsPageState extends State<DetailsPage>
                                       ),
                                     ),
                                     Text(
-                                      "Napi séta, heti 1-3 könnyű edzés.",
+                                      lang.getText("slightly_active_desc"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: _aselectedIndex == 0
@@ -714,7 +716,7 @@ class _DetailsPageState extends State<DetailsPage>
                                             : Colors.grey,
                                         fontSize:
                                             MediaQuery.of(context).size.height *
-                                            0.02,
+                                            0.016,
                                       ),
                                     ),
                                   ],
@@ -754,7 +756,7 @@ class _DetailsPageState extends State<DetailsPage>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "Közepesen aktív",
+                                      lang.getText("moderately_active"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -765,7 +767,7 @@ class _DetailsPageState extends State<DetailsPage>
                                       ),
                                     ),
                                     Text(
-                                      "Heti 3-5 edzés, ülőmunka.",
+                                      lang.getText("moderately_active_desc"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: _aselectedIndex == 1
@@ -773,7 +775,7 @@ class _DetailsPageState extends State<DetailsPage>
                                             : Colors.grey,
                                         fontSize:
                                             MediaQuery.of(context).size.height *
-                                            0.02,
+                                            0.016,
                                       ),
                                     ),
                                   ],
@@ -813,7 +815,7 @@ class _DetailsPageState extends State<DetailsPage>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "Nagyon aktív",
+                                      lang.getText("very_active"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -824,7 +826,7 @@ class _DetailsPageState extends State<DetailsPage>
                                       ),
                                     ),
                                     Text(
-                                      "Napi edzés, aktív, fizikai munka.",
+                                      lang.getText("very_active_desc"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: _aselectedIndex == 2
@@ -872,7 +874,7 @@ class _DetailsPageState extends State<DetailsPage>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "Extrém aktív",
+                                      lang.getText("extremely_active"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -883,7 +885,7 @@ class _DetailsPageState extends State<DetailsPage>
                                       ),
                                     ),
                                     Text(
-                                      "Napi 2 edzés, például sportkarrier.",
+                                      lang.getText("extremely_active_desc"),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: _aselectedIndex == 3
@@ -891,7 +893,7 @@ class _DetailsPageState extends State<DetailsPage>
                                             : Colors.grey,
                                         fontSize:
                                             MediaQuery.of(context).size.height *
-                                            0.02,
+                                            0.016,
                                       ),
                                     ),
                                   ],
@@ -908,7 +910,7 @@ class _DetailsPageState extends State<DetailsPage>
                   top: MediaQuery.of(context).size.height * 0.007,
                   left: MediaQuery.of(context).size.width * 0.08,
                   child: Text(
-                    "Aktivitás",
+                    lang.getText("activity"),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -939,7 +941,7 @@ class _DetailsPageState extends State<DetailsPage>
             ),
           ),
           child: Text(
-            "Regisztráció befejezése",
+            lang.getText("finish_register"),
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,

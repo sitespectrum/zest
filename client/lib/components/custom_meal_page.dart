@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../Providers/language_provider.dart';
 import 'add_meal_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -31,7 +33,7 @@ class _CMealPageState extends State<CMealPage> {
       (sum, meal) => sum + meal.calories,
     );
     final totalProtein = meals.fold<double>(
-      0.0, 
+      0.0,
       (sum, meal) => sum + meal.protein,
     );
     final totalCarbs = meals.fold<double>(0.0, (sum, meal) => sum + meal.carbs);
@@ -256,7 +258,7 @@ class _CMealPageState extends State<CMealPage> {
 
   @override
   Widget build(BuildContext context) {
-    const appTitle = "Új étkezés";
+    final lang = Provider.of<LanguageProvider>(context);
     // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
@@ -273,8 +275,8 @@ class _CMealPageState extends State<CMealPage> {
                 child: Container(
                   margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
                   child: AppBar(
-                    title: const Text(
-                      appTitle,
+                    title: Text(
+                      lang.getText("new_meal"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
@@ -323,7 +325,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
-                                child: Text("Reggeli"),
+                                child: Text(lang.getText("breakfast")),
                               ),
                             ],
                           ),
@@ -359,7 +361,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
-                                child: Text("Ebéd"),
+                                child: Text(lang.getText("lunch")),
                               ),
                             ],
                           ),
@@ -399,7 +401,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
-                                child: Text("Vacsora"),
+                                child: Text(lang.getText("dinner")),
                               ),
                             ],
                           ),
@@ -435,7 +437,7 @@ class _CMealPageState extends State<CMealPage> {
                                     ),
                                   ),
                                 ),
-                                child: Text("Egyéb"),
+                                child: Text(lang.getText("other")),
                               ),
                             ],
                           ),
@@ -451,10 +453,10 @@ class _CMealPageState extends State<CMealPage> {
                     ? Center(
                         child: Column(
                           children: [
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.all(20),
                               child: Text(
-                                'Nincsenek hozzáadott ételek',
+                                lang.getText("no_added_meal_yet"),
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 18,
@@ -511,7 +513,7 @@ class _CMealPageState extends State<CMealPage> {
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g protein | ${meal.qCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.qFat.toStringAsFixed(3)} g zsír | ${meal.quantity.toStringAsFixed(0)} darab | ${meal.baseWeight} ${meal.unit}',
+                                              '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | ${meal.quantity.toStringAsFixed(0)} ${lang.getText("piece(s)")} | ${meal.baseWeight} ${meal.unit}',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                               ),
@@ -526,8 +528,8 @@ class _CMealPageState extends State<CMealPage> {
                                               userMeals.remove(meal);
                                             }),
                                           },
-                                          child: const Text(
-                                            "Törlés",
+                                          child: Text(
+                                            lang.getText("delete"),
                                             style: TextStyle(
                                               color: Colors.redAccent,
                                             ),
@@ -572,7 +574,7 @@ class _CMealPageState extends State<CMealPage> {
                             Stack(
                               children: [
                                 Text(
-                                  'Kalória: $userCaloriesSum kcal',
+                                  '${lang.getText("calories")}: $userCaloriesSum kcal',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
@@ -589,7 +591,7 @@ class _CMealPageState extends State<CMealPage> {
                             Stack(
                               children: [
                                 Text(
-                                  'Fehérje: ${userProteinsSum.toStringAsFixed(3)} g',
+                                  '${lang.getText("protein")}: ${userProteinsSum.toStringAsFixed(3)} g',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
@@ -606,7 +608,7 @@ class _CMealPageState extends State<CMealPage> {
                             Stack(
                               children: [
                                 Text(
-                                  'Szénhidrát: ${userCarbsSum.toStringAsFixed(3)} g',
+                                  '${lang.getText("carbs")}: ${userCarbsSum.toStringAsFixed(3)} g',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
@@ -623,7 +625,7 @@ class _CMealPageState extends State<CMealPage> {
                             Stack(
                               children: [
                                 Text(
-                                  'Zsír: ${userFatSum.toStringAsFixed(3)} g',
+                                  '${lang.getText("fat")}: ${userFatSum.toStringAsFixed(3)} g',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
@@ -641,7 +643,7 @@ class _CMealPageState extends State<CMealPage> {
                     top: MediaQuery.of(context).size.height * 0.006,
                     left: MediaQuery.of(context).size.width * 0.09,
                     child: Text(
-                      "Összegzés",
+                      lang.getText("summary"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -656,7 +658,7 @@ class _CMealPageState extends State<CMealPage> {
 
               Center(
                 child: Text(
-                  "Sablonjaim",
+                  lang.getText("my_templates"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 30,
@@ -685,9 +687,9 @@ class _CMealPageState extends State<CMealPage> {
                   final meals = snapshot.data ?? [];
 
                   if (meals.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        "Nincs sablon létrehozva.",
+                        lang.getText("no_added_sample_yet"),
                         style: TextStyle(color: Colors.white70, fontSize: 18),
                       ),
                     );
@@ -739,7 +741,7 @@ class _CMealPageState extends State<CMealPage> {
                                           Text(
                                             meal.customName.isNotEmpty
                                                 ? meal.customName
-                                                : "Ismeretlen sablon",
+                                                : lang.getText("unknown_template"),
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
@@ -811,7 +813,7 @@ class _CMealPageState extends State<CMealPage> {
                                                           ),
                                                           Expanded(
                                                             child: Text(
-                                                              '${item.qProtein.toStringAsFixed(3)} g protein',
+                                                              '${item.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")}',
                                                               style:
                                                                   const TextStyle(
                                                                     color: Colors
@@ -825,7 +827,7 @@ class _CMealPageState extends State<CMealPage> {
                                                         children: [
                                                           Expanded(
                                                             child: Text(
-                                                              '${item.qCarbs.toStringAsFixed(3)} g szénhidrát',
+                                                              '${item.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")}',
                                                               style:
                                                                   const TextStyle(
                                                                     color: Colors
@@ -835,7 +837,7 @@ class _CMealPageState extends State<CMealPage> {
                                                           ),
                                                           Expanded(
                                                             child: Text(
-                                                              '${item.qFat.toStringAsFixed(3)} g zsír',
+                                                              '${item.qFat.toStringAsFixed(3)} g ${lang.getText("fat")}',
                                                               style:
                                                                   const TextStyle(
                                                                     color: Colors
@@ -1009,7 +1011,7 @@ class _CMealPageState extends State<CMealPage> {
                                                   },
                                                 );
                                               },
-                                              child: Text("Mentés étkezésként"),
+                                              child: Text(lang.getText("save_as_meal")),
                                             ),
                                           ),
                                           Center(
@@ -1023,7 +1025,7 @@ class _CMealPageState extends State<CMealPage> {
                                                   showdelete = true;
                                                 });
                                               },
-                                              child: Text("Szerkesztés"),
+                                              child: Text(lang.getText("edit")),
                                             ),
                                           ),
                                           Center(
@@ -1055,7 +1057,7 @@ class _CMealPageState extends State<CMealPage> {
                                                   });
                                                 }
                                               },
-                                              child: Text("Hozzáadás"),
+                                              child: Text(lang.getText("add")),
                                             ),
                                           ),
                                           Center(
@@ -1097,8 +1099,8 @@ class _CMealPageState extends State<CMealPage> {
                                                       BorderRadius.circular(12),
                                                 ),
                                               ),
-                                              child: const Text(
-                                                "Étkezés folytatása",
+                                              child: Text(
+                                                lang.getText("continue_meal"),
                                                 style: TextStyle(
                                                   color: Colors.red,
                                                   fontSize: 16,
@@ -1138,7 +1140,7 @@ class _CMealPageState extends State<CMealPage> {
                                   Text(
                                     meal.customName.isNotEmpty
                                         ? meal.customName
-                                        : "Ismeretlen sablon",
+                                        : lang.getText("unknown_template"),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -1147,7 +1149,7 @@ class _CMealPageState extends State<CMealPage> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    '${meal.totalCalories} kcal | ${meal.totalProtein.toStringAsFixed(3)} g protein | ${meal.totalCarbs.toStringAsFixed(3)} g szénhidrát | ${meal.totalFat.toStringAsFixed(3)} g zsír',
+                                    '${meal.totalCalories} kcal | ${meal.totalProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.totalCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.totalFat.toStringAsFixed(3)} g ${lang.getText("fat")}',
                                     style: const TextStyle(
                                       color: Colors.white70,
                                     ),
@@ -1195,8 +1197,8 @@ class _CMealPageState extends State<CMealPage> {
                     borderRadius: BorderRadius.circular(11),
                   ),
                 ),
-                child: const Text(
-                  'Hozzáadás',
+                child: Text(
+                  lang.getText("add"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -1228,7 +1230,7 @@ class _CMealPageState extends State<CMealPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  "Sablon mentése",
+                                  lang.getText("save_sample"),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,
@@ -1304,8 +1306,8 @@ class _CMealPageState extends State<CMealPage> {
                                       left:
                                           MediaQuery.of(context).size.width *
                                           0.04,
-                                      child: const Text(
-                                        "Sablon neve",
+                                      child:  Text(
+                                        lang.getText("sample_name"),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 18,
@@ -1430,8 +1432,8 @@ class _CMealPageState extends State<CMealPage> {
                                           horizontal: 10,
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Nincs mentés',
+                                      child: Text(
+                                        lang.getText("save_without_sample"),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 17,
@@ -1547,8 +1549,8 @@ class _CMealPageState extends State<CMealPage> {
                                           ),
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Mentés',
+                                      child: Text(
+                                        lang.getText("save"),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 17,
@@ -1576,8 +1578,8 @@ class _CMealPageState extends State<CMealPage> {
                     borderRadius: BorderRadius.circular(11),
                   ),
                 ),
-                child: const Text(
-                  'Tovább',
+                child: Text(
+                  lang.getText("continue"),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,

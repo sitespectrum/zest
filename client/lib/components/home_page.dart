@@ -1,6 +1,8 @@
+import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
@@ -72,7 +74,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-  with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin {
   late Future<List<UserMealDto>> _futureMeals;
   late Future<double> _todaycalories;
   late Future<double> _calorieGoal;
@@ -94,8 +96,9 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+    final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
     super.build(context);
-    const appTitle = "Főoldal";
 
     return SingleChildScrollView(
       child: FutureBuilder<List<UserMealDto>>(
@@ -120,9 +123,9 @@ class _HomePageState extends State<HomePage>
 
           String formattedDate = '';
           if (lastMeal != null) {
-            formattedDate = DateFormat(
-              'yyyy-MM-dd HH:mm:ss',
-            ).format(lastMeal.eatenAt);
+            formattedDate = DateFormat.yMd(
+              locale,
+            ).add_Hms().format(lastMeal.eatenAt);
           }
 
           return Column(
@@ -133,8 +136,8 @@ class _HomePageState extends State<HomePage>
                 child: Container(
                   margin: const EdgeInsets.all(6),
                   child: AppBar(
-                    title: const Text(
-                      appTitle,
+                    title: Text(
+                      lang.getText("home_page"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
@@ -233,7 +236,7 @@ class _HomePageState extends State<HomePage>
                     top: MediaQuery.of(context).size.height * 0.005,
                     left: MediaQuery.of(context).size.width * 0.09,
                     child: Text(
-                      "Kalóriadeficit",
+                      lang.getText("calorie_deficit"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -270,7 +273,7 @@ class _HomePageState extends State<HomePage>
                     top: MediaQuery.of(context).size.height * 0.005,
                     left: MediaQuery.of(context).size.width * 0.09,
                     child: Text(
-                      "Legutóbbi edzés",
+                      lang.getText("recent_workout"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -302,10 +305,10 @@ class _HomePageState extends State<HomePage>
                               ),
                             ],
                           ),
-                          child: const Padding(
+                          child: Padding(
                             padding: EdgeInsets.all(20),
                             child: Text(
-                              'Nincsenek hozzáadott ételek',
+                              lang.getText("no_added_meal_yet"),
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 18,
@@ -419,7 +422,7 @@ class _HomePageState extends State<HomePage>
                                                         ),
                                                         Expanded(
                                                           child: Text(
-                                                            '${meal.qProtein.toStringAsFixed(3)} g protein',
+                                                            '${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein").toLowerCase()}',
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -433,7 +436,7 @@ class _HomePageState extends State<HomePage>
                                                       children: [
                                                         Expanded(
                                                           child: Text(
-                                                            '${meal.qCarbs.toStringAsFixed(3)} g szénhidrát',
+                                                            '${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs").toLowerCase()}',
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -443,7 +446,7 @@ class _HomePageState extends State<HomePage>
                                                         ),
                                                         Expanded(
                                                           child: Text(
-                                                            '${meal.qFat.toStringAsFixed(3)} g zsír',
+                                                            '${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat").toLowerCase()}',
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -482,7 +485,7 @@ class _HomePageState extends State<HomePage>
                                               ),
                                             ),
                                             child: Text(
-                                              "Bezárás",
+                                              lang.getText("close"),
                                               style: TextStyle(
                                                 color: Colors.red,
                                               ),
@@ -532,28 +535,28 @@ class _HomePageState extends State<HomePage>
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      "Kalória: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
+                                      "${lang.getText("calories")} ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                       ),
                                     ),
                                     Text(
-                                      "Fehérje: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
+                                      "${lang.getText("protein")} ${lastMeal.totalProtein.toStringAsFixed(1)} g",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                       ),
                                     ),
                                     Text(
-                                      "Szénhidrát: ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
+                                      "${lang.getText("carbs")} ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                       ),
                                     ),
                                     Text(
-                                      "Zsír: ${lastMeal.totalFat.toStringAsFixed(1)} g",
+                                      "${lang.getText("fat")} ${lastMeal.totalFat.toStringAsFixed(1)} g",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
@@ -589,7 +592,7 @@ class _HomePageState extends State<HomePage>
                     top: MediaQuery.of(context).size.height * 0.005,
                     left: MediaQuery.of(context).size.width * 0.09,
                     child: Text(
-                      "Legutóbbi étkezés",
+                      lang.getText("recent_meal"),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
