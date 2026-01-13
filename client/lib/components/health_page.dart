@@ -37,7 +37,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
     final List<dynamic> data = jsonDecode(response.body);
     return data.map((e) => UserMealDto.fromJson(e)).toList();
   } else {
-    throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+    throw Exception(response.body);
   }
 }
 
@@ -59,7 +59,7 @@ Future<Map<String, double>> fetchMacroGoals() async {
       'proteinGoal': (data['proteinGoal'] as num).toDouble(),
     };
   } else {
-    throw Exception("Nem sikerült lekérni a tápanyagokat: ${response.body}");
+    throw Exception(response.body);
   }
 }
 
@@ -82,7 +82,7 @@ Future<Map<String, double>> fetchTodayNutrients() async {
       'protein': (data['totalprotein'] as num).toDouble(),
     };
   } else {
-    throw Exception("Nem sikerült lekérni a tápanyagokat: ${response.body}");
+    throw Exception(response.body);
   }
 }
 

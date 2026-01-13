@@ -147,6 +147,8 @@ class LanguageProvider with ChangeNotifier {
       'no_unit_found': 'Nem található mértékegység ehhez az ételhez.',
       'no_userId_found': 'Nem található userId.',
       'no_meals_selected' : 'Nincs étel kiválasztva.',
+      'failed_to_fetch_meals' : 'Nem sikerült lekérni az étkezéseket.',
+      'failed_to_save' : 'Nem sikerült menteni',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -254,6 +256,8 @@ class LanguageProvider with ChangeNotifier {
       'no_unit_found': 'No unit found for this meal.',
       'no_userId_found': 'No userId found',
       'no_meals_selected' : 'No meals selected.',
+      'failed_to_fetch_meals' : 'Failed to fetch meals.',
+      'failed_to_save' : 'Failed to save',
     },
   };
 }

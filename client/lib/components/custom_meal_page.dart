@@ -40,6 +40,7 @@ class _CMealPageState extends State<CMealPage> {
     final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
@@ -70,7 +71,7 @@ class _CMealPageState extends State<CMealPage> {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(
-        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
       );
     }
   }
@@ -119,6 +120,7 @@ class _CMealPageState extends State<CMealPage> {
     final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
@@ -149,7 +151,7 @@ class _CMealPageState extends State<CMealPage> {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(
-        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
       );
     }
   }
@@ -172,6 +174,7 @@ class _CMealPageState extends State<CMealPage> {
     final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
@@ -202,7 +205,7 @@ class _CMealPageState extends State<CMealPage> {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(
-        "Nem sikerült menteni: ${response.statusCode} ${response.body}",
+        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
       );
     }
   }
@@ -240,6 +243,7 @@ class _CMealPageState extends State<CMealPage> {
   Future<List<CustomUserMealDto>> fetchCustomUserMeals() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null) throw Exception("Nincs token");
 
@@ -252,7 +256,7 @@ class _CMealPageState extends State<CMealPage> {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
     } else {
-      throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+      throw Exception("${lang.getText("failed_to_fetch_meals")} ${response.body}");
     }
   }
 
@@ -934,7 +938,7 @@ class _CMealPageState extends State<CMealPage> {
                                                   );
                                                   if (userId == null) {
                                                     throw Exception(
-                                                      "Nincs userId a gépen.",
+                                                      lang.getText("no_userId"),
                                                     );
                                                   }
 
@@ -1395,6 +1399,7 @@ class _CMealPageState extends State<CMealPage> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text("Hiba: $e"),
+                                              backgroundColor: Colors.red,
                                               behavior:
                                                   SnackBarBehavior.floating,
                                               margin: EdgeInsets.only(

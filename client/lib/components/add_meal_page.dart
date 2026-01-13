@@ -94,7 +94,7 @@ class _AddMealPageState extends State<AddMealPage> {
       }
       final response = await http.get(uri);
 
-      if (response.statusCode != 200) throw Exception('HTTP hiba');
+      if (response.statusCode != 200) throw Exception('HTTP error');
 
       final data = jsonDecode(response.body);
       if (data is! List) {
@@ -154,6 +154,7 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   Future<List<UserMealDto>> fetchUserMeals() async {
+    final lang = Provider.of<LanguageProvider>(context);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
@@ -168,7 +169,7 @@ class _AddMealPageState extends State<AddMealPage> {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => UserMealDto.fromJson(e)).toList();
     } else {
-      throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+      throw Exception(lang.getText("failed_to_fetch_meals"));
     }
   }
 
@@ -489,6 +490,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                           content: Text(
                                             lang.getText("no_barcode_found"),
                                           ),
+                                          backgroundColor: Colors.red,
                                           behavior: SnackBarBehavior.floating,
                                           margin: EdgeInsets.only(
                                             bottom: 30,
@@ -676,6 +678,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                         content: Text(
                                           lang.getText("no_unit_found"),
                                         ),
+                                        backgroundColor: Colors.red,
                                         behavior: SnackBarBehavior.floating,
                                         margin: EdgeInsets.only(
                                           bottom: 30,
