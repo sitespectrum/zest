@@ -86,10 +86,11 @@ class _DetailsPageState extends State<DetailsPage>
   }
 
   Future<void> submitDetails() async {
+    final lang = Provider.of<LanguageProvider>(context);
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Válassz születési dátumot!"),
+          content: Text(lang.getText("choose_date_of_birth")),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
           duration: Duration(milliseconds: 1800),
@@ -111,7 +112,7 @@ class _DetailsPageState extends State<DetailsPage>
     if (height == null || weight == null || gender.isEmpty || goal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Töltsd ki az összes mezőt helyesen!"),
+          content: Text(lang.getText("choose_date_of_birth")),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
           duration: Duration(milliseconds: 1800),
@@ -136,7 +137,7 @@ class _DetailsPageState extends State<DetailsPage>
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Válassz születési dátumot!"),
+          content: Text(lang.getText("choose_date_of_birth")),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
           duration: Duration(milliseconds: 1800),
@@ -248,6 +249,17 @@ class _DetailsPageState extends State<DetailsPage>
                                 horizontal: 0,
                                 vertical: 0,
                               ),
+                              suffixIcon: Padding(
+                                padding: EdgeInsets.fromLTRB(10, 12, 10, 10),
+                                child: const Text(
+                                  " cm",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -308,6 +320,17 @@ class _DetailsPageState extends State<DetailsPage>
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 0,
                                 vertical: 0,
+                              ),
+                              suffixIcon: Padding(
+                                padding: EdgeInsets.fromLTRB(12, 12, 10, 10),
+                                child: const Text(
+                                  " kg",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),

@@ -92,6 +92,21 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  String getTranslatedName(String mealName, LanguageProvider lang) {
+    switch (mealName) {
+      case 'Reggeli':
+        return lang.getText('breakfast');
+      case 'Ebéd':
+        return lang.getText('lunch');
+      case 'Vacsora':
+        return lang.getText('dinner');
+      case 'Egyéb':
+        return lang.getText('other');
+      default:
+        return mealName;
+    }
+  }
+
   final colorList = <Color>[Color.fromRGBO(78, 156, 71, 1)];
 
   @override
@@ -349,7 +364,10 @@ class _HomePageState extends State<HomePage>
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          lastMeal.mealName,
+                                          getTranslatedName(
+                                            lastMeal.mealName,
+                                            lang,
+                                          ),
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 20,
@@ -524,7 +542,7 @@ class _HomePageState extends State<HomePage>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "${lastMeal.mealName} - $formattedDate",
+                                      "${getTranslatedName(lastMeal.mealName, lang)} - $formattedDate",
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize:
@@ -535,28 +553,28 @@ class _HomePageState extends State<HomePage>
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      "${lang.getText("calories")} ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
+                                      "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                       ),
                                     ),
                                     Text(
-                                      "${lang.getText("protein")} ${lastMeal.totalProtein.toStringAsFixed(1)} g",
+                                      "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                       ),
                                     ),
                                     Text(
-                                      "${lang.getText("carbs")} ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
+                                      "${lang.getText("carbs")}: ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                       ),
                                     ),
                                     Text(
-                                      "${lang.getText("fat")} ${lastMeal.totalFat.toStringAsFixed(1)} g",
+                                      "${lang.getText("fat")}: ${lastMeal.totalFat.toStringAsFixed(1)} g",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,

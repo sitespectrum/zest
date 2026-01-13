@@ -51,10 +51,10 @@ class _AddMealPageState extends State<AddWorkoutPage> {
       userWorkouts.add(exercise);
     });
     final cleanName = stripHtmlTags(exercise.name);
-
+    final lang = Provider.of<LanguageProvider>(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$cleanName hozzáadva a listádhoz!'),
+        content: Text('$cleanName ${lang.getText("added_to_list")}'),
         showCloseIcon: true,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
@@ -557,7 +557,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          '$cleanName hozzáadva a listádhoz!',
+                                          '$cleanName ${lang.getText("added_to_list")}',
                                         ),
                                         behavior: SnackBarBehavior.floating,
                                         margin: EdgeInsets.only(
@@ -688,7 +688,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        '$cleanName hozzáadva a listádhoz!',
+                                        '$cleanName ${lang.getText("added_to_list")}',
                                       ),
                                       behavior: SnackBarBehavior.floating,
                                       margin: EdgeInsets.only(

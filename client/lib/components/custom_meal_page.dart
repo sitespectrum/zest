@@ -741,7 +741,9 @@ class _CMealPageState extends State<CMealPage> {
                                           Text(
                                             meal.customName.isNotEmpty
                                                 ? meal.customName
-                                                : lang.getText("unknown_template"),
+                                                : lang.getText(
+                                                    "unknown_template",
+                                                  ),
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
@@ -874,9 +876,11 @@ class _CMealPageState extends State<CMealPage> {
                                                                         ScaffoldMessenger.of(
                                                                           context,
                                                                         ).showSnackBar(
-                                                                          const SnackBar(
+                                                                          SnackBar(
                                                                             content: Text(
-                                                                              "Étel törölve",
+                                                                              lang.getText(
+                                                                                "meal_deleted",
+                                                                              ),
                                                                             ),
                                                                           ),
                                                                         );
@@ -884,9 +888,11 @@ class _CMealPageState extends State<CMealPage> {
                                                                         ScaffoldMessenger.of(
                                                                           context,
                                                                         ).showSnackBar(
-                                                                          const SnackBar(
+                                                                          SnackBar(
                                                                             content: Text(
-                                                                              "Nem sikerült törölni",
+                                                                              lang.getText(
+                                                                                "deletion_failed",
+                                                                              ),
                                                                             ),
                                                                           ),
                                                                         );
@@ -943,7 +949,9 @@ class _CMealPageState extends State<CMealPage> {
                                                   ).showSnackBar(
                                                     SnackBar(
                                                       content: Text(
-                                                        "Sikeresen mentve!",
+                                                        lang.getText(
+                                                          "saved_successfully",
+                                                        ),
                                                       ),
                                                       behavior: SnackBarBehavior
                                                           .floating,
@@ -1011,7 +1019,9 @@ class _CMealPageState extends State<CMealPage> {
                                                   },
                                                 );
                                               },
-                                              child: Text(lang.getText("save_as_meal")),
+                                              child: Text(
+                                                lang.getText("save_as_meal"),
+                                              ),
                                             ),
                                           ),
                                           Center(
@@ -1072,7 +1082,7 @@ class _CMealPageState extends State<CMealPage> {
                                                 ).showSnackBar(
                                                   SnackBar(
                                                     content: Text(
-                                                      "${meal.customName} hozzáadva a listához!",
+                                                      "${meal.customName} ${lang.getText("added_to_list")}",
                                                     ),
                                                     duration: const Duration(
                                                       milliseconds: 1500,
@@ -1209,6 +1219,16 @@ class _CMealPageState extends State<CMealPage> {
 
               FilledButton(
                 onPressed: () async {
+                  if (userMeals.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(lang.getText("no_meals_selected")),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -1306,7 +1326,7 @@ class _CMealPageState extends State<CMealPage> {
                                       left:
                                           MediaQuery.of(context).size.width *
                                           0.04,
-                                      child:  Text(
+                                      child: Text(
                                         lang.getText("sample_name"),
                                         style: TextStyle(
                                           color: Colors.white,
@@ -1330,7 +1350,7 @@ class _CMealPageState extends State<CMealPage> {
                                           final userId = prefs.getInt('userId');
                                           if (userId == null) {
                                             throw Exception(
-                                              "Nincs userId a gépen.",
+                                              lang.getText("no_userId_found"),
                                             );
                                           }
 
@@ -1346,7 +1366,9 @@ class _CMealPageState extends State<CMealPage> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                "Sikeresen mentve!",
+                                                lang.getText(
+                                                  "saved_successfully",
+                                                ),
                                               ),
                                               showCloseIcon: true,
                                               behavior:
@@ -1390,6 +1412,7 @@ class _CMealPageState extends State<CMealPage> {
                                               ),
                                             ),
                                           );
+                                          return;
                                         }
                                         if (_debounce?.isActive ?? false) {
                                           _debounce!.cancel();
@@ -1444,13 +1467,30 @@ class _CMealPageState extends State<CMealPage> {
 
                                     FilledButton(
                                       onPressed: () async {
+                                        if (mealnamecontroller.text
+                                            .trim()
+                                            .isEmpty) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "Adj nevet a sablonnak!",
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         try {
                                           final prefs =
                                               await SharedPreferences.getInstance();
                                           final userId = prefs.getInt('userId');
                                           if (userId == null) {
                                             throw Exception(
-                                              "Nincs userId a gépen.",
+                                              lang.getText("no_userId_found"),
                                             );
                                           }
 
@@ -1466,7 +1506,9 @@ class _CMealPageState extends State<CMealPage> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                "Sikeresen mentve!",
+                                                lang.getText(
+                                                  "saved_successfully",
+                                                ),
                                               ),
                                               showCloseIcon: true,
                                               behavior:
@@ -1510,6 +1552,7 @@ class _CMealPageState extends State<CMealPage> {
                                               ),
                                             ),
                                           );
+                                          return;
                                         }
                                         if (_debounce?.isActive ?? false) {
                                           _debounce!.cancel();
