@@ -92,6 +92,7 @@ class _DetailsPageState extends State<DetailsPage>
         SnackBar(
           content: Text(lang.getText("choose_date_of_birth")),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
           margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
           duration: Duration(milliseconds: 1800),
           animation: CurvedAnimation(
@@ -113,6 +114,7 @@ class _DetailsPageState extends State<DetailsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(lang.getText("choose_date_of_birth")),
+          backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
           duration: Duration(milliseconds: 1800),
@@ -138,6 +140,7 @@ class _DetailsPageState extends State<DetailsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(lang.getText("choose_date_of_birth")),
+          backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
           duration: Duration(milliseconds: 1800),

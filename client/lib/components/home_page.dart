@@ -16,7 +16,7 @@ Future<double> fetchCalorieGoal() async {
   if (token == null) throw Exception("Nincs token");
 
   final response = await http.get(
-    Uri.parse("$apiUrl/api/auth/getUser"), // s || l
+    Uri.parse("$apiUrl/api/auth/getUser"),
     headers: {"Authorization": "Bearer $token"},
   );
 
@@ -25,7 +25,7 @@ Future<double> fetchCalorieGoal() async {
     final goal = data['calorieGoal'] ?? data['CalorieGoal'];
     return (goal as num).toDouble();
   } else {
-    throw Exception("Nem sikerült lekérni a cél kalóriát: ${response.body}");
+    throw Exception(response.body);
   }
 }
 
@@ -44,7 +44,7 @@ Future<List<UserMealDto>> fetchUserMeals() async {
     final List<dynamic> data = jsonDecode(response.body);
     return data.map((e) => UserMealDto.fromJson(e)).toList();
   } else {
-    throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+    throw Exception(response.body);
   }
 }
 
@@ -62,7 +62,7 @@ Future<double> fetchTodayCalories() async {
     final data = jsonDecode(response.body);
     return (data as num).toDouble();
   } else {
-    throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+    throw Exception(response.body);
   }
 }
 

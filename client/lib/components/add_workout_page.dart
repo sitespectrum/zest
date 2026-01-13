@@ -225,6 +225,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   }
 
   Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
+    final lang = Provider.of<LanguageProvider>(context);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
@@ -239,7 +240,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
     } else {
-      throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+      throw Exception(lang.getText("failed_to_fetch_meals"));
     }
   }
 

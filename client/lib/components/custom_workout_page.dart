@@ -30,6 +30,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   Future<List<CustomUserWorkoutDto>> fetchCustomUserWorkouts() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null) throw Exception("Nincs token");
 
@@ -42,7 +43,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => CustomUserWorkoutDto.fromJson(e)).toList();
     } else {
-      throw Exception("Nem sikerült lekérni az étkezéseket: ${response.body}");
+      throw Exception("${lang.getText("failed_to_fetch_meals")} ${response.body}");
     }
   }
 
