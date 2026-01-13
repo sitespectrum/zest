@@ -46,6 +46,16 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     }
   }
 
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      final ExerciseDto item = userWorkouts.removeAt(oldIndex);
+      userWorkouts.insert(newIndex, item);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
@@ -96,15 +106,37 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                           ],
                         ),
                       )
-                    : ListView.builder(
+                    : ReorderableListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: userWorkouts.length,
+                        onReorder: _onReorder,
+                        proxyDecorator:
+                            (
+                              Widget child,
+                              int index,
+                              Animation<double> animation,
+                            ) {
+                              return AnimatedBuilder(
+                                animation: animation,
+                                builder: (BuildContext context, Widget? child) {
+                                  return Material(
+                                    color: Colors
+                                        .transparent,
+                                    elevation:
+                                        0,
+                                    child: child,
+                                  );
+                                },
+                                child: child,
+                              );
+                            },
                         itemBuilder: (context, index) {
                           final exerciseItem = userWorkouts[index];
                           final name = exerciseItem.getName(langCode);
 
                           return GestureDetector(
+                            key: ValueKey(exerciseItem),
                             onTap: () {
                               showDialog(
                                 context: context,
