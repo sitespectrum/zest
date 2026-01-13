@@ -657,186 +657,175 @@ class _HealthPageState extends State<HealthPage>
                     ),
                     child: nutrients == null
                         ? Center(child: CircularProgressIndicator())
-                        : Stack(
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Stack(
-                                        children: [
-                                          Text(
-                                            '${lang.getText("calories")}: ${nutrients!['calories']!.toStringAsFixed(0)} kcal \n',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: 10,
+                                  left: 10,
+                                ),
+                                child: Text(
+                                  '${lang.getText("calories")}: ${nutrients!['calories']!.toStringAsFixed(0)} kcal',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
                                   ),
+                                ),
+                              ),
 
-                                  Row(
-                                    children: [
-                                      Stack(
-                                        children: [
-                                          LinearPercentIndicator(
-                                            width:
-                                                MediaQuery.of(
-                                                  context,
-                                                ).size.width *
-                                                0.5,
-                                            animation: true,
-                                            animationDuration: 1000,
-                                            lineHeight: 20.0,
-                                            leading: Text(
-                                              "${lang.getText("protein")}: ",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            percent: min(
-                                              (nutrients!['protein']! /
-                                                      macros!['proteinGoal']!)
-                                                  .toDouble(),
-                                              1.0,
-                                            ),
-                                            center: Text(
-                                              "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros!['proteinGoal']!.toStringAsFixed(0)} g ${macros!['proteinGoal']! <= nutrients!['protein']! && nutrients!['protein']! <= macros!['proteinGoal']! + 50
-                                                  ? "✅"
-                                                  : nutrients!['protein']! > macros!['proteinGoal']! + 50
-                                                  ? "😡"
-                                                  : ""}",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            progressColor: Colors.blue,
-                                            backgroundColor: Color.fromRGBO(
-                                              58,
-                                              58,
-                                              58,
-                                              1,
-                                            ),
-                                            barRadius: const Radius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ],
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                  horizontal: 10,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${lang.getText("protein")}: ",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    LinearPercentIndicator(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.75,
+                                      animation: true,
+                                      animationDuration: 1000,
+                                      lineHeight: 20.0,
+                                      percent: min(
+                                        (nutrients!['protein']! /
+                                                macros!['proteinGoal']!)
+                                            .toDouble(),
+                                        1.0,
+                                      ),
+                                      center: Text(
+                                        "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros!['proteinGoal']!.toStringAsFixed(0)} g ${macros!['proteinGoal']! <= nutrients!['protein']! && nutrients!['protein']! <= macros!['proteinGoal']! + 50
+                                            ? "✅"
+                                            : nutrients!['protein']! > macros!['proteinGoal']! + 50
+                                            ? "😡"
+                                            : ""}",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      progressColor: Colors.blue,
+                                      backgroundColor: Color.fromRGBO(
+                                        58,
+                                        58,
+                                        58,
+                                        1,
+                                      ),
+                                      barRadius: const Radius.circular(12),
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                                  Row(
-                                    children: [
-                                      Stack(
-                                        children: [
-                                          LinearPercentIndicator(
-                                            width:
-                                                MediaQuery.of(
-                                                  context,
-                                                ).size.width *
-                                                0.38,
-                                            animation: true,
-                                            animationDuration: 1000,
-                                            lineHeight: 20.0,
-                                            leading: Text(
-                                              "${lang.getText("carbs")}: ",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            percent: min(
-                                              (nutrients!['carbs']! /
-                                                      macros!['carbsGoal']!)
-                                                  .toDouble(),
-                                              1.0,
-                                            ),
-                                            center: Text(
-                                              "${nutrients!['carbs']!.toStringAsFixed(0)} g / ${macros!['carbsGoal']!.toStringAsFixed(0)} g ${macros!['carbsGoal']! <= nutrients!['carbs']! && nutrients!['carbs']! <= macros!['carbsGoal']! + 30
-                                                  ? "✅"
-                                                  : nutrients!['carbs']! > macros!['carbsGoal']! + 30
-                                                  ? "😡"
-                                                  : ""}",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            progressColor: Colors.orange,
-                                            backgroundColor: Color.fromRGBO(
-                                              58,
-                                              58,
-                                              58,
-                                              1,
-                                            ),
-                                            barRadius: const Radius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ],
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                  horizontal: 10,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${lang.getText("carbs")}: ",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    LinearPercentIndicator(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.75,
+                                      animation: true,
+                                      animationDuration: 1000,
+                                      lineHeight: 20.0,
+                                      percent: min(
+                                        (nutrients!['carbs']! /
+                                                macros!['carbsGoal']!)
+                                            .toDouble(),
+                                        1.0,
+                                      ),
+                                      center: Text(
+                                        "${nutrients!['carbs']!.toStringAsFixed(0)} g / ${macros!['carbsGoal']!.toStringAsFixed(0)} g ${macros!['carbsGoal']! <= nutrients!['carbs']! && nutrients!['carbs']! <= macros!['carbsGoal']! + 30
+                                            ? "✅"
+                                            : nutrients!['carbs']! > macros!['carbsGoal']! + 30
+                                            ? "😡"
+                                            : ""}",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      progressColor: Colors.orange,
+                                      backgroundColor: Color.fromRGBO(
+                                        58,
+                                        58,
+                                        58,
+                                        1,
+                                      ),
+                                      barRadius: const Radius.circular(12),
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                                  Row(
-                                    children: [
-                                      Stack(
-                                        children: [
-                                          LinearPercentIndicator(
-                                            width:
-                                                MediaQuery.of(
-                                                  context,
-                                                ).size.width *
-                                                0.5,
-                                            animation: true,
-                                            animationDuration: 1000,
-                                            lineHeight: 20.0,
-                                            leading: Text(
-                                              "${lang.getText("fat")}: ",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            percent: min(
-                                              (nutrients!['fat']! /
-                                                      macros!['fatGoal']!)
-                                                  .toDouble(),
-                                              1.0,
-                                            ),
-                                            center: Text(
-                                              "${nutrients!['fat']!.toStringAsFixed(0)} g / ${macros!['fatGoal']!.toStringAsFixed(0)} g ${macros!['fatGoal']! <= nutrients!['fat']! && nutrients!['fat']! <= macros!['fatGoal']! + 20
-                                                  ? "✅"
-                                                  : nutrients!['fat']! > macros!['fatGoal']! + 20
-                                                  ? "😡"
-                                                  : ""}",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            progressColor: Colors.pink,
-                                            backgroundColor: Color.fromRGBO(
-                                              58,
-                                              58,
-                                              58,
-                                              1,
-                                            ),
-                                            barRadius: const Radius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ],
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                  horizontal: 10,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${lang.getText("fat")}: ",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                    SizedBox(height: 5),
+                                    LinearPercentIndicator(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.75,
+                                      animation: true,
+                                      animationDuration: 1000,
+                                      lineHeight: 20.0,
+                                      percent: min(
+                                        (nutrients!['fat']! /
+                                                macros!['fatGoal']!)
+                                            .toDouble(),
+                                        1.0,
+                                      ),
+                                      center: Text(
+                                        "${nutrients!['fat']!.toStringAsFixed(0)} g / ${macros!['fatGoal']!.toStringAsFixed(0)} g ${macros!['fatGoal']! <= nutrients!['fat']! && nutrients!['fat']! <= macros!['fatGoal']! + 20
+                                            ? "✅"
+                                            : nutrients!['fat']! > macros!['fatGoal']! + 20
+                                            ? "😡"
+                                            : ""}",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      progressColor: Colors.pink,
+                                      backgroundColor: Color.fromRGBO(
+                                        58,
+                                        58,
+                                        58,
+                                        1,
+                                      ),
+                                      barRadius: const Radius.circular(12),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

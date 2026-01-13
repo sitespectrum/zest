@@ -43,10 +43,11 @@ class _AddMealPageState extends State<AddMealPage> {
       userMeals.add(meal);
     });
     final cleanName = stripHtmlTags(meal.name);
+    final lang = Provider.of<LanguageProvider>(context);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$cleanName hozzáadva a listádhoz!'),
+        content: Text('$cleanName ${lang.getText("added_to_list")}'),
         showCloseIcon: true,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
@@ -486,7 +487,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            "Nincs ilyen vonalkódú étel",
+                                            lang.getText("no_barcode_found"),
                                           ),
                                           behavior: SnackBarBehavior.floating,
                                           margin: EdgeInsets.only(
@@ -578,7 +579,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          '$cleanName hozzáadva a listádhoz!',
+                                          '$cleanName ${lang.getText("added_to_list")}',
                                         ),
                                         behavior: SnackBarBehavior.floating,
                                         margin: EdgeInsets.only(
@@ -673,7 +674,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          "Nem található mértékegység ehhez az ételhez.",
+                                          lang.getText("no_unit_found"),
                                         ),
                                         behavior: SnackBarBehavior.floating,
                                         margin: EdgeInsets.only(
@@ -987,7 +988,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          '$cleanName hozzáadva a listádhoz!',
+                                          '$cleanName ${lang.getText("added_to_list")}',
                                         ),
                                         behavior: SnackBarBehavior.floating,
                                         margin: EdgeInsets.only(

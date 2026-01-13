@@ -621,7 +621,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         ).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              "${template.customWorkoutName} betöltve!",
+                                              "${template.customWorkoutName} ${lang.getText("loaded")}",
                                             ),
                                           ),
                                         );
