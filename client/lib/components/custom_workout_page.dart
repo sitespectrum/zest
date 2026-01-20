@@ -1,12 +1,14 @@
 import 'dart:convert';
+import 'package:client/components/running_workout_page.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:client/models/workout.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Providers/language_provider.dart';
 import 'add_workout_page.dart';
+import '../Providers/language_provider.dart';
+import '../providers/workout_provider.dart';
 
 class CWorkoutPage extends StatefulWidget {
   const CWorkoutPage({super.key});
@@ -43,7 +45,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => CustomUserWorkoutDto.fromJson(e)).toList();
     } else {
-      throw Exception("${lang.getText("failed_to_fetch_meals")} ${response.body}");
+      throw Exception(
+        "${lang.getText("failed_to_fetch_meals")} ${response.body}",
+      );
     }
   }
 
@@ -61,6 +65,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
     final langCode = Provider.of<LanguageProvider>(context).languageCode;
+    final workoutProvider = Provider.of<WorkoutProvider>(context);
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, userWorkouts);
@@ -122,10 +127,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                 animation: animation,
                                 builder: (BuildContext context, Widget? child) {
                                   return Material(
-                                    color: Colors
-                                        .transparent,
-                                    elevation:
-                                        0,
+                                    color: Colors.transparent,
+                                    elevation: 0,
                                     child: child,
                                   );
                                 },
@@ -590,7 +593,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                     30,
                                   ),
                                   title: Text(
-                                    template.customWorkoutName,
+                                    template.customName,
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                   content: SizedBox(
@@ -654,7 +657,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         ).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              "${template.customWorkoutName} ${lang.getText("loaded")}",
+                                              "${template.customName} ${lang.getText("loaded")}",
                                             ),
                                           ),
                                         );
@@ -683,8 +686,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        template.customWorkoutName.isNotEmpty
-                                            ? template.customWorkoutName
+                                        template.customName.isNotEmpty
+                                            ? template.customName
                                             : "Ismeretlen sablon",
                                         style: const TextStyle(
                                           color: Colors.white,
@@ -720,66 +723,116 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         ),
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.all(20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              FilledButton(
-                onPressed: () async {
-                  final result = await Navigator.push<List<ExerciseDto>>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddWorkoutPage(),
-                    ),
-                  );
+          child: userWorkouts.isNotEmpty
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    FilledButton(
+                      onPressed: () async {
+                        final result = await Navigator.push<List<ExerciseDto>>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddWorkoutPage(),
+                          ),
+                        );
 
-                  if (result != null) {
-                    setState(() {
-                      userWorkouts.addAll(result);
-                    });
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width * 0.41,
-                    MediaQuery.of(context).size.height * 0.07,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
-                  ),
+                        if (result != null) {
+                          setState(() {
+                            userWorkouts.addAll(result);
+                          });
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                        fixedSize: Size(
+                          MediaQuery.of(context).size.width * 0.41,
+                          MediaQuery.of(context).size.height * 0.07,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                      ),
+                      child: Text(
+                        lang.getText("add"),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                RunningWorkoutPage(userWorkouts: userWorkouts),
+                          ),
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                        fixedSize: Size(
+                          MediaQuery.of(context).size.width * 0.41,
+                          MediaQuery.of(context).size.height * 0.07,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                      ),
+                      child: Text(
+                        workoutProvider.isWorkoutActive
+                            ? lang.getText("continue_workout")
+                            : lang.getText("start"),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    FilledButton(
+                      onPressed: () async {
+                        final result = await Navigator.push<List<ExerciseDto>>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddWorkoutPage(),
+                          ),
+                        );
+
+                        if (result != null) {
+                          setState(() {
+                            userWorkouts.addAll(result);
+                          });
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                        fixedSize: Size(
+                          MediaQuery.of(context).size.width * 0.8888,
+                          MediaQuery.of(context).size.height * 0.07,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                      ),
+                      child: Text(
+                        lang.getText("add"),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  lang.getText("add"),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              FilledButton(
-                onPressed: () {},
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width * 0.41,
-                    MediaQuery.of(context).size.height * 0.07,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                ),
-                child: Text(
-                  lang.getText("start"),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

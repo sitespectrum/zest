@@ -8,6 +8,7 @@ import "login_page.dart";
 import "pages.dart";
 import "register_page.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:client/providers/workout_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,8 +16,11 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final savedUsername = prefs.getString('username');
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => LanguageProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => WorkoutProvider()),
+      ],
       child: Myapp(initialUsername: savedUsername),
     ),
   );

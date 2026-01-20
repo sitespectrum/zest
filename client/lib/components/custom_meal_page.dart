@@ -256,7 +256,9 @@ class _CMealPageState extends State<CMealPage> {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
     } else {
-      throw Exception("${lang.getText("failed_to_fetch_meals")} ${response.body}");
+      throw Exception(
+        "${lang.getText("failed_to_fetch_meals")} ${response.body}",
+      );
     }
   }
 
@@ -693,7 +695,7 @@ class _CMealPageState extends State<CMealPage> {
                   if (meals.isEmpty) {
                     return Center(
                       child: Text(
-                        lang.getText("no_added_sample_yet"),
+                        lang.getText("no_added_template_yet"),
                         style: TextStyle(color: Colors.white70, fontSize: 18),
                       ),
                     );
@@ -1480,7 +1482,7 @@ class _CMealPageState extends State<CMealPage> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                "Adj nevet a sablonnak!",
+                                                lang.getText("name_the_template"),
                                               ),
                                               behavior:
                                                   SnackBarBehavior.floating,

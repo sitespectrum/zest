@@ -34,6 +34,7 @@ class _AddMealPageState extends State<AddMealPage> {
   bool isLoading = false;
   bool anyResults = false;
   Timer? _debounce;
+  bool _isInit = true;
 
   List<MealDto> userMeals = [];
   List<MealDto> templateMeals = [];
@@ -66,8 +67,16 @@ class _AddMealPageState extends State<AddMealPage> {
   @override
   void initState() {
     super.initState();
-    futureMeals = fetchUserMeals();
-    loadTopMeals();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      futureMeals = fetchUserMeals();
+      loadTopMeals();
+      _isInit = false;
+    }
   }
 
   @override

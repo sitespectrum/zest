@@ -1,0 +1,1602 @@
+import 'dart:async';
+import 'package:client/models/workout.dart';
+import 'package:client/Providers/language_provider.dart';
+import 'package:client/pages.dart';
+import 'package:client/providers/workout_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/rendering.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:client/constants.dart';
+import 'package:http/http.dart' as http;
+
+class RunningWorkoutPage extends StatefulWidget {
+  final List<ExerciseDto> userWorkouts;
+  const RunningWorkoutPage({super.key, required this.userWorkouts});
+
+  @override
+  State<RunningWorkoutPage> createState() => _RunningWorkoutPageState();
+}
+
+final workoutcontroller = TextEditingController();
+
+class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
+  Future<void> saveUserExercises(
+    List<ExerciseDto> exercises,
+    String workoutName,
+    int userId,
+    int durationMinutes,
+    int caloriesBurnt,
+    int totalVolume,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Workout/AddWorkout");
+
+    final dto = {
+      "WorkoutName": workoutName,
+      "UserId": userId,
+      "Date": DateTime.now().toIso8601String(),
+      "Exercises": exercises
+          .map(
+            (e) => {
+              "ExerciseId": e.id,
+              "Name": e.name,
+              "Sets": e.sets.map((s) => s.toJson()).toList(),
+            },
+          )
+          .toList(),
+      "DurationMinutes": durationMinutes,
+      "CaloriesBurnt": caloriesBurnt,
+      "TotalVolume": totalVolume,
+      "IsCustom": false,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  Future<void> saveUserExercisesS(
+    List<ExerciseDto> exercises,
+    String customName,
+    int userId,
+    int durationMinutes,
+    int caloriesBurnt,
+    int totalVolume,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+    if (token == null || token.isEmpty) throw Exception("Nincs token.");
+
+    final uri = Uri.parse("$apiUrl/api/Workout/AddWorkoutS");
+
+    final dto = {
+      "CustomName": customName,
+      "UserId": userId,
+      "Date": DateTime.now().toIso8601String(),
+      "Exercises": exercises
+          .map(
+            (e) => {
+              "ExerciseId": e.id,
+              "Name": e.name,
+              "Sets": e.sets.map((s) => s.toJson()).toList(),
+            },
+          )
+          .toList(),
+      "DurationMinutes": durationMinutes,
+      "CaloriesBurnt": caloriesBurnt,
+      "TotalVolume": totalVolume,
+      "IsCustom": true,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(dto),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final workoutProvider = Provider.of<WorkoutProvider>(
+        context,
+        listen: false,
+      );
+      if (!workoutProvider.isWorkoutActive) {
+        workoutProvider.startWorkout(widget.userWorkouts);
+      } else {
+        workoutProvider.updateExercises(widget.userWorkouts);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  String dependOnHour() {
+    final lang = Provider.of<LanguageProvider>(context);
+    final hour = DateTime.now().hour;
+
+    if (6 <= hour && hour < 12) return lang.getText("morning");
+    if (12 <= hour && hour < 18) return lang.getText("afternoon");
+    if (18 <= hour && hour < 21) return lang.getText("evening");
+    return lang.getText("night");
+  }
+
+  String dependOnHourB() {
+    final hour = DateTime.now().hour;
+
+    if (6 <= hour && hour < 12) return "reggeli edzés";
+    if (12 <= hour && hour < 18) return "délutáni edzés";
+    if (18 <= hour && hour < 21) return "esti edzés";
+    return "éjszakai edzés";
+  }
+
+  final PageController _pageController = PageController(viewportFraction: 0.95);
+
+  int currentPage = 0;
+  final Map<int, double> _pageHeights = {};
+
+  double _getcurrentHeight(BuildContext context) {
+    if (_pageHeights.containsKey(currentPage)) {
+      return _pageHeights[currentPage]!;
+    }
+    return MediaQuery.of(context).size.height * 0.7;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final workoutProvider = Provider.of<WorkoutProvider>(context);
+    final currentExercises = workoutProvider.userWorkouts;
+    final lang = Provider.of<LanguageProvider>(context);
+    final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
+    final defWorkoutName =
+        "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}";
+    final defWorkoutNameB =
+        "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHourB()}";
+    Timer? _debounce;
+    return Scaffold(
+      body: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Container(
+                margin: const EdgeInsets.all(6),
+                child: AppBar(
+                  title: Row(
+                    children: [
+                      Text(
+                        lang.getText(
+                          "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}",
+                        ),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Color.fromARGB(255, 58, 58, 58),
+                ),
+              ),
+            ),
+
+            Center(
+              child: Text(
+                workoutProvider.formattedTime,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            SizedBox(height: 12),
+
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
+              height: _getcurrentHeight(context),
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.userWorkouts.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    currentPage = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final exercise = widget.userWorkouts[index];
+                  return SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: MeasureSize(
+                      onChange: (size) {
+                        double newHeight = size.height + 60;
+                        if (_pageHeights[index] != newHeight) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              setState(() {
+                                _pageHeights[index] = newHeight;
+                              });
+                            }
+                          });
+                        }
+                      },
+                      child: ExerciseTrackerCard(
+                        exercise: exercise,
+                        onremoveExercise: () {
+                          setState(() {
+                            currentExercises.removeAt(index);
+                            _pageHeights.remove(index);
+                            if (currentPage >= currentExercises.length &&
+                                currentPage > 0) {
+                              currentPage = currentExercises.length - 1;
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FilledButton(
+              onPressed: () async {
+                workoutProvider.stopWorkout();
+                int totalSets = 0;
+                int totalReps = 0;
+                double totalVolume = 0;
+                double totalMet = 0;
+                for (var ex in workoutProvider.userWorkouts) {
+                  totalSets += ex.sets.length;
+                  totalMet += ex.metValue;
+                  for (var s in ex.sets) {
+                    totalReps += s.reps;
+                    totalVolume += s.reps * s.weight;
+                  }
+                }
+
+                double avgMet = workoutProvider.userWorkouts.isNotEmpty
+                    ? totalMet / workoutProvider.userWorkouts.length
+                    : 3.5;
+
+                double durationMin =
+                    (workoutProvider.minutes + workoutProvider.hours * 60)
+                        .toDouble();
+                int burntCalories = (avgMet * 3.5 * 75 / 200 * durationMin)
+                    .toInt();
+                if (burntCalories == 0 && durationMin > 0)
+                  burntCalories = (durationMin * 5).toInt();
+
+                int currentWorkoutNum = 1;
+                try {
+                  final prefs = await SharedPreferences.getInstance();
+                  final token = prefs.getString('jwt_token');
+                  final response = await http.get(
+                    Uri.parse("$apiUrl/api/workouts/getUserWorkouts"),
+                    headers: {"Authorization": "Bearer $token"},
+                  );
+                  if (response.statusCode == 200) {
+                    List data = jsonDecode(response.body);
+                    currentWorkoutNum = data.length + 1;
+                  }
+                } catch (e) {
+                  debugPrint("Nem sikerült lekérni az edzések számát: $e");
+                }
+
+                for (var ex in workoutProvider.userWorkouts) {
+                  totalSets += ex.sets.length;
+                  for (var s in ex.sets) {
+                    if (s.isCompleted) {
+                      totalReps += s.reps;
+                      totalVolume += s.reps * s.weight;
+                    } else {
+                      totalReps += s.reps;
+                      totalVolume += s.reps * s.weight;
+                    }
+                  }
+                }
+                showDialog(
+                  //barrierDismissible: false,
+                  context: context,
+                  builder: (builderContext) {
+                    return PopScope(
+                      //canPop: false,
+                      child: Dialog(
+                        insetPadding: const EdgeInsets.all(20),
+                        backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 40, 40, 40),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Center(
+                                child: Text(
+                                  lang.getText(defWorkoutName),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+
+                              const Divider(color: Colors.white24, height: 30),
+
+                              Row(
+                                children: [
+                                  _buildStatCell(
+                                    "$currentWorkoutNum.",
+                                    isHeader: true,
+                                  ),
+                                  _buildStatCell(
+                                    "$burntCalories",
+                                    isHeader: true,
+                                  ),
+                                  _buildStatCell(
+                                    "${workoutProvider.minutes + workoutProvider.hours * 60} ${lang.getText("min")}",
+                                    isHeader: true,
+                                  ),
+                                  _buildStatCell(
+                                    "${totalVolume.toInt()}",
+                                    isHeader: true,
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  _buildStatCell(
+                                    lang.getText("workout"),
+                                    color: Colors.grey,
+                                  ),
+                                  _buildStatCell(
+                                    lang.getText("calories"),
+                                    color: Colors.grey,
+                                  ),
+                                  _buildStatCell(
+                                    lang.getText("duration"),
+                                    color: Colors.grey,
+                                  ),
+                                  _buildStatCell(
+                                    lang.getText("volume"),
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 15),
+                              Row(
+                                children: [
+                                  _buildStatCell(
+                                    "${workoutProvider.userWorkouts.length}",
+                                    isHeader: true,
+                                  ),
+                                  _buildStatCell("$totalSets", isHeader: true),
+                                  _buildStatCell("$totalReps", isHeader: true),
+                                  const Expanded(child: SizedBox()),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  _buildStatCell(
+                                    lang.getText("exercises"),
+                                    color: Colors.grey,
+                                  ),
+                                  _buildStatCell(
+                                    lang.getText("sets"),
+                                    color: Colors.grey,
+                                  ),
+                                  _buildStatCell(
+                                    lang.getText("reps"),
+                                    color: Colors.grey,
+                                  ),
+                                  const Expanded(child: SizedBox()),
+                                ],
+                              ),
+
+                              const Divider(color: Colors.white24, height: 30),
+
+                              Flexible(
+                                child: ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount:
+                                      workoutProvider.userWorkouts.length,
+                                  separatorBuilder: (ctx, i) =>
+                                      const Divider(color: Colors.white12),
+                                  itemBuilder: (context, index) {
+                                    final ex =
+                                        workoutProvider.userWorkouts[index];
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          ex.getName(lang.languageCode),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+
+                                        if (ex.sets.isEmpty)
+                                          const Text(
+                                            " - Nincs sorozat",
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
+                                          )
+                                        else
+                                          Wrap(
+                                            spacing: 8.0,
+                                            runSpacing: 4.0,
+                                            children: ex.sets.map((s) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                  left: 8.0,
+                                                  bottom: 2.0,
+                                                ),
+                                                child: Column(
+                                                  children: [
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            const Color.fromARGB(
+                                                              255,
+                                                              85,
+                                                              173,
+                                                              78,
+                                                            ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              100,
+                                                            ),
+                                                      ),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets.fromLTRB(
+                                                              11,
+                                                              10,
+                                                              11,
+                                                              10,
+                                                            ),
+                                                        child: Text(
+                                                          s.weight
+                                                              .toStringAsFixed(
+                                                                0,
+                                                              ),
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                                fontSize: 18,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      "${s.reps}X",
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Positioned(
+                                child: Center(
+                                  child: FilledButton(
+                                    onPressed: () async {
+                                      Navigator.pop(context);
+                                      if (_debounce?.isActive ?? false) {
+                                        _debounce!.cancel();
+                                      }
+                                      _debounce = Timer(
+                                        const Duration(milliseconds: 1500),
+                                        () {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).hideCurrentSnackBar();
+                                        },
+                                      );
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return Dialog(
+                                            insetPadding: const EdgeInsets.all(
+                                              20,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                            child: Container(
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                color: const Color.fromARGB(
+                                                  255,
+                                                  40,
+                                                  40,
+                                                  40,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                border: Border.all(
+                                                  color: Colors.white24,
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  20,
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      lang.getText(
+                                                        "save_sample",
+                                                      ),
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    Stack(
+                                                      children: [
+                                                        Container(
+                                                          width:
+                                                              double.infinity,
+                                                          height: null,
+                                                          margin:
+                                                              const EdgeInsets.fromLTRB(
+                                                                0,
+                                                                20,
+                                                                0,
+                                                                20,
+                                                              ),
+                                                          padding:
+                                                              const EdgeInsets.fromLTRB(
+                                                                0,
+                                                                0,
+                                                                5,
+                                                                5,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                const Color.fromARGB(
+                                                                  255,
+                                                                  72,
+                                                                  72,
+                                                                  72,
+                                                                ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                          child: TextField(
+                                                            cursorColor:
+                                                                Colors.white,
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 18,
+                                                                ),
+                                                            controller:
+                                                                workoutcontroller,
+                                                            decoration: InputDecoration(
+                                                              border: OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
+                                                                    ),
+                                                              ),
+                                                              focusedBorder: OutlineInputBorder(
+                                                                borderSide:
+                                                                    const BorderSide(
+                                                                      color: Colors
+                                                                          .transparent,
+                                                                      width: 2,
+                                                                    ),
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
+                                                                    ),
+                                                              ),
+                                                              enabledBorder: OutlineInputBorder(
+                                                                borderSide:
+                                                                    const BorderSide(
+                                                                      color: Colors
+                                                                          .transparent,
+                                                                      width: 1,
+                                                                    ),
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                            keyboardType:
+                                                                TextInputType
+                                                                    .text,
+                                                          ),
+                                                        ),
+
+                                                        Positioned(
+                                                          top:
+                                                              MediaQuery.of(
+                                                                context,
+                                                              ).size.height *
+                                                              0.01,
+                                                          left:
+                                                              MediaQuery.of(
+                                                                context,
+                                                              ).size.width *
+                                                              0.04,
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "sample_name",
+                                                            ),
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 18,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        FilledButton(
+                                                          onPressed: () async {
+                                                            try {
+                                                              final prefs =
+                                                                  await SharedPreferences.getInstance();
+                                                              final userId =
+                                                                  prefs.getInt(
+                                                                    'userId',
+                                                                  );
+                                                              if (userId ==
+                                                                  null) {
+                                                                throw Exception(
+                                                                  lang.getText(
+                                                                    "no_userId_found",
+                                                                  ),
+                                                                );
+                                                              }
+
+                                                              await saveUserExercises(
+                                                                workoutProvider
+                                                                    .userWorkouts,
+                                                                defWorkoutNameB,
+                                                                userId,
+                                                                workoutProvider
+                                                                        .minutes +
+                                                                    workoutProvider
+                                                                            .hours *
+                                                                        60,
+                                                                burntCalories,
+                                                                totalVolume
+                                                                    .toInt(),
+                                                              );
+
+                                                              ScaffoldMessenger.of(
+                                                                // ignore: use_build_context_synchronously
+                                                                context,
+                                                              ).showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(
+                                                                    lang.getText(
+                                                                      "saved_successfully",
+                                                                    ),
+                                                                  ),
+                                                                  showCloseIcon:
+                                                                      true,
+                                                                  behavior:
+                                                                      SnackBarBehavior
+                                                                          .floating,
+                                                                  margin:
+                                                                      EdgeInsets.only(
+                                                                        bottom:
+                                                                            30,
+                                                                        left:
+                                                                            16,
+                                                                        right:
+                                                                            16,
+                                                                      ),
+                                                                  duration: Duration(
+                                                                    milliseconds:
+                                                                        1800,
+                                                                  ),
+                                                                  animation: CurvedAnimation(
+                                                                    parent:
+                                                                        kAlwaysCompleteAnimation,
+                                                                    curve: Curves
+                                                                        .easeInOut,
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            } catch (e) {
+                                                              ScaffoldMessenger.of(
+                                                                // ignore: use_build_context_synchronously
+                                                                context,
+                                                              ).showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(
+                                                                    "Hiba: $e",
+                                                                  ),
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .red,
+                                                                  behavior:
+                                                                      SnackBarBehavior
+                                                                          .floating,
+                                                                  margin:
+                                                                      EdgeInsets.only(
+                                                                        bottom:
+                                                                            30,
+                                                                        left:
+                                                                            16,
+                                                                        right:
+                                                                            16,
+                                                                      ),
+                                                                  duration: Duration(
+                                                                    milliseconds:
+                                                                        1800,
+                                                                  ),
+                                                                  animation: CurvedAnimation(
+                                                                    parent:
+                                                                        kAlwaysCompleteAnimation,
+                                                                    curve: Curves
+                                                                        .easeInOut,
+                                                                  ),
+                                                                ),
+                                                              );
+                                                              return;
+                                                            }
+                                                            if (_debounce
+                                                                    ?.isActive ??
+                                                                false) {
+                                                              _debounce!
+                                                                  .cancel();
+                                                            }
+                                                            _debounce = Timer(
+                                                              const Duration(
+                                                                milliseconds:
+                                                                    1500,
+                                                              ),
+                                                              () {
+                                                                ScaffoldMessenger.of(
+                                                                  context,
+                                                                ).hideCurrentSnackBar();
+                                                                Navigator.push<
+                                                                  List<
+                                                                    ExerciseDto
+                                                                  >
+                                                                >(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (
+                                                                          context,
+                                                                        ) =>
+                                                                            const Pages(),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                          style: FilledButton.styleFrom(
+                                                            backgroundColor:
+                                                                const Color.fromARGB(
+                                                                  255,
+                                                                  85,
+                                                                  173,
+                                                                  78,
+                                                                ),
+                                                            fixedSize: Size(
+                                                              MediaQuery.of(
+                                                                    context,
+                                                                  ).size.width *
+                                                                  0.36,
+                                                              MediaQuery.of(
+                                                                        context,
+                                                                      )
+                                                                      .size
+                                                                      .height *
+                                                                  0.07,
+                                                            ),
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    11,
+                                                                  ),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      10,
+                                                                ),
+                                                          ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "save_without_sample",
+                                                            ),
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 17,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ),
+
+                                                        FilledButton(
+                                                          onPressed: () async {
+                                                            if (workoutcontroller
+                                                                .text
+                                                                .trim()
+                                                                .isEmpty) {
+                                                              ScaffoldMessenger.of(
+                                                                context,
+                                                              ).showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(
+                                                                    lang.getText(
+                                                                      "name_the_template",
+                                                                    ),
+                                                                  ),
+                                                                  behavior:
+                                                                      SnackBarBehavior
+                                                                          .floating,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .red,
+                                                                ),
+                                                              );
+                                                              return;
+                                                            }
+                                                            try {
+                                                              final prefs =
+                                                                  await SharedPreferences.getInstance();
+                                                              final userId =
+                                                                  prefs.getInt(
+                                                                    'userId',
+                                                                  );
+                                                              if (userId ==
+                                                                  null) {
+                                                                throw Exception(
+                                                                  lang.getText(
+                                                                    "no_userId_found",
+                                                                  ),
+                                                                );
+                                                              }
+
+                                                              await saveUserExercisesS(
+                                                                workoutProvider
+                                                                    .userWorkouts,
+                                                                workoutcontroller
+                                                                    .text,
+                                                                userId,
+                                                                workoutProvider
+                                                                        .minutes +
+                                                                    workoutProvider
+                                                                            .hours *
+                                                                        60,
+                                                                burntCalories,
+                                                                totalVolume
+                                                                    .toInt(),
+                                                              );
+
+                                                              ScaffoldMessenger.of(
+                                                                // ignore: use_build_context_synchronously
+                                                                context,
+                                                              ).showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(
+                                                                    lang.getText(
+                                                                      "saved_successfully",
+                                                                    ),
+                                                                  ),
+                                                                  showCloseIcon:
+                                                                      true,
+                                                                  behavior:
+                                                                      SnackBarBehavior
+                                                                          .floating,
+                                                                  margin:
+                                                                      EdgeInsets.only(
+                                                                        bottom:
+                                                                            30,
+                                                                        left:
+                                                                            16,
+                                                                        right:
+                                                                            16,
+                                                                      ),
+                                                                  duration: Duration(
+                                                                    milliseconds:
+                                                                        1800,
+                                                                  ),
+                                                                  animation: CurvedAnimation(
+                                                                    parent:
+                                                                        kAlwaysCompleteAnimation,
+                                                                    curve: Curves
+                                                                        .easeInOut,
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            } catch (e) {
+                                                              ScaffoldMessenger.of(
+                                                                // ignore: use_build_context_synchronously
+                                                                context,
+                                                              ).showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(
+                                                                    "Hiba: $e",
+                                                                  ),
+                                                                  behavior:
+                                                                      SnackBarBehavior
+                                                                          .floating,
+                                                                  margin:
+                                                                      EdgeInsets.only(
+                                                                        bottom:
+                                                                            30,
+                                                                        left:
+                                                                            16,
+                                                                        right:
+                                                                            16,
+                                                                      ),
+                                                                  duration: Duration(
+                                                                    milliseconds:
+                                                                        1800,
+                                                                  ),
+                                                                  animation: CurvedAnimation(
+                                                                    parent:
+                                                                        kAlwaysCompleteAnimation,
+                                                                    curve: Curves
+                                                                        .easeInOut,
+                                                                  ),
+                                                                ),
+                                                              );
+                                                              return;
+                                                            }
+                                                            if (_debounce
+                                                                    ?.isActive ??
+                                                                false) {
+                                                              _debounce!
+                                                                  .cancel();
+                                                            }
+                                                            _debounce = Timer(
+                                                              const Duration(
+                                                                milliseconds:
+                                                                    1500,
+                                                              ),
+                                                              () {
+                                                                ScaffoldMessenger.of(
+                                                                  context,
+                                                                ).hideCurrentSnackBar();
+                                                                Navigator.push<
+                                                                  List<
+                                                                    ExerciseDto
+                                                                  >
+                                                                >(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (
+                                                                          context,
+                                                                        ) =>
+                                                                            const Pages(),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                          style: FilledButton.styleFrom(
+                                                            backgroundColor:
+                                                                const Color.fromARGB(
+                                                                  255,
+                                                                  85,
+                                                                  173,
+                                                                  78,
+                                                                ),
+                                                            fixedSize: Size(
+                                                              MediaQuery.of(
+                                                                    context,
+                                                                  ).size.width *
+                                                                  0.36,
+                                                              MediaQuery.of(
+                                                                        context,
+                                                                      )
+                                                                      .size
+                                                                      .height *
+                                                                  0.07,
+                                                            ),
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    11,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "save",
+                                                            ),
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 17,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: const Color.fromARGB(
+                                        255,
+                                        30,
+                                        30,
+                                        30,
+                                      ),
+                                      side: const BorderSide(
+                                        color: Colors.white24,
+                                        width: 1,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      lang.getText("close"),
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width * 0.8888,
+                  MediaQuery.of(context).size.height * 0.07,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                ),
+              ),
+              child: Text(
+                lang.getText("finish_workout"),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _buildStatCell(
+  String text, {
+  bool isHeader = false,
+  Color color = Colors.white,
+}) {
+  return Expanded(
+    child: Center(
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isHeader ? Colors.white : color,
+          fontWeight: FontWeight.bold,
+          fontSize: isHeader ? 16 : 14,
+        ),
+      ),
+    ),
+  );
+}
+
+class ExerciseTrackerCard extends StatefulWidget {
+  final ExerciseDto exercise;
+  final VoidCallback? onremoveExercise;
+
+  const ExerciseTrackerCard({
+    super.key,
+    required this.exercise,
+    this.onremoveExercise,
+  });
+
+  @override
+  State<ExerciseTrackerCard> createState() => _ExerciseTrackerCardState();
+}
+
+class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.exercise.sets.isEmpty) {
+      widget.exercise.sets.add(WorkoutSetDto(weight: 0, reps: 0));
+    }
+  }
+
+  void _addSet() {
+    setState(() {
+      double lastWeight = widget.exercise.sets.isNotEmpty
+          ? widget.exercise.sets.last.weight
+          : 0;
+      int lastReps = widget.exercise.sets.isNotEmpty
+          ? widget.exercise.sets.last.reps
+          : 0;
+
+      widget.exercise.sets.add(
+        WorkoutSetDto(weight: lastWeight, reps: lastReps),
+      );
+    });
+  }
+
+  void _removeSet(int index) {
+    setState(() {
+      widget.exercise.sets.removeAt(index);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final lang = Provider.of<LanguageProvider>(context);
+    final langCode = Provider.of<LanguageProvider>(context).languageCode;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 45, 45, 45),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 200,
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                  color: Colors.black12,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: widget.exercise.images.isNotEmpty
+                      ? Image.network(
+                          "https://raw.githubusercontent.com/sitespectrum/zest_exercises/main/exercises/${widget.exercise.images[0]}",
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(
+                                Icons.fitness_center,
+                                color: Colors.white24,
+                                size: 50,
+                              ),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: Colors.white24,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: Text(
+                  widget.exercise.getName(langCode),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          Row(
+            children: [
+              SizedBox(
+                width: 42,
+                child: Center(
+                  child: Text(
+                    lang.getText("set"),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    "KG",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    lang.getText("reps"),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 50,
+                child: Center(
+                  child: Text(
+                    lang.getText("done"),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const ClampingScrollPhysics(),
+            itemCount: widget.exercise.sets.length,
+            itemBuilder: (context, index) {
+              final set = widget.exercise.sets[index];
+              final backgroundColor = set.isCompleted
+                  ? const Color.fromARGB(50, 85, 173, 78)
+                  : Color.fromARGB(255, 58, 58, 58);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      child: Center(
+                        child: Text(
+                          "${index + 1}",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2C2C2E),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextFormField(
+                          initialValue: set.weight == 0
+                              ? ""
+                              : set.weight.toString(),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            hintText: "-",
+                            hintStyle: TextStyle(color: Colors.white24),
+                            contentPadding: EdgeInsets.only(bottom: 10),
+                          ),
+                          onChanged: (val) {
+                            set.weight =
+                                double.tryParse(val.replaceAll(',', '.')) ??
+                                0.0;
+                          },
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2C2C2E),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextFormField(
+                          initialValue: set.reps == 0
+                              ? ""
+                              : set.reps.toString(),
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            hintText: "-",
+                            hintStyle: TextStyle(color: Colors.white24),
+                            contentPadding: EdgeInsets.only(bottom: 10),
+                          ),
+                          onChanged: (val) {
+                            set.reps = int.tryParse(val) ?? 0;
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 50,
+                      child: Center(
+                        child: Transform.scale(
+                          scale: 1.2,
+                          child: Checkbox(
+                            value: set.isCompleted,
+                            activeColor: const Color.fromARGB(255, 85, 173, 78),
+                            checkColor: Colors.white,
+                            side: const BorderSide(
+                              color: Colors.grey,
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            onChanged: (bool? value) {
+                              setState(() {
+                                set.isCompleted = value ?? false;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                onPressed: _addSet,
+                icon: const Icon(Icons.add, color: Colors.orangeAccent),
+                label: Text(
+                  lang.getText("add_set"),
+                  style: TextStyle(color: Colors.orangeAccent),
+                ),
+              ),
+              if (widget.exercise.sets.length > 1) ...[
+                const SizedBox(width: 20),
+                TextButton.icon(
+                  onPressed: () => _removeSet(widget.exercise.sets.length - 1),
+                  icon: const Icon(Icons.remove, color: Colors.redAccent),
+                  label: Text(
+                    lang.getText("remove"),
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MeasureSize extends StatefulWidget {
+  final Widget child;
+  final ValueChanged<Size> onChange;
+
+  const MeasureSize({super.key, required this.onChange, required this.child});
+
+  @override
+  State<MeasureSize> createState() => _MeasureSizeState();
+}
+
+class _MeasureSizeState extends State<MeasureSize> {
+  @override
+  Widget build(BuildContext context) {
+    return _MeasureSizeRenderObject(
+      onChange: widget.onChange,
+      child: widget.child,
+    );
+  }
+}
+
+class _MeasureSizeRenderObject extends SingleChildRenderObjectWidget {
+  final ValueChanged<Size> onChange;
+
+  const _MeasureSizeRenderObject({
+    required this.onChange,
+    required Widget child,
+  }) : super(child: child);
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _MeasureSizeRenderBox(onChange);
+  }
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _MeasureSizeRenderBox renderObject,
+  ) {
+    renderObject.onChange = onChange;
+  }
+}
+
+class _MeasureSizeRenderBox extends RenderProxyBox {
+  ValueChanged<Size> onChange;
+  Size? _oldSize;
+
+  _MeasureSizeRenderBox(this.onChange);
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    if (child != null) {
+      final newSize = child!.size;
+      if (_oldSize == newSize) return;
+      _oldSize = newSize;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        onChange(newSize);
+      });
+    }
+  }
+}

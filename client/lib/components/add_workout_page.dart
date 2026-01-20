@@ -42,6 +42,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   List<String> muscleFilters = [];
   bool isFilterLoading = true;
   Set<int> _topExerciseIds = {};
+  bool _isInit = true;
 
   List<ExerciseDto> userWorkouts = [];
   List<ExerciseDto> templateWorkouts = [];
@@ -73,9 +74,17 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   @override
   void initState() {
     super.initState();
-    futureExercises = fetchUserWorkouts();
-    loadTopExercises();
-    fetchMuscleGroups();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      futureExercises = fetchUserWorkouts();
+      loadTopExercises();
+      fetchMuscleGroups();
+      _isInit = false;
+    }
   }
 
   @override
