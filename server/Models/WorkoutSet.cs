@@ -18,6 +18,6 @@ namespace Zest.Api.Models
         public int Reps { get; set; }
         public double Weight { get; set; }
         public int Order { get; set; }
-        public bool IsWarmup { get; set; } = false;
+        public bool IsCompleted { get; set; } = false;
     }
 }

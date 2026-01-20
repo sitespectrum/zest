@@ -216,7 +216,7 @@ public class WorkoutController : ControllerBase
                         order = s.Order,
                         weight = s.Weight,
                         reps = s.Reps,
-                        isWarmup = s.IsWarmup
+                        isCompleted = s.IsCompleted
                     }).ToList()
                 }).ToList()
             })
@@ -273,7 +273,7 @@ public class WorkoutController : ControllerBase
                         s.Order,
                         s.Weight,
                         s.Reps,
-                        s.IsWarmup
+                        s.IsCompleted
                     }).ToList()
                 }).ToList()
             })
@@ -356,4 +356,112 @@ public class WorkoutController : ControllerBase
 
         return Ok(results);
     }
+
+    [HttpPost("AddWorkout")]
+    [Authorize]
+    public async Task<IActionResult> AddUserWorkout([FromBody] AddUserWorkoutRequest request)
+    {
+        var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            return BadRequest("Felhasználó nem található.");
+
+        var userWorkout = new UserWorkouts
+        {
+            UserId = userId,
+            WorkoutName = request.WorkoutName,
+            Date = request.Date,
+            DurationMinutes = request.DurationMinutes,
+            TotalBurntCalories = request.CaloriesBurnt,
+            TotalLiftedWeight = request.TotalVolume,
+            IsCustom = request.IsCustom,
+
+            Exercises = request.Exercises.Select(e => new WorkoutExercise
+            {
+                ExerciseId = e.ExerciseId,
+                Sets = e.Sets.Select(s => new WorkoutSet
+                {
+                    Weight = s.Weight,
+                    Reps = s.Reps,
+                    IsCompleted = s.IsCompleted
+                }).ToList()
+            }).ToList()
+        };
+
+        _context.UserWorkouts.Add(userWorkout);
+        await _context.SaveChangesAsync();
+
+        Console.WriteLine($"[AddUserWorkout] Saved WorkoutId: {userWorkout.Id} for UserId: {userId}");
+
+        return Ok(new { Message = "Edzés mentése sikeres", UserWorkoutId = userWorkout.Id });
+    }
+
+    [HttpPost("AddWorkoutS")]
+    [Authorize]
+    public async Task<IActionResult> AddUserWorkoutS([FromBody] AddUserWorkoutRequest request)
+    {
+
+        var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            return BadRequest("Felhasználó nem található.");
+
+        var userWorkout = new UserWorkouts
+        {
+            UserId = userId,
+            CustomName = request.CustomName,
+            Date = request.Date,
+            DurationMinutes = request.DurationMinutes,
+            TotalBurntCalories = request.CaloriesBurnt,
+            TotalLiftedWeight = request.TotalVolume,
+            IsCustom = request.IsCustom,
+
+            Exercises = request.Exercises.Select(e => new WorkoutExercise
+            {
+                ExerciseId = e.ExerciseId,
+                Sets = e.Sets.Select(s => new WorkoutSet
+                {
+                    Weight = s.Weight,
+                    Reps = s.Reps,
+                    IsCompleted = s.IsCompleted
+                }).ToList()
+            }).ToList()
+        };
+
+        _context.UserWorkouts.Add(userWorkout);
+        await _context.SaveChangesAsync();
+
+        Console.WriteLine($"[AddUserWorkoutS] Saved WorkoutId: {userWorkout.Id} for UserId: {userId}");
+
+        return Ok(new { Message = "Custom edzés mentése sikeres", UserWorkoutId = userWorkout.Id });
+    }
+}
+
+public class AddUserWorkoutRequest
+{
+    public int UserId { get; set; }
+    public string? WorkoutName { get; set; }
+    public string? CustomName { get; set; }
+    public DateTime Date { get; set; }
+    public int DurationMinutes { get; set; }
+    public int CaloriesBurnt { get; set; }
+    public int TotalVolume { get; set; }
+    public List<WorkoutExerciseDto> Exercises { get; set; }
+    public bool IsCustom { get; set; }
+}
+
+public class WorkoutExerciseDto
+{
+    public int ExerciseId { get; set; }
+    public string Name { get; set; }
+    public List<WorkoutSetDto> Sets { get; set; }
+}
+
+public class WorkoutSetDto
+{
+    public double Weight { get; set; }
+    public int Reps { get; set; }
+    public bool IsCompleted { get; set; }
 }

@@ -86,7 +86,7 @@ class _DetailsPageState extends State<DetailsPage>
   }
 
   Future<void> submitDetails() async {
-    final lang = Provider.of<LanguageProvider>(context);
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (selectedBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -20,6 +20,7 @@ class ExerciseDto {
   final List<String> instructionsHu;
   final List<String> images;
   final double metValue;
+  List<WorkoutSetDto> sets = [];
 
   String getName(String langCode) {
     if (langCode == 'hu') return nameHu.isNotEmpty ? nameHu : name;
@@ -94,6 +95,7 @@ class ExerciseDto {
     required this.instructionsHu,
     required this.images,
     required this.metValue,
+    this.sets = const [],
   });
 
   factory ExerciseDto.fromJson(Map<String, dynamic> json) {
@@ -115,7 +117,6 @@ class ExerciseDto {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       nameHu: json['nameHu'] ?? '',
-      // JAVÍTÁS: Mindenhova ?? '' került, hogy sose legyen null!
       force: json['force'] ?? '',
       forceHu: json['forceHu'] ?? '',
       level: json['level'] ?? '',
@@ -133,7 +134,7 @@ class ExerciseDto {
       instructions: parseList(json['instructions']),
       instructionsHu: parseList(json['instructionsHu']),
       images: parseList(json['images']),
-
+      sets: [],
       metValue: toDoubleSafe(json['metValue'], 3.5),
     );
   }
@@ -160,6 +161,7 @@ class ExerciseDto {
     'instructionsHu': instructionsHu,
     'images': images,
     'metValue': metValue,
+    'sets': sets.map((e) => e.toJson()).toList(),
   };
 
   ExerciseDto copyWith({int? id}) {
@@ -190,42 +192,22 @@ class ExerciseDto {
 }
 
 class WorkoutSetDto {
-  final int id;
-  final int workoutExerciseId;
-  final int order;
-  final double weight;
-  final int reps;
-  final bool isWarmup;
+  double weight;
+  int reps;
+  bool isCompleted;
 
-  WorkoutSetDto({
-    required this.id,
-    required this.workoutExerciseId,
-    required this.order,
-    required this.weight,
-    required this.reps,
-    required this.isWarmup,
-  });
+  WorkoutSetDto({this.weight = 0.0, this.reps = 0, this.isCompleted = false});
 
   factory WorkoutSetDto.fromJson(Map<String, dynamic> json) {
     return WorkoutSetDto(
-      id: json['id'] ?? 0,
-      workoutExerciseId: json['workoutExerciseId'] ?? 0,
-      order: json['order'] ?? 0,
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
-      reps: json['reps'] ?? 0,
-      isWarmup: json['isWarmup'] ?? false,
+      reps: json['reps'] as int? ?? 0,
+      isCompleted: json['isCompleted'] as bool? ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'workoutExerciseId': workoutExerciseId,
-      'order': order,
-      'weight': weight,
-      'reps': reps,
-      'isWarmup': isWarmup,
-    };
+    return {'weight': weight, 'reps': reps, 'isWarmup': isCompleted};
   }
 }
 
@@ -249,8 +231,6 @@ class WorkoutExerciseDto {
     List<WorkoutSetDto> parsedSets = setsList != null
         ? setsList.map((i) => WorkoutSetDto.fromJson(i)).toList()
         : [];
-
-    parsedSets.sort((a, b) => a.order.compareTo(b.order));
 
     return WorkoutExerciseDto(
       id: json['id'] ?? 0,
@@ -332,7 +312,7 @@ class UserWorkoutDto {
 class CustomUserWorkoutDto {
   final int id;
   final int userId;
-  final String customWorkoutName;
+  final String customName;
   final DateTime date;
   final double totalLiftedWeight;
   final int totalBurntCalories;
@@ -342,7 +322,7 @@ class CustomUserWorkoutDto {
   CustomUserWorkoutDto({
     required this.id,
     required this.userId,
-    required this.customWorkoutName,
+    required this.customName,
     required this.date,
     required this.totalLiftedWeight,
     required this.totalBurntCalories,
@@ -359,7 +339,7 @@ class CustomUserWorkoutDto {
     return CustomUserWorkoutDto(
       id: json['id'] ?? 0,
       userId: json['userId'] ?? 0,
-      customWorkoutName: json['workoutName'] ?? '',
+      customName: json['customName'] ?? '',
       date: json['date'] != null
           ? DateTime.parse(json['date'])
           : DateTime.now(),
@@ -374,7 +354,7 @@ class CustomUserWorkoutDto {
     return {
       'id': id,
       'userId': userId,
-      'workoutName': customWorkoutName,
+      'customName': customName,
       'date': date.toIso8601String(),
       'totalLiftedWeight': totalLiftedWeight,
       'totalBurntCalories': totalBurntCalories,
