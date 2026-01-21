@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:client/components/running_workout_page.dart';
 import 'package:client/constants.dart';
@@ -20,6 +21,8 @@ class CWorkoutPage extends StatefulWidget {
 class _CWorkoutPageState extends State<CWorkoutPage> {
   List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
+  bool showdelete = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -575,100 +578,186 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     itemBuilder: (context, index) {
                       final template = templates[index];
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 6,
-                        ),
-                        child: InkWell(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  backgroundColor: const Color.fromARGB(
-                                    255,
-                                    30,
-                                    30,
-                                    30,
-                                  ),
-                                  title: Text(
-                                    template.customName,
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                  content: SizedBox(
-                                    width: double.maxFinite,
-                                    child: ListView.builder(
-                                      shrinkWrap: true,
-                                      itemCount: template.exercises.length,
-                                      itemBuilder: (ctx, i) {
-                                        final ex = template.exercises[i];
-                                        return ListTile(
-                                          title: Text(
-                                            ex.exercise?.name ??
-                                                lang.getText("exercise"),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          subtitle: Text(
-                                            "${ex.sets.length} ${lang.getText("set(s)")}",
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                      return GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return StatefulBuilder(
+                                builder: (context, setStateDialog) {
+                                  return Dialog(
+                                    insetPadding: const EdgeInsets.all(20),
+                                    backgroundColor: const Color.fromARGB(
+                                      255,
+                                      30,
+                                      30,
+                                      30,
                                     ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(
-                                        lang.getText("cancel"),
-                                        style: TextStyle(color: Colors.white54),
-                                      ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
-                                    FilledButton(
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: const Color.fromARGB(
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromARGB(
                                           255,
-                                          85,
-                                          173,
-                                          78,
+                                          40,
+                                          40,
+                                          40,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.white24,
                                         ),
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          final exercisesFromTemplate = template
-                                              .exercises
-                                              .map((we) => we.exercise)
-                                              .where((e) => e != null)
-                                              .cast<ExerciseDto>()
-                                              .toList();
-
-                                          userWorkouts.addAll(
-                                            exercisesFromTemplate,
-                                          );
-                                        });
-                                        Navigator.pop(context);
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              "${template.customName} ${lang.getText("loaded")}",
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            template.customName.isNotEmpty
+                                                ? template.customName
+                                                : lang.getText(
+                                                    "unknown_template",
+                                                  ),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        );
-                                      },
-                                      child: Text(lang.getText("loading")),
+                                          const SizedBox(height: 12),
+                                          Flexible(
+                                            child: ListView.builder(
+                                              shrinkWrap: true,
+                                              itemCount:
+                                                  template.exercises.length,
+                                              itemBuilder: (context, i) {
+                                                final item =
+                                                    template.exercises[i];
+
+                                                return Container(
+                                                  width: double.infinity,
+                                                  margin:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 3,
+                                                        horizontal: 4,
+                                                      ),
+                                                  padding: const EdgeInsets.all(
+                                                    12,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color.fromARGB(
+                                                      255,
+                                                      30,
+                                                      30,
+                                                      30,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white24,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        item.exercise!.getName(
+                                                          langCode,
+                                                        ),
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Center(
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  userWorkouts.addAll(
+                                                    template.exercises
+                                                        .map(
+                                                          (we) => we.exercise,
+                                                        )
+                                                        .where((e) => e != null)
+                                                        .cast<ExerciseDto>()
+                                                        .toList(),
+                                                  );
+                                                });
+                                                Navigator.pop(context);
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      "${template.customName} ${lang.getText("added_to_list")}",
+                                                    ),
+                                                    duration: const Duration(
+                                                      milliseconds: 1500,
+                                                    ),
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                  ),
+                                                );
+                                              },
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor:
+                                                    const Color.fromARGB(
+                                                      255,
+                                                      30,
+                                                      30,
+                                                      30,
+                                                    ),
+                                                side: const BorderSide(
+                                                  color: Colors.white24,
+                                                  width: 1,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                lang.getText("load_template"),
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
+                                  );
+                                },
+                              );
+                            },
+                          );
+                          setState(() {
+                            showdelete = false;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 6,
+                          ),
                           child: Container(
                             decoration: BoxDecoration(
                               color: const Color.fromARGB(255, 45, 45, 45),
@@ -677,36 +766,25 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(12),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        template.customName.isNotEmpty
-                                            ? template.customName
-                                            : "Ismeretlen sablon",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        '${template.exercises.length} ${lang.getText("exercise").toLowerCase()}',
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    template.customName.isNotEmpty
+                                        ? template.customName
+                                        : lang.getText("unknown_template"),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                  const Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.white54,
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${lang.getText('exercises')}: ${template.exercises.length} \n${template.exercises.map((e) => e.exercise?.getName(langCode) ?? "").join(' | ')}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                    ),
                                   ),
                                 ],
                               ),
