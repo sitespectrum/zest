@@ -207,7 +207,7 @@ class WorkoutSetDto {
   }
 
   Map<String, dynamic> toJson() {
-    return {'weight': weight, 'reps': reps, 'isWarmup': isCompleted};
+    return {'weight': weight, 'reps': reps, 'isCompleted': isCompleted};
   }
 }
 

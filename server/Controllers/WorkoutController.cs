@@ -240,7 +240,7 @@ public class WorkoutController : ControllerBase
             .Select(w => new
             {
                 w.Id,
-                WorkoutName = w.WorkoutName,
+                w.CustomName,
                 w.TotalBurntCalories,
                 w.TotalLiftedWeight,
                 w.DurationMinutes,
@@ -264,7 +264,9 @@ public class WorkoutController : ControllerBase
                         we.Exercise.Force,
                         we.Exercise.Level,
                         we.Exercise.Mechanic,
-                        we.Exercise.Images
+                        we.Exercise.Images,
+                        we.Exercise.Instructions,
+                        we.Exercise.InstructionsHu
                     },
 
                     Sets = we.Sets.OrderBy(s => s.Order).Select(s => new
@@ -436,6 +438,21 @@ public class WorkoutController : ControllerBase
         Console.WriteLine($"[AddUserWorkoutS] Saved WorkoutId: {userWorkout.Id} for UserId: {userId}");
 
         return Ok(new { Message = "Custom edzés mentése sikeres", UserWorkoutId = userWorkout.Id });
+    }
+
+    [HttpDelete("DeleteCustomExercise")]
+    [Authorize]
+    public async Task<IActionResult> DeleteCustomExercise([FromQuery] int id)
+    {
+        var exercise = await _context.Exercises.FindAsync(id);
+
+        if (exercise == null)
+            return NotFound("Nincs ilyen étel a custom sablonban");
+
+        _context.Exercises.Remove(exercise);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Étel törlés sikeres" });
     }
 }
 

@@ -167,6 +167,8 @@ class LanguageProvider with ChangeNotifier {
       'volume': 'Összesen',
       'duration': 'Időtartam',
       'workout': 'Edzés',
+      'save_as_workout': 'Mentés edzésként',
+      'load_template': 'Sablon betöltése',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -294,6 +296,8 @@ class LanguageProvider with ChangeNotifier {
       'volume': 'Volume',
       'duration': 'Duration',
       'workout': 'Workout',
+      'save_as_workout': 'Save as workout',
+      'load_template': 'Load template',
     },
   };
 }
