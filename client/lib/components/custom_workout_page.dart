@@ -12,7 +12,8 @@ import '../Providers/language_provider.dart';
 import '../providers/workout_provider.dart';
 
 class CWorkoutPage extends StatefulWidget {
-  const CWorkoutPage({super.key});
+  final DateTime selectedDay;
+  const CWorkoutPage({super.key, required this.selectedDay});
 
   @override
   State<CWorkoutPage> createState() => _CWorkoutPageState();

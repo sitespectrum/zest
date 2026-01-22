@@ -184,6 +184,7 @@ public class WorkoutController : ControllerBase
             {
                 id = w.Id,
                 workoutName = w.WorkoutName,
+                customName = w.CustomName,
                 totalBurntCalories = w.TotalBurntCalories,
                 totalLiftedWeight = w.TotalLiftedWeight,
                 durationMinutes = w.DurationMinutes,
@@ -440,19 +441,22 @@ public class WorkoutController : ControllerBase
         return Ok(new { Message = "Custom edzés mentése sikeres", UserWorkoutId = userWorkout.Id });
     }
 
-    [HttpDelete("DeleteCustomExercise")]
+    [HttpDelete("deleteUserWorkout/{id}")]
     [Authorize]
-    public async Task<IActionResult> DeleteCustomExercise([FromQuery] int id)
+    public async Task<IActionResult> DeleteUserWorkout(int id)
     {
-        var exercise = await _context.Exercises.FindAsync(id);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null)
+            return Unauthorized();
 
-        if (exercise == null)
-            return NotFound("Nincs ilyen étel a custom sablonban");
+        var workout = await _context.UserWorkouts.FindAsync(id);
+        if (workout == null)
+            return NotFound();
 
-        _context.Exercises.Remove(exercise);
+        _context.UserWorkouts.Remove(workout);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Étel törlés sikeres" });
+        return NoContent();
     }
 }
 

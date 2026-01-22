@@ -169,6 +169,7 @@ class LanguageProvider with ChangeNotifier {
       'workout': 'Edzés',
       'save_as_workout': 'Mentés edzésként',
       'load_template': 'Sablon betöltése',
+      'add_new_workout' : 'Űj edzés hozzáadása',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -298,6 +299,7 @@ class LanguageProvider with ChangeNotifier {
       'workout': 'Workout',
       'save_as_workout': 'Save as workout',
       'load_template': 'Load template',
+      'add_new_workout' : 'Add new workout',
     },
   };
 }
