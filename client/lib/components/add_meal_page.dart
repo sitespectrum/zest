@@ -1,15 +1,16 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:client/Providers/language_provider.dart';
+import 'dart:math';
+
+import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:client/models/meal.dart';
-import 'dart:async';
-import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants.dart';
-import 'dart:math';
+import 'package:zest_client/constants.dart';
+import 'package:zest_client/models/meal.dart';
+import 'package:zest_client/providers/language_provider.dart';
 
 class AddMealPage extends StatefulWidget {
   final bool addToTemplate;

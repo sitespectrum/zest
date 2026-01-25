@@ -1,14 +1,21 @@
-import 'package:client/Providers/language_provider.dart';
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:math';
+
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:functional_widget_annotation/functional_widget_annotation.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/meal.dart';
+import 'package:zest_client/constants.dart';
+import 'package:zest_client/models/meal.dart';
+import 'package:zest_client/providers/language_provider.dart';
+
 import 'add_meal_page.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
-import '../constants.dart';
+
+part "home_page.g.dart";
 
 Future<double> fetchCalorieGoal() async {
   final prefs = await SharedPreferences.getInstance();
@@ -66,458 +73,422 @@ Future<double> fetchTodayCalories() async {
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
+String getTranslatedName(String mealName, LanguageProvider lang) {
+  switch (mealName) {
+    case 'Reggeli':
+      return lang.getText('breakfast');
+    case 'Ebéd':
+      return lang.getText('lunch');
+    case 'Vacsora':
+      return lang.getText('dinner');
+    case 'Egyéb':
+      return lang.getText('other');
+    default:
+      return mealName;
+  }
 }
 
-class _HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin {
-  late Future<List<UserMealDto>> _futureMeals;
-  late Future<double> _todaycalories;
-  late Future<double> _calorieGoal;
+@hwidget
+Widget homePage(BuildContext context) {
+  final futureMeals = useState(fetchUserMeals());
+  final todayCalories = useState(fetchTodayCalories());
+  final calorieGoal = useState(fetchCalorieGoal());
 
-  @override
-  bool get wantKeepAlive => false;
+  final lang = Provider.of<LanguageProvider>(context);
+  final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    setState(() {
-      _futureMeals = fetchUserMeals();
-      _todaycalories = fetchTodayCalories();
-      _calorieGoal = fetchCalorieGoal();
-    });
-  }
+  return SingleChildScrollView(
+    padding: const EdgeInsets.only(bottom: 88),
+    child: Stack(
+      children: [
+        Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.5,
+          decoration: BoxDecoration(
+            // border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
+            // borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [Colors.transparent, Color.fromARGB(75, 64, 255, 50)],
+              transform: GradientRotation(-0.5 * pi),
+            ),
+          ),
+        ),
+        FutureBuilder<List<UserMealDto>>(
+          future: futureMeals.value,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  "Hiba történt: ${snapshot.error}",
+                  style: TextStyle(color: Colors.red),
+                ),
+              );
+            }
 
-  String getTranslatedName(String mealName, LanguageProvider lang) {
-    switch (mealName) {
-      case 'Reggeli':
-        return lang.getText('breakfast');
-      case 'Ebéd':
-        return lang.getText('lunch');
-      case 'Vacsora':
-        return lang.getText('dinner');
-      case 'Egyéb':
-        return lang.getText('other');
-      default:
-        return mealName;
-    }
-  }
+            final meals = snapshot.data ?? [];
 
-  final colorList = <Color>[Color.fromRGBO(78, 156, 71, 1)];
+            final lastMeal = meals.isNotEmpty
+                ? (meals..sort((a, b) => b.eatenAt.compareTo(a.eatenAt))).first
+                : null;
 
-  @override
-  Widget build(BuildContext context) {
-    final lang = Provider.of<LanguageProvider>(context);
-    final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
-    super.build(context);
+            String formattedDate = '';
+            if (lastMeal != null) {
+              formattedDate = DateFormat.yMd(
+                locale,
+              ).add_Hms().format(lastMeal.eatenAt);
+            }
 
-    return SingleChildScrollView(
-      child: FutureBuilder<List<UserMealDto>>(
-        future: _futureMeals,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Hiba történt: ${snapshot.error}",
-                style: TextStyle(color: Colors.red),
-              ),
-            );
-          }
-
-          final meals = snapshot.data ?? [];
-
-          final lastMeal = meals.isNotEmpty
-              ? (meals..sort((a, b) => b.eatenAt.compareTo(a.eatenAt))).first
-              : null;
-
-          String formattedDate = '';
-          if (lastMeal != null) {
-            formattedDate = DateFormat.yMd(
-              locale,
-            ).add_Hms().format(lastMeal.eatenAt);
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PreferredSize(
-                preferredSize: const Size.fromHeight(60),
-                child: Container(
-                  margin: const EdgeInsets.all(6),
-                  child: AppBar(
-                    title: Text(
-                      lang.getText("home_page"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PreferredSize(
+                  preferredSize: const Size.fromHeight(60),
+                  child: Container(
+                    margin: const EdgeInsets.all(6),
+                    child: AppBar(
+                      title: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 20,
+                              top: 8,
+                              bottom: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(50, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Row(
+                              spacing: 8,
+                              children: [
+                                Icon(Icons.home, color: Colors.white, size: 24),
+                                Text(
+                                  lang.getText("home_page"),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
+                      automaticallyImplyLeading: false,
+                      backgroundColor: Colors.transparent,
                     ),
-                    automaticallyImplyLeading: false,
-                    backgroundColor: Color.fromARGB(255, 58, 58, 58),
                   ),
                 ),
-              ),
 
-              //Kalóriadeficit
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.30,
-                    margin: const EdgeInsets.all(20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 45, 45, 45),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
-                      boxShadow: [
-                        BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: FutureBuilder<List<double>>(
-                      future: Future.wait([_todaycalories, _calorieGoal]),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        } else if (snapshot.hasError) {
-                          return Center(child: Text("Hiba: ${snapshot.error}"));
-                        }
+                FutureBuilder(
+                  future: Future.wait([todayCalories.value, calorieGoal.value]),
+                  builder: (context, asyncSnapshot) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      margin: const EdgeInsets.fromLTRB(0, 64, 0, 8),
+                      child: Column(
+                        children: [
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  // text: (asyncSnapshot.data?[0] ?? 0)
+                                  //     .toStringAsFixed(0),
+                                  text: "1643",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 44,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextSpan(
+                                  // text: (asyncSnapshot.data?[0] ?? 0)
+                                  //     .toStringAsFixed(0),
+                                  text: " / 2154 kcal",
+                                  style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
 
-                        final calories = snapshot.data?[0] ?? 0.0;
-                        final targetCalories = snapshot.data?[1] ?? 3000.0;
-                        final percentage = (calories / targetCalories) * 100;
-
-                        return Stack(
-                          alignment: Alignment.center,
+                Container(
+                  height: 32,
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: Color.fromARGB(25, 255, 255, 255),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Flex(
+                    direction: Axis.horizontal,
+                    children: [
+                      Expanded(
+                        flex: 1643,
+                        child: Flex(
+                          direction: Axis.horizontal,
                           children: [
-                            PieChart(
-                              PieChartData(
-                                startDegreeOffset: 270,
-                                sectionsSpace: 2,
-                                centerSpaceRadius: 75,
-                                sections: [
-                                  PieChartSectionData(
-                                    color: Color.fromRGBO(78, 156, 71, 1),
-                                    value: calories,
-                                    title: "${percentage.toStringAsFixed(1)}%",
-                                    radius: 30,
-                                    titleStyle: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  PieChartSectionData(
-                                    color: Colors.grey.shade800,
-                                    value: (targetCalories - calories).clamp(
-                                      0,
-                                      targetCalories,
-                                    ),
-                                    title: '',
-                                    radius: 25,
-                                  ),
-                                ],
+                            Expanded(
+                              flex: 13,
+                              child: Container(
+                                color: const Color.fromARGB(195, 33, 149, 243),
                               ),
                             ),
-                            Text(
-                              "${calories.toStringAsFixed(0)} / ${targetCalories.toStringAsFixed(0)} kcal",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
+                            Expanded(
+                              flex: 15,
+                              child: Container(
+                                color: const Color.fromARGB(195, 255, 235, 59),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 7,
+                              child: Container(
+                                color: const Color.fromARGB(195, 244, 67, 54),
                               ),
                             ),
                           ],
-                        );
-                      },
-                    ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.005,
-                    left: MediaQuery.of(context).size.width * 0.09,
-                    child: Text(
-                      lang.getText("calorie_deficit"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              //Legutóbbi edzés
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.18,
-                    margin: const EdgeInsets.all(20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 45, 45, 45),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
-                      boxShadow: [
-                        BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
                         ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.005,
-                    left: MediaQuery.of(context).size.width * 0.09,
-                    child: Text(
-                      lang.getText("recent_workout"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
+                      Expanded(flex: 2154 - 1643, child: Container()),
+                    ],
                   ),
-                ],
-              ),
+                ),
 
-              //Legutóbbi étkezés
-              Stack(
-                children: [
-                  lastMeal == null
-                      ? Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.all(20),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 45, 45, 45),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
-                            boxShadow: [
-                              BoxShadow(
-                                // ignore: deprecated_member_use
-                                color: Colors.black.withOpacity(0.5),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: Text(
-                              lang.getText("no_added_meal_yet"),
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 18,
-                              ),
+                const SizedBox(height: 12),
+
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 20),
+                  child: Flex(
+                    spacing: 18,
+                    direction: Axis.horizontal,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Row(
+                        spacing: 6,
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(195, 33, 149, 243),
+                              borderRadius: BorderRadius.circular(4),
                             ),
                           ),
-                        )
-                      : GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return Dialog(
-                                  insetPadding: const EdgeInsets.all(20),
-                                  backgroundColor: const Color.fromARGB(
-                                    255,
-                                    30,
-                                    30,
-                                    30,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                        255,
-                                        40,
-                                        40,
-                                        40,
-                                      ),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white24),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          getTranslatedName(
-                                            lastMeal.mealName,
-                                            lang,
-                                          ),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Flexible(
-                                          child: ListView.builder(
-                                            shrinkWrap: true,
-                                            itemCount: lastMeal.meals.length,
-                                            itemBuilder: (context, index) {
-                                              final meal =
-                                                  lastMeal.meals[index];
-                                              final cleanName = stripHtmlTags(
-                                                meal.name,
-                                              );
+                          Text(
+                            "Fehérje",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
 
-                                              return Container(
-                                                width: double.infinity,
-                                                margin:
-                                                    const EdgeInsets.symmetric(
-                                                      vertical: 3,
-                                                      horizontal: 4,
-                                                    ),
-                                                padding: const EdgeInsets.all(
-                                                  12,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color.fromARGB(
-                                                    255,
-                                                    30,
-                                                    30,
-                                                    30,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: Colors.white24,
-                                                  ),
-                                                ),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      "$cleanName (${meal.quantity})",
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 6),
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Expanded(
-                                                          child: Text(
-                                                            '${meal.qCalories.toStringAsFixed(3)} kcal',
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            '${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein").toLowerCase()}',
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: Text(
-                                                            '${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs").toLowerCase()}',
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            '${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat").toLowerCase()}',
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Positioned(
-                                          child: FilledButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor:
-                                                  const Color.fromARGB(
-                                                    255,
-                                                    30,
-                                                    30,
-                                                    30,
-                                                  ),
-                                              side: const BorderSide(
-                                                color: Colors.white24,
-                                                width: 1,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              lang.getText("close"),
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
+                      Row(
+                        spacing: 6,
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(195, 255, 235, 59),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Text(
+                            "Szénhidrát",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Row(
+                        spacing: 6,
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(195, 244, 67, 54),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Text(
+                            "Zsír",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                //Kalóriadeficit
+                Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.height * 0.30,
+                      margin: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 45, 45, 45),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24),
+                        boxShadow: [
+                          BoxShadow(
+                            // ignore: deprecated_member_use
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: FutureBuilder<List<double>>(
+                        future: Future.wait([
+                          todayCalories.value,
+                          calorieGoal.value,
+                        ]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
                             );
-                          },
-                          child: Container(
+                          } else if (snapshot.hasError) {
+                            return Center(
+                              child: Text("Hiba: ${snapshot.error}"),
+                            );
+                          }
+
+                          final calories = snapshot.data?[0] ?? 0.0;
+                          final targetCalories = snapshot.data?[1] ?? 3000.0;
+                          final percentage = (calories / targetCalories) * 100;
+
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              PieChart(
+                                PieChartData(
+                                  startDegreeOffset: 270,
+                                  sectionsSpace: 2,
+                                  centerSpaceRadius: 75,
+                                  sections: [
+                                    PieChartSectionData(
+                                      color: Color.fromRGBO(78, 156, 71, 1),
+                                      value: calories,
+                                      title:
+                                          "${percentage.toStringAsFixed(1)}%",
+                                      radius: 30,
+                                      titleStyle: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    PieChartSectionData(
+                                      color: Colors.grey.shade800,
+                                      value: (targetCalories - calories).clamp(
+                                        0,
+                                        targetCalories,
+                                      ),
+                                      title: '',
+                                      radius: 25,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                "${calories.toStringAsFixed(0)} / ${targetCalories.toStringAsFixed(0)} kcal",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      top: MediaQuery.of(context).size.height * 0.005,
+                      left: MediaQuery.of(context).size.width * 0.09,
+                      child: Text(
+                        lang.getText("calorie_deficit"),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                //Legutóbbi edzés
+                Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.height * 0.18,
+                      margin: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 45, 45, 45),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24),
+                        boxShadow: [
+                          BoxShadow(
+                            // ignore: deprecated_member_use
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      top: MediaQuery.of(context).size.height * 0.005,
+                      left: MediaQuery.of(context).size.width * 0.09,
+                      child: Text(
+                        lang.getText("recent_workout"),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                //Legutóbbi étkezés
+                Stack(
+                  children: [
+                    lastMeal == null
+                        ? Container(
                             width: double.infinity,
                             margin: const EdgeInsets.all(20),
                             padding: const EdgeInsets.all(12),
@@ -534,96 +505,358 @@ class _HomePageState extends State<HomePage>
                                 ),
                               ],
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "${getTranslatedName(lastMeal.mealName, lang)} - $formattedDate",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize:
-                                            MediaQuery.of(context).size.height *
-                                            0.021,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "${lang.getText("carbs")}: ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "${lang.getText("fat")}: ${lastMeal.totalFat.toStringAsFixed(1)} g",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Text(
+                                lang.getText("no_added_meal_yet"),
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 18,
                                 ),
+                              ),
+                            ),
+                          )
+                        : GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Dialog(
+                                    insetPadding: const EdgeInsets.all(20),
+                                    backgroundColor: const Color.fromARGB(
+                                      255,
+                                      30,
+                                      30,
+                                      30,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromARGB(
+                                          255,
+                                          40,
+                                          40,
+                                          40,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.white24,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            getTranslatedName(
+                                              lastMeal.mealName,
+                                              lang,
+                                            ),
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Flexible(
+                                            child: ListView.builder(
+                                              shrinkWrap: true,
+                                              itemCount: lastMeal.meals.length,
+                                              itemBuilder: (context, index) {
+                                                final meal =
+                                                    lastMeal.meals[index];
+                                                final cleanName = stripHtmlTags(
+                                                  meal.name,
+                                                );
 
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    top:
-                                        MediaQuery.of(context).size.height *
-                                        0.055,
-                                  ),
-                                  child: Container(
-                                    width: 50,
-                                    height: 50,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
+                                                return Container(
+                                                  width: double.infinity,
+                                                  margin:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 3,
+                                                        horizontal: 4,
+                                                      ),
+                                                  padding: const EdgeInsets.all(
+                                                    12,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color.fromARGB(
+                                                      255,
+                                                      30,
+                                                      30,
+                                                      30,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white24,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        "$cleanName (${meal.quantity})",
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 6),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(
+                                                              '${meal.qCalories.toStringAsFixed(3)} kcal',
+                                                              style:
+                                                                  const TextStyle(
+                                                                    color: Colors
+                                                                        .white70,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              '${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein").toLowerCase()}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                    color: Colors
+                                                                        .white70,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(
+                                                              '${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs").toLowerCase()}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                    color: Colors
+                                                                        .white70,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              '${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat").toLowerCase()}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                    color: Colors
+                                                                        .white70,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Positioned(
+                                            child: FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor:
+                                                    const Color.fromARGB(
+                                                      255,
+                                                      30,
+                                                      30,
+                                                      30,
+                                                    ),
+                                                side: const BorderSide(
+                                                  color: Colors.white24,
+                                                  width: 1,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                lang.getText("close"),
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    child: const Icon(
-                                      Icons.arrow_forward,
-                                      color: Colors.black,
+                                  );
+                                },
+                              );
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 45, 45, 45),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    // ignore: deprecated_member_use
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "${getTranslatedName(lastMeal.mealName, lang)} - $formattedDate",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.height *
+                                              0.021,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${lang.getText("carbs")}: ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${lang.getText("fat")}: ${lastMeal.totalFat.toStringAsFixed(1)} g",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      top:
+                                          MediaQuery.of(context).size.height *
+                                          0.055,
+                                    ),
+                                    child: Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_forward,
+                                        color: Colors.black,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
+                    Positioned(
+                      top: MediaQuery.of(context).size.height * 0.005,
+                      left: MediaQuery.of(context).size.width * 0.09,
+                      child: Text(
+                        lang.getText("recent_meal"),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.005,
-                    left: MediaQuery.of(context).size.width * 0.09,
-                    child: Text(
-                      lang.getText("recent_meal"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+  );
 }
+
+// class HomePage extends StatefulWidget {
+//   const HomePage({super.key});
+
+//   @override
+//   State<HomePage> createState() => _HomePageState();
+// }
+
+// class _HomePageState extends State<HomePage>
+//     with AutomaticKeepAliveClientMixin {
+//   late Future<List<UserMealDto>> _futureMeals;
+//   late Future<double> _todaycalories;
+//   late Future<double> _calorieGoal;
+
+//   @override
+//   bool get wantKeepAlive => false;
+
+//   @override
+//   void didChangeDependencies() {
+//     super.didChangeDependencies();
+//     setState(() {
+//       _futureMeals = fetchUserMeals();
+//       _todaycalories = fetchTodayCalories();
+//       _calorieGoal = fetchCalorieGoal();
+//     });
+//   }
+
+//   final colorList = <Color>[Color.fromRGBO(78, 156, 71, 1)];
+
+//   @override
+//   Widget build(BuildContext context) {
+//     useAutomaticKeepAlive(wantKeepAlive: true);
+
+//     final lang = Provider.of<LanguageProvider>(context);
+//     final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
+//     super.build(context);
+//   }
+// }

@@ -1,16 +1,17 @@
 import 'dart:async';
-import 'package:client/models/workout.dart';
-import 'package:client/Providers/language_provider.dart';
-import 'package:client/pages.dart';
-import 'package:client/providers/workout_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter/rendering.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:client/constants.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zest_client/constants.dart';
+import 'package:zest_client/models/workout.dart';
+import 'package:zest_client/pages.dart';
+import 'package:zest_client/providers/language_provider.dart';
+import 'package:zest_client/providers/workout_provider.dart';
 
 class RunningWorkoutPage extends StatefulWidget {
   final List<ExerciseDto> userWorkouts;

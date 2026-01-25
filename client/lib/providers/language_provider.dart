@@ -1,6 +1,26 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'package:shared_preferences/shared_preferences.dart';
+
+// part 'language_provider.g.dart';
+
+// @riverpod
+// class Language extends _$Language {
+//   @override
+//   Locale build() => Locale("hu");
+
+//   String get languageCode => state.languageCode;
+
+//   Future<void> changeLanguage(String languageCode) async {
+//     state = Locale(languageCode);
+
+//     final prefs = await SharedPreferences.getInstance();
+//     await prefs.setString('selected_language', languageCode);
+//   }
+
+//   String getText(String key) {
+//     return localizedValues[languageCode]?[key] ?? key;
+//   }
+// }
 
 class LanguageProvider with ChangeNotifier {
   Locale _currentLocale = const Locale('hu');
@@ -169,7 +189,7 @@ class LanguageProvider with ChangeNotifier {
       'workout': 'Edzés',
       'save_as_workout': 'Mentés edzésként',
       'load_template': 'Sablon betöltése',
-      'add_new_workout' : 'Űj edzés hozzáadása',
+      'add_new_workout': 'Űj edzés hozzáadása',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -299,7 +319,7 @@ class LanguageProvider with ChangeNotifier {
       'workout': 'Workout',
       'save_as_workout': 'Save as workout',
       'load_template': 'Load template',
-      'add_new_workout' : 'Add new workout',
+      'add_new_workout': 'Add new workout',
     },
   };
 }

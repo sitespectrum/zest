@@ -1,12 +1,13 @@
 import 'dart:convert';
-import 'package:client/Providers/language_provider.dart';
-import 'package:provider/provider.dart';
-import 'package:client/constants.dart';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:client/main.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zest_client/constants.dart';
+import 'package:zest_client/main.dart';
+import 'package:zest_client/providers/language_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
@@ -862,7 +863,6 @@ class _ProfilePageState extends State<ProfilePage>
     super.build(context);
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 58, 58, 58),
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(
@@ -870,104 +870,106 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             )
           : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  PreferredSize(
-                    preferredSize: const Size.fromHeight(60),
-                    child: Container(
-                      margin: const EdgeInsets.all(6),
-                      child: AppBar(
-                        title: Text(
-                          lang.getText("profile_page"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 88),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PreferredSize(
+                      preferredSize: const Size.fromHeight(60),
+                      child: Container(
+                        margin: const EdgeInsets.all(6),
+                        child: AppBar(
+                          title: Text(
+                            lang.getText("profile_page"),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
+                          automaticallyImplyLeading: false,
+                          backgroundColor: Colors.transparent,
                         ),
-                        automaticallyImplyLeading: false,
-                        backgroundColor: Colors.transparent,
                       ),
                     ),
-                  ),
-                  if (userData != null) ...[
-                    _buildDisplayCard(
-                      title: lang.getText("personal_details"),
-                      rows: [
-                        _buildInfoRow(
-                          Icons.person_outline,
-                          lang.getText("user"),
-                          username ?? "",
+                    if (userData != null) ...[
+                      _buildDisplayCard(
+                        title: lang.getText("personal_details"),
+                        rows: [
+                          _buildInfoRow(
+                            Icons.person_outline,
+                            lang.getText("user"),
+                            username ?? "",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.height,
+                            lang.getText("height"),
+                            "${userData!['height']} cm",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.fitness_center,
+                            lang.getText("weight"),
+                            "${userData!['weight']} kg",
+                          ),
+                        ],
+                      ),
+                      _buildDisplayCard(
+                        title: lang.getText("daily_goals"),
+                        rows: [
+                          _buildInfoRow(
+                            Icons.local_fire_department,
+                            lang.getText("calories"),
+                            "${userData!['calorieGoal'].toInt()} kcal",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.egg_alt,
+                            lang.getText("protein"),
+                            "${userData!['proteinGoal'].toInt()} g",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.bakery_dining,
+                            lang.getText("carbs"),
+                            "${userData!['carbsGoal'].toInt()} g",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.opacity,
+                            lang.getText("fat"),
+                            "${userData!['fatGoal'].toInt()} g",
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
                         ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.height,
-                          lang.getText("height"),
-                          "${userData!['height']} cm",
+                        child: _buildZestButton(
+                          lang.getText("modify_details"),
+                          _showEditPopup,
                         ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.fitness_center,
-                          lang.getText("weight"),
-                          "${userData!['weight']} kg",
-                        ),
-                      ],
-                    ),
-                    _buildDisplayCard(
-                      title: lang.getText("daily_goals"),
-                      rows: [
-                        _buildInfoRow(
-                          Icons.local_fire_department,
-                          lang.getText("calories"),
-                          "${userData!['calorieGoal'].toInt()} kcal",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.egg_alt,
-                          lang.getText("protein"),
-                          "${userData!['proteinGoal'].toInt()} g",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.bakery_dining,
-                          lang.getText("carbs"),
-                          "${userData!['carbsGoal'].toInt()} g",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.opacity,
-                          lang.getText("fat"),
-                          "${userData!['fatGoal'].toInt()} g",
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
                       ),
                       child: _buildZestButton(
-                        lang.getText("modify_details"),
-                        _showEditPopup,
+                        lang.getText("logout"),
+                        () async {
+                          await _logout();
+                        },
+                        color: const Color.fromARGB(255, 45, 45, 45),
                       ),
                     ),
                   ],
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    child: _buildZestButton(
-                      lang.getText("logout"),
-                      () async {
-                        await _logout();
-                      },
-                      color: const Color.fromARGB(255, 45, 45, 45),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
+                ),
               ),
             ),
     );

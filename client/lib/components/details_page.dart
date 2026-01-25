@@ -1,9 +1,11 @@
-import 'package:client/Providers/language_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:zest_client/providers/language_provider.dart';
+
 import '../constants.dart';
 
 class DetailsPage extends StatefulWidget {

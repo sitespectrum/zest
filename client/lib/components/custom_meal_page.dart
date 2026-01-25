@@ -1,15 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Providers/language_provider.dart';
+import 'package:zest_client/constants.dart';
+import 'package:zest_client/models/meal.dart';
+import 'package:zest_client/pages.dart';
+import 'package:zest_client/providers/language_provider.dart';
+
 import 'add_meal_page.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:client/models/meal.dart';
-import 'dart:async';
-import 'package:client/pages.dart';
-import '../constants.dart';
 
 class CMealPage extends StatefulWidget {
   final DateTime selectedDay;
@@ -289,7 +291,6 @@ class _CMealPageState extends State<CMealPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    backgroundColor: const Color.fromARGB(255, 58, 58, 58),
                     iconTheme: const IconThemeData(color: Colors.white),
                   ),
                 ),
@@ -1482,7 +1483,9 @@ class _CMealPageState extends State<CMealPage> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                lang.getText("name_the_template"),
+                                                lang.getText(
+                                                  "name_the_template",
+                                                ),
                                               ),
                                               behavior:
                                                   SnackBarBehavior.floating,

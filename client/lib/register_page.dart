@@ -1,11 +1,13 @@
-import 'package:client/Providers/language_provider.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'components/details_page.dart';
+import 'package:zest_client/providers/language_provider.dart';
+
 import '../constants.dart';
+import 'components/details_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});

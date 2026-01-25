@@ -1,15 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:client/models/workout.dart';
-import 'package:flutter/cupertino.dart';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:client/models/meal.dart';
 import 'package:provider/provider.dart';
-import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Providers/language_provider.dart';
+import 'package:zest_client/models/workout.dart';
+
 import '../constants.dart';
-import 'dart:math';
+import '../providers/language_provider.dart';
 
 class AddWorkoutPage extends StatefulWidget {
   final bool addToTemplate;

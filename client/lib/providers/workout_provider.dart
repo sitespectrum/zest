@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:client/models/workout.dart';
+import 'package:zest_client/models/workout.dart';
 
 class WorkoutProvider with ChangeNotifier {
   Timer? _timer;

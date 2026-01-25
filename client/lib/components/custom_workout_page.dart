@@ -1,15 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:client/components/running_workout_page.dart';
-import 'package:client/constants.dart';
+
 import 'package:flutter/material.dart';
-import 'package:client/models/workout.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'add_workout_page.dart';
-import '../Providers/language_provider.dart';
+import 'package:zest_client/components/running_workout_page.dart';
+import 'package:zest_client/constants.dart';
+import 'package:zest_client/models/workout.dart';
+
+import '../providers/language_provider.dart';
 import '../providers/workout_provider.dart';
+import 'add_workout_page.dart';
 
 class CWorkoutPage extends StatefulWidget {
   final DateTime selectedDay;
@@ -23,7 +25,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
   bool showdelete = false;
-  Timer? _debounce;
 
   @override
   void initState() {
