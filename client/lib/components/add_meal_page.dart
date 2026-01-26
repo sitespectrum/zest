@@ -88,7 +88,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
-      var uri;
+      Uri uri;
       final lang = Provider.of<LanguageProvider>(
         context,
         listen: false,
@@ -121,7 +121,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
-      var uri;
+      Uri uri;
       final lang = Provider.of<LanguageProvider>(
         context,
         listen: false,
@@ -203,7 +203,7 @@ class _AddMealPageState extends State<AddMealPage> {
       "unit": meal.unit,
       "baseWeight": meal.baseWeight,
     });
-    print("templateId: ${templateId}");
+    print("templateId: $templateId");
 
     try {
       final response = await http.post(
@@ -277,7 +277,7 @@ class _AddMealPageState extends State<AddMealPage> {
     });
 
     try {
-      var uri;
+      Uri uri;
       if (lang == "hu") {
         setState(() {
           uri = Uri.parse('$apiUrl/api/meals/husearch?q=$q');
@@ -288,7 +288,7 @@ class _AddMealPageState extends State<AddMealPage> {
         });
       }
       final response = await http.get(uri);
-      print("URI: ${uri}");
+      print("URI: $uri");
 
       if (response.statusCode != 200) {
         print("Hiba: Státuszkód ${response.statusCode}");
@@ -309,9 +309,9 @@ class _AddMealPageState extends State<AddMealPage> {
       if (decoded is List) {
         items = decoded;
       } else if (decoded is Map<String, dynamic>) {
-        if (decoded['results2'] is List)
+        if (decoded['results2'] is List) {
           items = decoded['results2'];
-        else if (decoded['results'] is List)
+        } else if (decoded['results'] is List)
           items = decoded['results'];
         else if (decoded['data'] is List)
           items = decoded['data'];
@@ -569,7 +569,7 @@ class _AddMealPageState extends State<AddMealPage> {
                                       final prefs =
                                           await SharedPreferences.getInstance();
                                       final userId = prefs.getInt("userId");
-                                      print("userId: ${userId}");
+                                      print("userId: $userId");
                                       if (userId != null &&
                                           widget.templateId != null) {
                                         await addFoodToTemplate(

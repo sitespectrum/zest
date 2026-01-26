@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
 import 'package:provider/provider.dart' as pr;
-import 'package:zest_client/components/custom_meal_page.dart';
-import 'package:zest_client/components/custom_workout_page.dart';
 import 'package:zest_client/components/drawers/add_drawer.dart';
 import 'package:zest_client/components/health_page.dart';
 import 'package:zest_client/components/home_page.dart';

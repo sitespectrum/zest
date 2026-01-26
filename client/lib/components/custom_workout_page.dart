@@ -226,8 +226,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                       loadingProgress,
                                                                     ) {
                                                                       if (loadingProgress ==
-                                                                          null)
+                                                                          null) {
                                                                         return child;
+                                                                      }
                                                                       return const Center(
                                                                         child:
                                                                             CircularProgressIndicator(),

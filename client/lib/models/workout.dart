@@ -28,14 +28,16 @@ class ExerciseDto {
   }
 
   List<String> getInstructions(String langCode) {
-    if (langCode == 'hu')
+    if (langCode == 'hu') {
       return instructionsHu.isNotEmpty ? instructionsHu : instructions;
+    }
     return instructions;
   }
 
   List<String> getPMuscles(String langCode) {
-    if (langCode == 'hu')
+    if (langCode == 'hu') {
       return primaryMusclesHu.isNotEmpty ? primaryMusclesHu : primaryMuscles;
+    }
     return primaryMuscles;
   }
 
@@ -55,8 +57,9 @@ class ExerciseDto {
   }
 
   String getEquipment(String langCode) {
-    if (langCode == 'hu')
+    if (langCode == 'hu') {
       return equipmentHu.isNotEmpty ? equipmentHu : equipment;
+    }
     return equipment;
   }
 
@@ -66,10 +69,11 @@ class ExerciseDto {
   }
 
   List<String> getSMuscles(String langCode) {
-    if (langCode == 'hu')
+    if (langCode == 'hu') {
       return secondaryMusclesHu.isNotEmpty
           ? secondaryMusclesHu
           : secondaryMuscles;
+    }
     return secondaryMuscles;
   }
 
@@ -167,26 +171,26 @@ class ExerciseDto {
   ExerciseDto copyWith({int? id}) {
     return ExerciseDto(
       id: id ?? this.id,
-      name: name ?? this.name,
-      nameHu: nameHu ?? this.nameHu,
-      force: force ?? this.force,
-      forceHu: forceHu ?? this.forceHu,
-      level: level ?? this.level,
-      levelHu: levelHu ?? this.levelHu,
-      mechanic: mechanic ?? this.mechanic,
-      mechanicHu: mechanicHu ?? this.mechanicHu,
-      equipment: equipment ?? this.equipment,
-      equipmentHu: equipmentHu ?? this.equipmentHu,
-      category: category ?? this.category,
-      categoryHu: categoryHu ?? this.categoryHu,
-      primaryMuscles: primaryMuscles ?? this.primaryMuscles,
-      primaryMusclesHu: primaryMusclesHu ?? this.primaryMusclesHu,
-      secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
-      secondaryMusclesHu: secondaryMusclesHu ?? this.secondaryMusclesHu,
-      instructions: instructions ?? this.instructions,
-      instructionsHu: instructionsHu ?? this.instructionsHu,
-      images: images ?? this.images,
-      metValue: metValue ?? this.metValue,
+      name: name ?? name,
+      nameHu: nameHu ?? nameHu,
+      force: force ?? force,
+      forceHu: forceHu ?? forceHu,
+      level: level ?? level,
+      levelHu: levelHu ?? levelHu,
+      mechanic: mechanic ?? mechanic,
+      mechanicHu: mechanicHu ?? mechanicHu,
+      equipment: equipment ?? equipment,
+      equipmentHu: equipmentHu ?? equipmentHu,
+      category: category ?? category,
+      categoryHu: categoryHu ?? categoryHu,
+      primaryMuscles: primaryMuscles ?? primaryMuscles,
+      primaryMusclesHu: primaryMusclesHu ?? primaryMusclesHu,
+      secondaryMuscles: secondaryMuscles ?? secondaryMuscles,
+      secondaryMusclesHu: secondaryMusclesHu ?? secondaryMusclesHu,
+      instructions: instructions ?? instructions,
+      instructionsHu: instructionsHu ?? instructionsHu,
+      images: images ?? images,
+      metValue: metValue ?? metValue,
     );
   }
 }

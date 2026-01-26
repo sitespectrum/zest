@@ -154,18 +154,18 @@ class MealDto {
 
   MealDto copyWith({int? id}) {
     return MealDto(
-      Id: id ?? this.Id,
-      foodId: this.foodId,
-      name: this.name,
-      piece: this.piece,
-      calories: this.calories,
-      protein: this.protein,
-      carbs: this.carbs,
-      fat: this.fat,
-      quantity: this.quantity,
-      unit: this.unit,
-      baseWeight: this.baseWeight,
-      multiplier: this.multiplier,
+      Id: id ?? Id,
+      foodId: foodId,
+      name: name,
+      piece: piece,
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fat: fat,
+      quantity: quantity,
+      unit: unit,
+      baseWeight: baseWeight,
+      multiplier: multiplier,
     );
   }
 }

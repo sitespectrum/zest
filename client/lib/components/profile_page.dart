@@ -209,9 +209,7 @@ class _ProfilePageState extends State<ProfilePage>
                                           72,
                                         ),
                                         onSurface: Colors.white,
-                                      ),
-                                      dialogBackgroundColor:
-                                          const Color.fromARGB(255, 72, 72, 72),
+                                      ), dialogTheme: DialogThemeData(backgroundColor: const Color.fromARGB(255, 72, 72, 72)),
                                     ),
                                     child: child!,
                                   ),
@@ -597,7 +595,7 @@ class _ProfilePageState extends State<ProfilePage>
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             dropdownColor: const Color.fromARGB(255, 72, 72, 72),
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -656,7 +654,7 @@ class _ProfilePageState extends State<ProfilePage>
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonFormField<String>(
-            value: Provider.of<LanguageProvider>(context).languageCode,
+            initialValue: Provider.of<LanguageProvider>(context).languageCode,
             dropdownColor: const Color.fromARGB(255, 72, 72, 72),
             decoration: const InputDecoration(
               border: InputBorder.none,

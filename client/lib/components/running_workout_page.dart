@@ -206,7 +206,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
         "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}";
     final defWorkoutNameB =
         "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHourB()}";
-    Timer? _debounce;
+    Timer? debounce;
     return Scaffold(
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
@@ -337,8 +337,9 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                         .toDouble();
                 int burntCalories = (avgMet * 3.5 * 75 / 200 * durationMin)
                     .toInt();
-                if (burntCalories == 0 && durationMin > 0)
+                if (burntCalories == 0 && durationMin > 0) {
                   burntCalories = (durationMin * 5).toInt();
+                }
 
                 int currentWorkoutNum = 1;
                 try {
@@ -581,10 +582,10 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                   child: FilledButton(
                                     onPressed: () async {
                                       Navigator.pop(context);
-                                      if (_debounce?.isActive ?? false) {
-                                        _debounce!.cancel();
+                                      if (debounce?.isActive ?? false) {
+                                        debounce!.cancel();
                                       }
-                                      _debounce = Timer(
+                                      debounce = Timer(
                                         const Duration(milliseconds: 1500),
                                         () {
                                           ScaffoldMessenger.of(
@@ -859,13 +860,13 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                                               );
                                                               return;
                                                             }
-                                                            if (_debounce
+                                                            if (debounce
                                                                     ?.isActive ??
                                                                 false) {
-                                                              _debounce!
+                                                              debounce!
                                                                   .cancel();
                                                             }
-                                                            _debounce = Timer(
+                                                            debounce = Timer(
                                                               const Duration(
                                                                 milliseconds:
                                                                     1500,
@@ -1066,13 +1067,13 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                                               );
                                                               return;
                                                             }
-                                                            if (_debounce
+                                                            if (debounce
                                                                     ?.isActive ??
                                                                 false) {
-                                                              _debounce!
+                                                              debounce!
                                                                   .cancel();
                                                             }
-                                                            _debounce = Timer(
+                                                            debounce = Timer(
                                                               const Duration(
                                                                 milliseconds:
                                                                     1500,

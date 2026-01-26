@@ -543,7 +543,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                       final prefs =
                                           await SharedPreferences.getInstance();
                                       final userId = prefs.getInt("userId");
-                                      print("userId: ${userId}");
+                                      print("userId: $userId");
                                       if (userId != null &&
                                           widget.templateId != null) {
                                         await addExerciseToTemplate(

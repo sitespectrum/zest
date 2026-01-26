@@ -165,7 +165,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         context: context,
                         builder: (_) => AlertDialog(
                           title: const Text("Hiba"),
-                          content: Text("${response.body}"),
+                          content: Text(response.body),
                         ),
                       );
                     }
