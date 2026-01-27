@@ -72,6 +72,32 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     }
   }
 
+  Future<bool> deleteUserWorkoutTemplate(int id) async {
+    final url = Uri.parse("$apiUrl/api/Workout/DeleteTemplate?id=$id");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Szerver hiba (${response.statusCode}): ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Hálózati hiba: $e");
+      return false;
+    }
+  }
+
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       if (oldIndex < newIndex) {
@@ -1467,9 +1493,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                               );
                             },
                           );
-                          setState(() {
-                            showdelete = false;
-                          });
                         },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -1487,15 +1510,174 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    template.customName.isNotEmpty
-                                        ? template.customName
-                                        : lang.getText("unknown_template"),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          template.customName.isNotEmpty
+                                              ? template.customName
+                                              : lang.getText(
+                                                  "unknown_template",
+                                                ),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onPressed: () async {
+                                          final confirmed = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => Dialog(
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    30,
+                                                    30,
+                                                    30,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                side: const BorderSide(
+                                                  color: Colors.white24,
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  20,
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      lang.getText("delete"),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 22,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 16),
+                                                    Text(
+                                                      "${lang.getText("sure_delete_template")}\n'${template.customName}'?",
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 24),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      children: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                false,
+                                                              ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "cancel",
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white54,
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        FilledButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                true,
+                                                              ),
+                                                          style: FilledButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .redAccent,
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "delete",
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 16,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+
+                                          if (confirmed == true) {
+                                            final success =
+                                                await deleteUserWorkoutTemplate(
+                                                  template.id,
+                                                );
+
+                                            if (success) {
+                                              setState(() {
+                                                templates.removeAt(index);
+                                              });
+
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      lang.getText(
+                                                        "deleted_successfully",
+                                                      ),
+                                                    ),
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
