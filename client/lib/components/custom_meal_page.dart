@@ -110,6 +110,32 @@ class _CMealPageState extends State<CMealPage> {
     }
   }
 
+  Future<bool> deleteUserMealTemplate(int id) async {
+    final url = Uri.parse("$apiUrl/api/Meals/DeleteTemplate?id=$id");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Szerver hiba (${response.statusCode}): ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Hálózati hiba: $e");
+      return false;
+    }
+  }
+
   Future<void> saveUserMealsS(
     List<MealDto> meals,
     String customName,
@@ -1814,6 +1840,205 @@ class _CMealPageState extends State<CMealPage> {
                                       color: Colors.white70,
                                     ),
                                   ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onPressed: () async {
+                                          final confirmed = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => Dialog(
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    30,
+                                                    30,
+                                                    30,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                side: const BorderSide(
+                                                  color: Colors.white24,
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  20,
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      lang.getText("delete"),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 22,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 16),
+                                                    Text(
+                                                      "${lang.getText("sure_delete_template")}\n'${meal.customName}'?",
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 24),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      children: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                false,
+                                                              ),
+                                                          style:
+                                                              TextButton.styleFrom(
+                                                                foregroundColor:
+                                                                    Colors
+                                                                        .white54,
+                                                              ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "cancel",
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        FilledButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                true,
+                                                              ),
+                                                          style: FilledButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .redAccent,
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      20,
+                                                                  vertical: 10,
+                                                                ),
+                                                          ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "delete",
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 16,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+
+                                          if (confirmed == true) {
+                                            final success =
+                                                await deleteUserMealTemplate(
+                                                  meal.id,
+                                                );
+
+                                            if (success) {
+                                              setState(() {
+                                                meals.removeAt(index);
+                                              });
+
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      lang.getText(
+                                                        "deleted_successfully",
+                                                      ),
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    showCloseIcon: true,
+                                                    closeIconColor:
+                                                        Colors.white70,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    backgroundColor:
+                                                        const Color.fromARGB(
+                                                          255,
+                                                          45,
+                                                          45,
+                                                          45,
+                                                        ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      side: const BorderSide(
+                                                        color: Colors.white24,
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 30,
+                                                          left: 16,
+                                                          right: 16,
+                                                        ),
+                                                    duration: const Duration(
+                                                      milliseconds: 1800,
+                                                    ),
+                                                    animation: CurvedAnimation(
+                                                      parent:
+                                                          kAlwaysCompleteAnimation,
+                                                      curve: Curves.easeInOut,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -2137,6 +2362,39 @@ class _CMealPageState extends State<CMealPage> {
                                           );
                                           return;
                                         }
+
+                                        final existingTemplates =
+                                            await futureCustomMeals;
+                                        final newName = mealnamecontroller.text
+                                            .trim();
+
+                                        final bool isDuplicate =
+                                            existingTemplates.any(
+                                              (template) =>
+                                                  template.customName
+                                                      .trim()
+                                                      .toLowerCase() ==
+                                                  newName.toLowerCase(),
+                                            );
+
+                                        if (isDuplicate) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                lang.getText(
+                                                  'duplicate_template',
+                                                ),
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
+
                                         try {
                                           final prefs =
                                               await SharedPreferences.getInstance();
