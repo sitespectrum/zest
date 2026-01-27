@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Zest.Api.Data;
 
@@ -10,9 +11,11 @@ using Zest.Api.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    partial class ZestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260121093820_DeleteTemplate")]
+    partial class DeleteTemplate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -55,7 +58,7 @@ namespace server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserMeals", (string)null);
+                    b.ToTable("UserMeals");
                 });
 
             modelBuilder.Entity("UserWorkouts", b =>
@@ -93,7 +96,7 @@ namespace server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserWorkouts", (string)null);
+                    b.ToTable("UserWorkouts");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.Exercise", b =>
@@ -196,7 +199,7 @@ namespace server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Exercises", (string)null);
+                    b.ToTable("Exercises");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
@@ -244,7 +247,7 @@ namespace server.Migrations
 
                     b.HasIndex("UserMealId");
 
-                    b.ToTable("Meals", (string)null);
+                    b.ToTable("Meals");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.RefreshToken", b =>
@@ -265,7 +268,7 @@ namespace server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.User", b =>
@@ -321,7 +324,7 @@ namespace server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.WorkoutExercise", b =>
@@ -342,7 +345,7 @@ namespace server.Migrations
 
                     b.HasIndex("UserWorkoutId");
 
-                    b.ToTable("WorkoutExercises", (string)null);
+                    b.ToTable("WorkoutExercises");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.WorkoutSet", b =>
@@ -370,7 +373,7 @@ namespace server.Migrations
 
                     b.HasIndex("WorkoutId");
 
-                    b.ToTable("WorkoutSets", (string)null);
+                    b.ToTable("WorkoutSets");
                 });
 
             modelBuilder.Entity("UserMeal", b =>

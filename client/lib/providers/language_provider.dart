@@ -167,6 +167,9 @@ class LanguageProvider with ChangeNotifier {
       'volume': 'Összesen',
       'duration': 'Időtartam',
       'workout': 'Edzés',
+      'duplicate_template': 'Ez a sablon név már létezik!',
+      "sure_delete_template": "Biztosan törölni szeretnéd ezt a sablont:",
+      "deleted_successfully": "Sikeresen törölve!",
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -294,6 +297,9 @@ class LanguageProvider with ChangeNotifier {
       'volume': 'Volume',
       'duration': 'Duration',
       'workout': 'Workout',
+      'duplicate_template': 'This template name already exists!',
+      "sure_delete_template": "Are you sure you want to delete this template:",
+      "deleted_successfully": "Deleted successfully!",
     },
   };
 }

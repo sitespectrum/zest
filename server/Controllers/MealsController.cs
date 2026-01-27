@@ -538,6 +538,33 @@ public class MealsController : ControllerBase
         return Ok(new { message = "Étel törlés sikeres" });
     }
 
+    [HttpDelete("DeleteTemplate")]
+    [Authorize]
+    public async Task<IActionResult> DeleteTemplate([FromQuery] int id)
+    {
+        var meal = await _context.UserMeals
+            .Include(m => m.Meals)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (meal == null)
+            return NotFound("Nincs ilyen étkezés");
+
+        var userIdClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim == null)
+            return Unauthorized("Nincs érvényes azonosító a tokenben.");
+
+        var userId = int.Parse(userIdClaim);
+
+        if (meal.UserId != userId)
+            return Unauthorized("Nincs jogosultsága törölni ezt a sablont.");
+
+        _context.UserMeals.Remove(meal);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Étkezés törlés sikeres" });
+    }
+
     [HttpPost("AddFoodToTemplate")]
     public async Task<IActionResult> AddFoodToTemplate([FromBody] AddFoodToTemplateDto dto)
     {
