@@ -169,7 +169,12 @@ class LanguageProvider with ChangeNotifier {
       'workout': 'Edzés',
       'save_as_workout': 'Mentés edzésként',
       'load_template': 'Sablon betöltése',
-      'add_new_workout' : 'Űj edzés hozzáadása',
+      'add_new_workout': 'Űj edzés hozzáadása',
+      'share': 'Megosztás',
+      'share_via_NFC': 'Megosztás NFC-n keresztül',
+      'recive_workout': 'Edzés fogadása',
+      'or': 'Vagy',
+      'scan': 'QR kód belolvasása',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -299,7 +304,12 @@ class LanguageProvider with ChangeNotifier {
       'workout': 'Workout',
       'save_as_workout': 'Save as workout',
       'load_template': 'Load template',
-      'add_new_workout' : 'Add new workout',
+      'add_new_workout': 'Add new workout',
+      'share': 'Share',
+      'share_via_NFC': 'Share via NFC',
+      'recive_workout': 'Recive workout',
+      'or': 'Or',
+      'scan': 'Scan QR code',
     },
   };
 }
