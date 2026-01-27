@@ -6,6 +6,14 @@ plugins {
 }
 
 android {
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.core:core-ktx:1.15.0")
+            force("androidx.core:core:1.15.0")
+            force("androidx.activity:activity-ktx:1.10.0")
+            force("androidx.activity:activity:1.10.0")
+        }
+    }
     namespace = "com.example.client"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
@@ -21,7 +29,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.client"
+        applicationId = "com.example.zest"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
