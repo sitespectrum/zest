@@ -184,6 +184,7 @@ public class WorkoutController : ControllerBase
             {
                 id = w.Id,
                 workoutName = w.WorkoutName,
+                customName = w.CustomName,
                 totalBurntCalories = w.TotalBurntCalories,
                 totalLiftedWeight = w.TotalLiftedWeight,
                 durationMinutes = w.DurationMinutes,
@@ -240,7 +241,7 @@ public class WorkoutController : ControllerBase
             .Select(w => new
             {
                 w.Id,
-                WorkoutName = w.WorkoutName,
+                w.CustomName,
                 w.TotalBurntCalories,
                 w.TotalLiftedWeight,
                 w.DurationMinutes,
@@ -264,7 +265,9 @@ public class WorkoutController : ControllerBase
                         we.Exercise.Force,
                         we.Exercise.Level,
                         we.Exercise.Mechanic,
-                        we.Exercise.Images
+                        we.Exercise.Images,
+                        we.Exercise.Instructions,
+                        we.Exercise.InstructionsHu
                     },
 
                     Sets = we.Sets.OrderBy(s => s.Order).Select(s => new
@@ -436,6 +439,24 @@ public class WorkoutController : ControllerBase
         Console.WriteLine($"[AddUserWorkoutS] Saved WorkoutId: {userWorkout.Id} for UserId: {userId}");
 
         return Ok(new { Message = "Custom edzés mentése sikeres", UserWorkoutId = userWorkout.Id });
+    }
+
+    [HttpDelete("deleteUserWorkout/{id}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteUserWorkout(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var workout = await _context.UserWorkouts.FindAsync(id);
+        if (workout == null)
+            return NotFound();
+
+        _context.UserWorkouts.Remove(workout);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }
 

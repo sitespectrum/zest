@@ -142,7 +142,7 @@ class _PagesState extends State<Pages> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const CWorkoutPage(),
+                                    builder: (context) => CWorkoutPage(selectedDay: DateTime.now()),
                                   ),
                                 );
                               },

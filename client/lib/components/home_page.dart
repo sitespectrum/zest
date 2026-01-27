@@ -1,4 +1,5 @@
 import 'package:client/Providers/language_provider.dart';
+import 'package:client/models/workout.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -48,6 +49,25 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   }
 }
 
+Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  if (token == null) throw Exception("Nincs token");
+
+  final response = await http.get(
+    Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
+    headers: {"Authorization": "Bearer $token"},
+  );
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+  } else {
+    throw Exception(response.body);
+  }
+}
+
 Future<double> fetchTodayCalories() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
@@ -78,6 +98,7 @@ class _HomePageState extends State<HomePage>
   late Future<List<UserMealDto>> _futureMeals;
   late Future<double> _todaycalories;
   late Future<double> _calorieGoal;
+  late Future<List<UserWorkoutDto>> _futureWorkouts;
 
   @override
   bool get wantKeepAlive => false;
@@ -89,6 +110,7 @@ class _HomePageState extends State<HomePage>
       _futureMeals = fetchUserMeals();
       _todaycalories = fetchTodayCalories();
       _calorieGoal = fetchCalorieGoal();
+      _futureWorkouts = fetchUserWorkouts();
     });
   }
 
@@ -116,191 +138,187 @@ class _HomePageState extends State<HomePage>
     super.build(context);
 
     return SingleChildScrollView(
-      child: FutureBuilder<List<UserMealDto>>(
-        future: _futureMeals,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Hiba történt: ${snapshot.error}",
-                style: TextStyle(color: Colors.red),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              margin: const EdgeInsets.all(6),
+              child: AppBar(
+                title: Text(
+                  lang.getText("home_page"),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                automaticallyImplyLeading: false,
+                backgroundColor: Color.fromARGB(255, 58, 58, 58),
               ),
-            );
-          }
+            ),
+          ),
 
-          final meals = snapshot.data ?? [];
-
-          final lastMeal = meals.isNotEmpty
-              ? (meals..sort((a, b) => b.eatenAt.compareTo(a.eatenAt))).first
-              : null;
-
-          String formattedDate = '';
-          if (lastMeal != null) {
-            formattedDate = DateFormat.yMd(
-              locale,
-            ).add_Hms().format(lastMeal.eatenAt);
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          //Kalóriadeficit
+          Stack(
             children: [
-              PreferredSize(
-                preferredSize: const Size.fromHeight(60),
-                child: Container(
-                  margin: const EdgeInsets.all(6),
-                  child: AppBar(
-                    title: Text(
-                      lang.getText("home_page"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                      ),
+              Container(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height * 0.30,
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 45, 45, 45),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                  boxShadow: [
+                    BoxShadow(
+                      // ignore: deprecated_member_use
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                    automaticallyImplyLeading: false,
-                    backgroundColor: Color.fromARGB(255, 58, 58, 58),
+                  ],
+                ),
+                child: FutureBuilder<List<double>>(
+                  future: Future.wait([_todaycalories, _calorieGoal]),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text("Hiba: ${snapshot.error}"));
+                    }
+
+                    final calories = snapshot.data?[0] ?? 0.0;
+                    final targetCalories = snapshot.data?[1] ?? 3000.0;
+                    final percentage = (calories / targetCalories) * 100;
+
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            startDegreeOffset: 270,
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 75,
+                            sections: [
+                              PieChartSectionData(
+                                color: Color.fromRGBO(78, 156, 71, 1),
+                                value: calories,
+                                title: "${percentage.toStringAsFixed(1)}%",
+                                radius: 30,
+                                titleStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              PieChartSectionData(
+                                color: Colors.grey.shade800,
+                                value: (targetCalories - calories).clamp(
+                                  0,
+                                  targetCalories,
+                                ),
+                                title: '',
+                                radius: 25,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          "${calories.toStringAsFixed(0)} / ${targetCalories.toStringAsFixed(0)} kcal",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              Positioned(
+                top: MediaQuery.of(context).size.height * 0.005,
+                left: MediaQuery.of(context).size.width * 0.09,
+                child: Text(
+                  lang.getText("calorie_deficit"),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+            ],
+          ),
 
-              //Kalóriadeficit
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.30,
-                    margin: const EdgeInsets.all(20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 45, 45, 45),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
-                      boxShadow: [
-                        BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+          //Legutóbbi edzés
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height * 0.18,
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 45, 45, 45),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                  boxShadow: [
+                    BoxShadow(
+                      // ignore: deprecated_member_use
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                    child: FutureBuilder<List<double>>(
-                      future: Future.wait([_todaycalories, _calorieGoal]),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        } else if (snapshot.hasError) {
-                          return Center(child: Text("Hiba: ${snapshot.error}"));
-                        }
-
-                        final calories = snapshot.data?[0] ?? 0.0;
-                        final targetCalories = snapshot.data?[1] ?? 3000.0;
-                        final percentage = (calories / targetCalories) * 100;
-
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            PieChart(
-                              PieChartData(
-                                startDegreeOffset: 270,
-                                sectionsSpace: 2,
-                                centerSpaceRadius: 75,
-                                sections: [
-                                  PieChartSectionData(
-                                    color: Color.fromRGBO(78, 156, 71, 1),
-                                    value: calories,
-                                    title: "${percentage.toStringAsFixed(1)}%",
-                                    radius: 30,
-                                    titleStyle: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  PieChartSectionData(
-                                    color: Colors.grey.shade800,
-                                    value: (targetCalories - calories).clamp(
-                                      0,
-                                      targetCalories,
-                                    ),
-                                    title: '',
-                                    radius: 25,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              "${calories.toStringAsFixed(0)} / ${targetCalories.toStringAsFixed(0)} kcal",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.005,
-                    left: MediaQuery.of(context).size.width * 0.09,
-                    child: Text(
-                      lang.getText("calorie_deficit"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-
-              //Legutóbbi edzés
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.18,
-                    margin: const EdgeInsets.all(20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 45, 45, 45),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
-                      boxShadow: [
-                        BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+              Positioned(
+                top: MediaQuery.of(context).size.height * 0.005,
+                left: MediaQuery.of(context).size.width * 0.09,
+                child: Text(
+                  lang.getText("recent_workout"),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.005,
-                    left: MediaQuery.of(context).size.width * 0.09,
-                    child: Text(
-                      lang.getText("recent_workout"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
+            ],
+          ),
+          FutureBuilder<List<UserMealDto>>(
+            future: _futureMeals,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    "Hiba történt: ${snapshot.error}",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                );
+              }
 
+              final meals = snapshot.data ?? [];
+
+              final lastMeal = meals.isNotEmpty
+                  ? (meals..sort((a, b) => b.eatenAt.compareTo(a.eatenAt)))
+                        .first
+                  : null;
+
+              String formattedDate = '';
+              if (lastMeal != null) {
+                formattedDate = DateFormat.yMd(
+                  locale,
+                ).add_Hms().format(lastMeal.eatenAt);
+              }
               //Legutóbbi étkezés
-              Stack(
+              return Stack(
                 children: [
                   lastMeal == null
                       ? Container(
@@ -619,10 +637,10 @@ class _HomePageState extends State<HomePage>
                     ),
                   ),
                 ],
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
     );
   }

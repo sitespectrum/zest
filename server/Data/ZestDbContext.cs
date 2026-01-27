@@ -17,6 +17,8 @@ public class ZestDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Meals> Meals { get; set; }
     public DbSet<UserMeal> UserMeals { get; set; }
+    public DbSet<SharedWorkouts> SharedWorkouts { get; set; }
+    public DbSet<SharedMeals> SharedMeals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

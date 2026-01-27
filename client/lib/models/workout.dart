@@ -207,7 +207,7 @@ class WorkoutSetDto {
   }
 
   Map<String, dynamic> toJson() {
-    return {'weight': weight, 'reps': reps, 'isWarmup': isCompleted};
+    return {'weight': weight, 'reps': reps, 'isCompleted': isCompleted};
   }
 }
 
@@ -258,6 +258,7 @@ class UserWorkoutDto {
   final int id;
   final int userId;
   final String workoutName;
+  final String customName;
   final DateTime date;
   final double totalLiftedWeight;
   final int totalBurntCalories;
@@ -268,6 +269,7 @@ class UserWorkoutDto {
     required this.id,
     required this.userId,
     required this.workoutName,
+    required this.customName,
     required this.date,
     required this.totalLiftedWeight,
     required this.totalBurntCalories,
@@ -285,6 +287,7 @@ class UserWorkoutDto {
       id: json['id'] ?? 0,
       userId: json['userId'] ?? 0,
       workoutName: json['workoutName'] ?? '',
+      customName: json['customName']?.toString() ?? '',
       date: json['date'] != null
           ? DateTime.parse(json['date'])
           : DateTime.now(),
@@ -300,6 +303,7 @@ class UserWorkoutDto {
       'id': id,
       'userId': userId,
       'workoutName': workoutName,
+      'customName': customName,
       'date': date.toIso8601String(),
       'totalLiftedWeight': totalLiftedWeight,
       'totalBurntCalories': totalBurntCalories,

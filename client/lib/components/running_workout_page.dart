@@ -39,11 +39,20 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
 
     final uri = Uri.parse("$apiUrl/api/Workout/AddWorkout");
 
+    final exercisesToSave = exercises
+        .where((e) => e.sets.any((s) => s.isCompleted))
+        .map((e) {
+          var exCopy = e.copyWith();
+          exCopy.sets = e.sets.where((s) => s.isCompleted).toList();
+          return exCopy;
+        })
+        .toList();
+
     final dto = {
       "WorkoutName": workoutName,
       "UserId": userId,
       "Date": DateTime.now().toIso8601String(),
-      "Exercises": exercises
+      "Exercises": exercisesToSave
           .map(
             (e) => {
               "ExerciseId": e.id,
@@ -90,11 +99,20 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
 
     final uri = Uri.parse("$apiUrl/api/Workout/AddWorkoutS");
 
+    final exercisesToSave = exercises
+        .where((e) => e.sets.any((s) => s.isCompleted))
+        .map((e) {
+          var exCopy = e.copyWith();
+          exCopy.sets = e.sets.where((s) => s.isCompleted).toList();
+          return exCopy;
+        })
+        .toList();
+
     final dto = {
       "CustomName": customName,
       "UserId": userId,
       "Date": DateTime.now().toIso8601String(),
-      "Exercises": exercises
+      "Exercises": exercisesToSave
           .map(
             (e) => {
               "ExerciseId": e.id,
@@ -289,15 +307,21 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
           children: [
             FilledButton(
               onPressed: () async {
+                final finishedExercises = workoutProvider.userWorkouts
+                    .where((ex) => ex.sets.any((s) => s.isCompleted))
+                    .toList();
                 workoutProvider.stopWorkout();
                 int totalSets = 0;
                 int totalReps = 0;
                 double totalVolume = 0;
                 double totalMet = 0;
-                for (var ex in workoutProvider.userWorkouts) {
+                for (var ex in finishedExercises) {
+                  final finishedSets = ex.sets
+                      .where((s) => s.isCompleted)
+                      .toList();
                   totalSets += ex.sets.length;
                   totalMet += ex.metValue;
-                  for (var s in ex.sets) {
+                  for (var s in finishedSets) {
                     totalReps += s.reps;
                     totalVolume += s.reps * s.weight;
                   }
@@ -456,13 +480,11 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                               Flexible(
                                 child: ListView.separated(
                                   shrinkWrap: true,
-                                  itemCount:
-                                      workoutProvider.userWorkouts.length,
+                                  itemCount: finishedExercises.length,
                                   separatorBuilder: (ctx, i) =>
                                       const Divider(color: Colors.white12),
                                   itemBuilder: (context, index) {
-                                    final ex =
-                                        workoutProvider.userWorkouts[index];
+                                    final ex = finishedExercises[index];
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -489,7 +511,9 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                           Wrap(
                                             spacing: 8.0,
                                             runSpacing: 4.0,
-                                            children: ex.sets.map((s) {
+                                            children: ex.sets.where((s) => s.isCompleted).map((
+                                              s,
+                                            ) {
                                               return Padding(
                                                 padding: const EdgeInsets.only(
                                                   left: 8.0,
