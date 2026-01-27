@@ -458,6 +458,34 @@ public class WorkoutController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpDelete("DeleteTemplate")]
+    [Authorize]
+    public async Task<IActionResult> DeleteTemplate([FromQuery] int id)
+    {
+        var workout = await _context.UserWorkouts
+            .Include(w => w.Exercises)
+            .ThenInclude(e => e.Sets)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workout == null)
+            return NotFound("Nincs ilyen edzés sablon");
+
+        var userIdClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim == null)
+            return Unauthorized("Nincs érvényes azonosító a tokenben.");
+
+        var userId = int.Parse(userIdClaim);
+
+        if (workout.UserId != userId)
+            return Unauthorized("Nincs jogosultsága törölni ezt a sablont.");
+
+        _context.UserWorkouts.Remove(workout);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Edzés sablon törlése sikeres" });
+    }
 }
 
 public class AddUserWorkoutRequest
