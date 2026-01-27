@@ -254,27 +254,130 @@ class _HomePageState extends State<HomePage>
             ],
           ),
 
-          //Legutóbbi edzés
           Stack(
             children: [
-              Container(
-                width: double.infinity,
-                height: MediaQuery.of(context).size.height * 0.18,
-                margin: const EdgeInsets.all(20),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 45, 45, 45),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
-                  boxShadow: [
-                    BoxShadow(
-                      // ignore: deprecated_member_use
-                      color: Colors.black.withOpacity(0.5),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+              FutureBuilder<List<UserWorkoutDto>>(
+                future: _futureWorkouts,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container(
+                      height: MediaQuery.of(context).size.height * 0.18,
+                      margin: const EdgeInsets.all(20),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+
+                  final workouts = snapshot.data ?? [];
+                  final lastWorkout = workouts.isNotEmpty
+                      ? (workouts..sort((a, b) => b.date.compareTo(a.date)))
+                            .first
+                      : null;
+
+                  String formattedDate = '';
+                  if (lastWorkout != null) {
+                    formattedDate = DateFormat.yMd(
+                      locale,
+                    ).add_Hm().format(lastWorkout.date);
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      // Ide jöhet navigáció a részletekre, ha szeretnéd
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(
+                        20,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 45, 45, 45),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: lastWorkout == null
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 20.0),
+                              child: Text(
+                                lang.getText("no_added_workout_yet"),
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 15,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          lastWorkout.workoutName,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          formattedDate,
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.fitness_center,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                Text(
+                                  "${lang.getText("duration")}: ${lastWorkout.durationMinutes} perc",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  "${lang.getText("calories")}: ${lastWorkout.totalBurntCalories} kcal",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
               Positioned(
                 top: MediaQuery.of(context).size.height * 0.005,
