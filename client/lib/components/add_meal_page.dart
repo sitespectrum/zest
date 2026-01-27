@@ -88,7 +88,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<Map<String, dynamic>>> _fetchUnit(String foodId) async {
     try {
-      Uri uri;
+      Uri? uri;
       final lang = Provider.of<LanguageProvider>(
         context,
         listen: false,
@@ -102,7 +102,7 @@ class _AddMealPageState extends State<AddMealPage> {
           uri = Uri.parse('$apiUrl/api/meals/en-get-units?foodId=$foodId');
         });
       }
-      final response = await http.get(uri);
+      final response = await http.get(uri!);
 
       if (response.statusCode != 200) throw Exception('HTTP error');
 
@@ -121,7 +121,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   Future<List<MealDto>> fetchMealsByBarcode(String code) async {
     try {
-      Uri uri;
+      Uri? uri;
       final lang = Provider.of<LanguageProvider>(
         context,
         listen: false,
@@ -135,7 +135,7 @@ class _AddMealPageState extends State<AddMealPage> {
           uri = Uri.parse('$apiUrl/api/meals/en-get-by-barcode?code=$code');
         });
       }
-      final response = await http.get(uri);
+      final response = await http.get(uri!);
 
       if (response.statusCode != 200) throw Exception('HTTP hiba');
 
@@ -277,7 +277,7 @@ class _AddMealPageState extends State<AddMealPage> {
     });
 
     try {
-      Uri uri;
+      Uri? uri;
       if (lang == "hu") {
         setState(() {
           uri = Uri.parse('$apiUrl/api/meals/husearch?q=$q');
@@ -287,7 +287,7 @@ class _AddMealPageState extends State<AddMealPage> {
           uri = Uri.parse('$apiUrl/api/meals/ensearch?q=$q');
         });
       }
-      final response = await http.get(uri);
+      final response = await http.get(uri!);
       print("URI: $uri");
 
       if (response.statusCode != 200) {

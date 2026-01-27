@@ -92,11 +92,11 @@ Widget navBar(
         onDestinationSelected: onNavTap,
         destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home, color: Colors.white),
+            icon: Icon(Icons.home_rounded, color: Colors.white),
             label: lang.getText("home_page"),
           ),
           NavigationDestination(
-            icon: Icon(Icons.fitness_center, color: Colors.white),
+            icon: Icon(Icons.fitness_center_rounded, color: Colors.white),
             label: lang.getText("workout_page"),
           ),
 
@@ -117,10 +117,14 @@ Widget navBar(
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.add, size: 38, color: Colors.white),
+                child: const Icon(
+                  Icons.add_rounded,
+                  size: 38,
+                  color: Colors.white,
+                ),
               ),
             ),
-            icon: const Icon(Icons.add, size: 38, color: Colors.white),
+            icon: const Icon(Icons.add_rounded, size: 38, color: Colors.white),
             onPressed: () => showDialog(
               context: context,
               builder: (BuildContext context) => AddDrawer(),
@@ -128,11 +132,11 @@ Widget navBar(
           ),
 
           NavigationDestination(
-            icon: Icon(Icons.favorite, color: Colors.white),
+            icon: Icon(Icons.favorite_rounded, color: Colors.white),
             label: lang.getText("health_page"),
           ),
           NavigationDestination(
-            icon: Icon(Icons.person, color: Colors.white),
+            icon: Icon(Icons.person_rounded, color: Colors.white),
             label: lang.getText("profile_page"),
           ),
         ],

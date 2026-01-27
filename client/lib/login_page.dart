@@ -126,12 +126,14 @@ class _LoginPageState extends State<LoginPage> {
                     print(json);
                     final token = json['token'];
                     final refreshToken = json['refreshToken'];
+                    final userId = json['userId'];
                     String username = json['username'];
 
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setString('jwt_token', token);
                     await prefs.setString('refresh_token', refreshToken);
                     await prefs.setString('username', username);
+                    await prefs.setInt('userId', userId);
 
                     print('Token mentve: $token');
                     if (context.mounted) {
