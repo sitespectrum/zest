@@ -301,6 +301,9 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   void _showExerciseDetails(ExerciseDto exercise) {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     final langCode = lang.languageCode;
+    print(
+      "DEBUG LEÍRÁS: ${exercise.instructions} / HU: ${exercise.instructionsHu}",
+    );
 
     showDialog(
       context: context,
@@ -848,7 +851,31 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: () async {
-                                  await _addExerciseWrapper(exercise);
+                                  if (widget.addToTemplate) {
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    final userId = prefs.getInt("userId");
+                                    if (userId != null &&
+                                        widget.templateId != null) {
+                                      final newId = await addExerciseToTemplate(
+                                        widget.templateId!,
+                                        userId,
+                                        exercise,
+                                      );
+                                      if (newId != null) {
+                                        final mealWithId = exercise.copyWith(
+                                          id: newId,
+                                        );
+                                        setState(() {
+                                          templateWorkouts.add(mealWithId);
+                                        });
+                                      }
+                                    }
+                                  } else {
+                                    setState(() {
+                                      userWorkouts.add(exercise);
+                                    });
+                                  }
                                   final cleanName = stripHtmlTags(
                                     exercise.getName(langCode),
                                   );

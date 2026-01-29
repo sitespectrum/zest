@@ -208,7 +208,9 @@ public class WorkoutController : ControllerBase
                         force = we.Exercise.Force,
                         level = we.Exercise.Level,
                         mechanic = we.Exercise.Mechanic,
-                        images = we.Exercise.Images
+                        images = we.Exercise.Images,
+                        instructions = we.Exercise.Instructions,
+                        instructionsHu = we.Exercise.InstructionsHu
                     },
 
                     sets = we.Sets.OrderBy(s => s.Order).Select(s => new
