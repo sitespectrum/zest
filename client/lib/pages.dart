@@ -54,7 +54,9 @@ class _PagesState extends State<Pages> {
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+    child: Scaffold(
       body: PageView(
         controller: _pageController,
         onPageChanged: onPageChanged,
@@ -293,6 +295,7 @@ class _PagesState extends State<Pages> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       resizeToAvoidBottomInset: false,
+    ),
     );
   }
 }

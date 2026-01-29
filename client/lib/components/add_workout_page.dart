@@ -404,7 +404,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // ITT VAN A VÁLTOZÁS: Két gomb egymás mellett
                     Row(
                       children: [
                         Expanded(
@@ -440,9 +439,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                           child: FilledButton(
                             onPressed: () {
                               _addExerciseWrapper(exercise);
-                              Navigator.pop(
-                                context,
-                              ); // Bezárjuk a popupot hozzáadás után
+                              Navigator.pop(context);
                             },
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color.fromARGB(
@@ -777,7 +774,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(12),
                                       child: Row(
-                                        // <-- ITT KEZDŐDIK A VÁLTOZÁS: Row lett a Column helyett
                                         children: [
                                           Expanded(
                                             child: Column(
@@ -809,18 +805,17 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                             ),
                                           ),
                                           IconButton(
-                                            // <-- EZ AZ ÚJ GOMB
                                             onPressed: () {
                                               _showExerciseDetails(exercise);
                                             },
                                             icon: const Icon(
-                                              Icons.search, // Nagyító ikon
+                                              Icons.search,
                                               color: Color.fromARGB(
                                                 255,
                                                 85,
                                                 173,
                                                 78,
-                                              ), // Zöld szín
+                                              ),
                                               size: 28,
                                             ),
                                           ),
@@ -853,32 +848,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: () async {
-                                  // ... (Eredeti hozzáadás logika ugyanaz, mint fent) ...
-                                  if (widget.addToTemplate) {
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
-                                    final userId = prefs.getInt("userId");
-                                    if (userId != null &&
-                                        widget.templateId != null) {
-                                      final newId = await addExerciseToTemplate(
-                                        widget.templateId!,
-                                        userId,
-                                        exercise,
-                                      );
-                                      if (newId != null) {
-                                        final mealWithId = exercise.copyWith(
-                                          id: newId,
-                                        );
-                                        setState(() {
-                                          templateWorkouts.add(mealWithId);
-                                        });
-                                      }
-                                    }
-                                  } else {
-                                    setState(() {
-                                      userWorkouts.add(exercise);
-                                    });
-                                  }
+                                  await _addExerciseWrapper(exercise);
                                   final cleanName = stripHtmlTags(
                                     exercise.getName(langCode),
                                   );
@@ -888,7 +858,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                         '$cleanName ${lang.getText("added_to_list")}',
                                       ),
                                       behavior: SnackBarBehavior.floating,
-                                      // ... snackbar stílus ...
                                     ),
                                   );
                                 },
@@ -913,7 +882,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Row(
-                                      // <-- ITT IS ROW LETT
                                       children: [
                                         Expanded(
                                           child: Column(
@@ -945,7 +913,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                           ),
                                         ),
                                         IconButton(
-                                          // <-- ÚJ GOMB ITT IS
                                           onPressed: () {
                                             _showExerciseDetails(exercise);
                                           },
