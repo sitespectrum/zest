@@ -1432,15 +1432,18 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                             child: ElevatedButton(
                                               onPressed: () {
                                                 setState(() {
-                                                  userWorkouts.addAll(
-                                                    template.exercises
-                                                        .map(
-                                                          (we) => we.exercise,
-                                                        )
-                                                        .where((e) => e != null)
-                                                        .cast<ExerciseDto>()
-                                                        .toList(),
-                                                  );
+                                                  template.exercises
+                                                      .map((we) => we.exercise)
+                                                      .where((e) => e != null)
+                                                      .cast<ExerciseDto>()
+                                                      .forEach((exercise) {
+                                                        final exerciseCopy =
+                                                            exercise.copyWith();
+                                                        exerciseCopy.sets = [];
+                                                        userWorkouts.add(
+                                                          exerciseCopy,
+                                                        );
+                                                      });
                                                 });
                                                 Navigator.pop(context);
                                                 ScaffoldMessenger.of(
