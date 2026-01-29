@@ -29,16 +29,15 @@
             </intent-filter>
         </activity>
         <service
-            android:name="io.github.mkiisoft.nfc_host_card_emulation.HostCardEmulatorService"
-            android:exported="true"
-            android:permission="android.permission.BIND_NFC_SERVICE">
-            <intent-filter>
-                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.nfc.cardemulation.host_apdu_service"
-                android:resource="@xml/apduservice" />
-        </service>
+    android:name="io.github.mkiisoft.nfc_host_card_emulation.HostCardEmulatorService"
+    android:exported="true"
+    android:permission="android.permission.BIND_NFC_SERVICE">
+    <intent-filter>
+        <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+    </intent-filter>
+    <meta-data
+    android:name="android.nfc.cardemulation.host_apdu_service"
+    android:resource="@xml/nfc_config" /> </service>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

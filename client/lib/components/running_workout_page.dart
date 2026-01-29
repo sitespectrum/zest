@@ -337,6 +337,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                 int burntCalories = (avgMet * 3.5 * 75 / 200 * durationMin)
                     .toInt();
                 if (burntCalories == 0 && durationMin > 0)
+                  // ignore: curly_braces_in_flow_control_structures
                   burntCalories = (durationMin * 5).toInt();
 
                 int currentWorkoutNum = 1;

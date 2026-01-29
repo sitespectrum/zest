@@ -463,13 +463,18 @@ public class WorkoutController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteTemplate([FromQuery] int id)
     {
+        Console.WriteLine($"[DeleteTemplate] Kérés érkezett ID: {id}");
+
         var workout = await _context.UserWorkouts
             .Include(w => w.Exercises)
             .ThenInclude(e => e.Sets)
             .FirstOrDefaultAsync(w => w.Id == id);
 
         if (workout == null)
+        {
+            Console.WriteLine($"[DeleteTemplate] Hiba: Nincs ilyen ID ({id}) az adatbázisban.");
             return NotFound("Nincs ilyen edzés sablon");
+        }
 
         var userIdClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -483,6 +488,8 @@ public class WorkoutController : ControllerBase
 
         _context.UserWorkouts.Remove(workout);
         await _context.SaveChangesAsync();
+
+        Console.WriteLine($"[DeleteTemplate] Sikeres törlés ID: {id}");
 
         return Ok(new { message = "Edzés sablon törlése sikeres" });
     }

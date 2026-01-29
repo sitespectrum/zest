@@ -1,5 +1,6 @@
 import 'package:client/Providers/language_provider.dart';
 import 'package:client/models/workout.dart';
+import 'package:client/providers/workout_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -135,6 +136,7 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
     final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
+    final workoutProvider = Provider.of<WorkoutProvider>(context);
     super.build(context);
 
     return SingleChildScrollView(
@@ -280,102 +282,478 @@ class _HomePageState extends State<HomePage>
                     ).add_Hm().format(lastWorkout.date);
                   }
 
-                  return GestureDetector(
-                    onTap: () {
-                      // Ide jöhet navigáció a részletekre, ha szeretnéd
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.all(20),
-                      padding: const EdgeInsets.all(
-                        20,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 45, 45, 45),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.5),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: lastWorkout == null
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 20.0),
-                              child: Text(
-                                lang.getText("no_added_workout_yet"),
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 18,
+                  return Stack(
+                    children: [
+                      lastWorkout == null
+                          ? Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 45, 45, 45),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    // ignore: deprecated_member_use
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Text(
+                                  lang.getText("no_added_meal_yet"),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 18,
+                                  ),
                                 ),
                               ),
                             )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  height: 15,
+                          : GestureDetector(
+                              onTap: () async {
+                                int currentWorkoutNum = 1;
+                                try {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final token = prefs.getString('jwt_token');
+                                  final response = await http.get(
+                                    Uri.parse(
+                                      "$apiUrl/api/workouts/getUserWorkouts",
+                                    ),
+                                    headers: {"Authorization": "Bearer $token"},
+                                  );
+                                  if (response.statusCode == 200) {
+                                    List data = jsonDecode(response.body);
+                                    currentWorkoutNum = data.length + 1;
+                                  }
+                                } catch (e) {
+                                  debugPrint(
+                                    "Nem sikerült lekérni az edzések számát: $e",
+                                  );
+                                }
+                                showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (builderContext) {
+                                    return PopScope(
+                                      canPop: false,
+                                      child: Dialog(
+                                        insetPadding: const EdgeInsets.all(20),
+                                        backgroundColor: const Color.fromARGB(
+                                          255,
+                                          30,
+                                          30,
+                                          30,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(
+                                              255,
+                                              40,
+                                              40,
+                                              40,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.white24,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Center(
+                                                child: Text(
+                                                  lastWorkout
+                                                          .workoutName
+                                                          .isEmpty
+                                                      ? lastWorkout.customName
+                                                      : lastWorkout.workoutName,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+
+                                              const Divider(
+                                                color: Colors.white24,
+                                                height: 30,
+                                              ),
+
+                                              Row(
+                                                children: [
+                                                  _buildStatCell(
+                                                    "$currentWorkoutNum.",
+                                                    isHeader: true,
+                                                  ),
+                                                  _buildStatCell(
+                                                    "${lastWorkout?.totalBurntCalories}",
+                                                    isHeader: true,
+                                                  ),
+                                                  _buildStatCell(
+                                                    "${lastWorkout?.durationMinutes} ${lang.getText("min")}",
+                                                    isHeader: true,
+                                                  ),
+                                                  _buildStatCell(
+                                                    "${lastWorkout?.totalLiftedWeight.toInt()}",
+                                                    isHeader: true,
+                                                  ),
+                                                ],
+                                              ),
+                                              Row(
+                                                children: [
+                                                  _buildStatCell(
+                                                    lang.getText("workout"),
+                                                    color: Colors.grey,
+                                                  ),
+                                                  _buildStatCell(
+                                                    lang.getText("calories"),
+                                                    color: Colors.grey,
+                                                  ),
+                                                  _buildStatCell(
+                                                    lang.getText("duration"),
+                                                    color: Colors.grey,
+                                                  ),
+                                                  _buildStatCell(
+                                                    lang.getText("volume"),
+                                                    color: Colors.grey,
+                                                  ),
+                                                ],
+                                              ),
+
+                                              const SizedBox(height: 15),
+                                              Builder(
+                                                builder: (context) {
+                                                  final totalSets = lastWorkout!
+                                                      .exercises
+                                                      .fold<int>(
+                                                        0,
+                                                        (sum, ex) =>
+                                                            sum +
+                                                            ex.sets
+                                                                .where(
+                                                                  (s) => s
+                                                                      .isCompleted,
+                                                                )
+                                                                .length,
+                                                      );
+                                                  final totalReps = lastWorkout
+                                                      .exercises
+                                                      .fold<int>(
+                                                        0,
+                                                        (sum, ex) =>
+                                                            sum +
+                                                            ex.sets
+                                                                .where(
+                                                                  (s) => s
+                                                                      .isCompleted,
+                                                                )
+                                                                .fold<int>(
+                                                                  0,
+                                                                  (r, set) =>
+                                                                      r +
+                                                                      set.reps,
+                                                                ),
+                                                      );
+                                                  return Row(
+                                                    children: [
+                                                      _buildStatCell(
+                                                        "${workoutProvider.userWorkouts.length}",
+                                                        isHeader: true,
+                                                      ),
+                                                      _buildStatCell(
+                                                        "$totalSets",
+                                                        isHeader: true,
+                                                      ),
+                                                      _buildStatCell(
+                                                        "$totalReps",
+                                                        isHeader: true,
+                                                      ),
+                                                      const Expanded(
+                                                        child: SizedBox(),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              ),
+                                              Row(
+                                                children: [
+                                                  _buildStatCell(
+                                                    lang.getText("exercises"),
+                                                    color: Colors.grey,
+                                                  ),
+                                                  _buildStatCell(
+                                                    lang.getText("sets"),
+                                                    color: Colors.grey,
+                                                  ),
+                                                  _buildStatCell(
+                                                    lang.getText("reps"),
+                                                    color: Colors.grey,
+                                                  ),
+                                                  const Expanded(
+                                                    child: SizedBox(),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              const Divider(
+                                                color: Colors.white24,
+                                                height: 30,
+                                              ),
+
+                                              Flexible(
+                                                child: ListView.separated(
+                                                  shrinkWrap: true,
+                                                  itemCount: lastWorkout!
+                                                      .exercises
+                                                      .length,
+                                                  separatorBuilder: (ctx, i) =>
+                                                      const Divider(
+                                                        color: Colors.white12,
+                                                      ),
+                                                  itemBuilder: (context, index) {
+                                                    final ex = lastWorkout
+                                                        .exercises[index];
+                                                    return Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          ex.exercise?.getName(
+                                                                lang.languageCode,
+                                                              ) ??
+                                                              '',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 6,
+                                                        ),
+
+                                                        if (ex.sets.isEmpty)
+                                                          const Text(
+                                                            " - Nincs sorozat",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.grey,
+                                                              fontSize: 12,
+                                                            ),
+                                                          )
+                                                        else
+                                                          Wrap(
+                                                            spacing: 8.0,
+                                                            runSpacing: 4.0,
+                                                            children: ex.sets
+                                                                .where(
+                                                                  (s) => s
+                                                                      .isCompleted,
+                                                                )
+                                                                .map((s) {
+                                                                  return Padding(
+                                                                    padding: const EdgeInsets.only(
+                                                                      left: 8.0,
+                                                                      bottom:
+                                                                          2.0,
+                                                                    ),
+                                                                    child: Column(
+                                                                      children: [
+                                                                        Container(
+                                                                          decoration: BoxDecoration(
+                                                                            color: const Color.fromARGB(
+                                                                              255,
+                                                                              85,
+                                                                              173,
+                                                                              78,
+                                                                            ),
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              100,
+                                                                            ),
+                                                                          ),
+                                                                          child: Padding(
+                                                                            padding: const EdgeInsets.fromLTRB(
+                                                                              11,
+                                                                              10,
+                                                                              11,
+                                                                              10,
+                                                                            ),
+                                                                            child: Text(
+                                                                              s.weight.toStringAsFixed(
+                                                                                0,
+                                                                              ),
+                                                                              style: const TextStyle(
+                                                                                color: Colors.white70,
+                                                                                fontSize: 18,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Text(
+                                                                          "${s.reps}X",
+                                                                          style: const TextStyle(
+                                                                            color:
+                                                                                Colors.white70,
+                                                                            fontSize:
+                                                                                18,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                })
+                                                                .toList(),
+                                                          ),
+                                                      ],
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Positioned(
+                                                child: Center(
+                                                  child: FilledButton(
+                                                    onPressed: () async {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    style: FilledButton.styleFrom(
+                                                      backgroundColor:
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            30,
+                                                            30,
+                                                            30,
+                                                          ),
+                                                      side: const BorderSide(
+                                                        color: Colors.white24,
+                                                        width: 1,
+                                                      ),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      lang.getText("close"),
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(255, 45, 45, 45),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      // ignore: deprecated_member_use
+                                      color: Colors.black.withOpacity(0.5),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                Row(
+                                child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          lastWorkout.workoutName,
+                                          "${lastWorkout.workoutName.isEmpty ? lastWorkout.customName : getTranslatedName(lastWorkout.workoutName, lang)} - $formattedDate",
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 20,
+                                            fontSize:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.height *
+                                                0.02,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
+                                        const SizedBox(height: 8),
                                         Text(
-                                          formattedDate,
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 14,
+                                          "${lang.getText("duration")}: ${lastWorkout.durationMinutes} ${lang.getText("min")}",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${lang.getText("protein")}: ${lastWorkout.totalBurntCalories} kcal",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
+
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        top:
+                                            MediaQuery.of(context).size.height *
+                                            0.02,
                                       ),
-                                      child: const Icon(
-                                        Icons.fitness_center,
-                                        color: Colors.black,
+                                      child: Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.arrow_forward,
+                                          color: Colors.black,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 10),
-                                Text(
-                                  "${lang.getText("duration")}: ${lastWorkout.durationMinutes} perc",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                Text(
-                                  "${lang.getText("calories")}: ${lastWorkout.totalBurntCalories} kcal",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                    ),
+                    ],
                   );
                 },
               ),
@@ -420,7 +798,6 @@ class _HomePageState extends State<HomePage>
                   locale,
                 ).add_Hms().format(lastMeal.eatenAt);
               }
-              //Legutóbbi étkezés
               return Stack(
                 children: [
                   lastMeal == null
@@ -668,7 +1045,7 @@ class _HomePageState extends State<HomePage>
                                         color: Colors.white,
                                         fontSize:
                                             MediaQuery.of(context).size.height *
-                                            0.021,
+                                            0.02,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -747,4 +1124,23 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
+}
+
+Widget _buildStatCell(
+  String text, {
+  bool isHeader = false,
+  Color color = Colors.white,
+}) {
+  return Expanded(
+    child: Center(
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isHeader ? Colors.white : color,
+          fontWeight: FontWeight.bold,
+          fontSize: isHeader ? 16 : 14,
+        ),
+      ),
+    ),
+  );
 }
