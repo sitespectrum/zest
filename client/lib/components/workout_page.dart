@@ -426,14 +426,62 @@ class _WorkoutPageState extends State<WorkoutPage>
                                                                             6,
                                                                       ),
 
-                                                                      Text(
-                                                                        '${lang.getText('exercises')}: ${workout.exercises.length} \n${workout.exercises.map((e) => e.exercise?.getName(langCode) ?? "").join(' | ')}',
-                                                                        style: const TextStyle(
-                                                                          color:
-                                                                              Colors.white70,
-                                                                          fontSize:
-                                                                              13,
-                                                                        ),
+                                                                      Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.start,
+                                                                        children: [
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                8,
+                                                                          ),
+                                                                          ...workout.exercises.map((
+                                                                            exerciseData,
+                                                                          ) {
+                                                                            return Padding(
+                                                                              padding: const EdgeInsets.only(
+                                                                                bottom: 8.0,
+                                                                              ),
+                                                                              child: Column(
+                                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  Text(
+                                                                                    exerciseData.exercise?.getName(
+                                                                                          langCode,
+                                                                                        ) ??
+                                                                                        "Ismeretlen gyakorlat",
+                                                                                    style: const TextStyle(
+                                                                                      color: Colors.green,
+                                                                                      fontWeight: FontWeight.bold,
+                                                                                      fontSize: 14,
+                                                                                    ),
+                                                                                  ),
+                                                                                  Padding(
+                                                                                    padding: const EdgeInsets.only(
+                                                                                      left: 10.0,
+                                                                                      top: 2,
+                                                                                    ),
+                                                                                    child: Column(
+                                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                      children: exerciseData.sets.map(
+                                                                                        (
+                                                                                          set,
+                                                                                        ) {
+                                                                                          return Text(
+                                                                                            "${set.weight} kg x ${set.reps}",
+                                                                                            style: const TextStyle(
+                                                                                              color: Colors.white70,
+                                                                                              fontSize: 13,
+                                                                                            ),
+                                                                                          );
+                                                                                        },
+                                                                                      ).toList(),
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            );
+                                                                          }).toList(),
+                                                                        ],
                                                                       ),
                                                                     ],
                                                                   ),
