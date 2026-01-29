@@ -369,11 +369,11 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                   }
                 }
                 showDialog(
-                  //barrierDismissible: false,
+                  barrierDismissible: false,
                   context: context,
                   builder: (builderContext) {
                     return PopScope(
-                      //canPop: false,
+                      canPop: false,
                       child: Dialog(
                         insetPadding: const EdgeInsets.all(20),
                         backgroundColor: const Color.fromARGB(255, 30, 30, 30),
@@ -594,8 +594,11 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                       );
                                       showDialog(
                                         context: context,
+                                        barrierDismissible: false,
                                         builder: (BuildContext context) {
-                                          return Dialog(
+                                        return PopScope(
+                                            canPop: false,
+                                          child: Dialog(
                                             insetPadding: const EdgeInsets.all(
                                               20,
                                             ),
@@ -1145,7 +1148,8 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                                 ),
                                               ),
                                             ),
-                                          );
+                                          )
+                                        );
                                         },
                                       );
                                     },

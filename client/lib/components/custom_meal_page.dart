@@ -461,7 +461,7 @@ class _CMealPageState extends State<CMealPage> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Text(
-                              lang.getText("new_workout"),
+                              lang.getText("new_meal"),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 30,
@@ -961,6 +961,7 @@ class _CMealPageState extends State<CMealPage> {
                             : Container(),
                       ],
                     ),
+                    iconTheme: const IconThemeData(color: Colors.white)
                   ),
                 ),
               ),
