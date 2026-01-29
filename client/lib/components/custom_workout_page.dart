@@ -111,6 +111,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   void startCloudNfcSharing(BuildContext context) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
+    // Töltés jelzése
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -118,6 +119,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     );
 
     try {
+      // 1. Feltöltés a szerverre
       List<Map<String, dynamic>> jsonList = userWorkouts
           .map((e) => e.toJson())
           .toList();
@@ -128,23 +130,31 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         body: jsonEncode(jsonList),
       );
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context); // Töltés le
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         String shareId = responseData['shareId'].toString();
-        print("GENERÁLT ID: $shareId");
+        print(">>> GENERÁLT ID: $shareId");
 
+        // 2. NFC Válasz beállítása (Minden résre)
         List<int> idBytes = utf8.encode(shareId);
+        // ID + 90 00 (Siker kód)
         List<int> responsePayload = [...idBytes, 0x90, 0x00];
 
         await NfcHce.removeApduResponse(0);
         await NfcHce.removeApduResponse(1);
-        await NfcHce.removeApduResponse(2);
 
+        // Mindkét "slotra" betesszük a választ, biztos ami biztos
         await NfcHce.addApduResponse(0, responsePayload);
         await NfcHce.addApduResponse(1, responsePayload);
-        await NfcHce.addApduResponse(2, responsePayload);
+
+        // 3. FÜLELÉS BEKAPCSOLÁSA (Ez a diagnosztika!)
+        // Ez fogja megmondani, hogy egyáltalán eljut-e a kérés az appig
+        NfcHce.stream.listen((command) {
+          print(">>> BEJÖVŐ NFC PARANCS: $command");
+          // Ha ezt látod a konzolon, akkor a kapcsolat ÉL!
+        });
 
         if (mounted) {
           showDialog(
@@ -184,7 +194,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
           );
         }
       } else {
-        throw Exception("Hiba: ${response.statusCode}");
+        throw Exception("Szerver hiba: ${response.statusCode}");
       }
     } catch (e) {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
@@ -230,20 +240,11 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
             isoDep.setTimeout(5000);
 
             String? foundId;
-
             List<int> selectCmd = [
+              0x00, 0xA4, 0x04, 0x00,
+              0x07, // Hossz
+              0xA0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10,
               0x00,
-              0xA4,
-              0x04,
-              0x00,
-              0x07,
-              0xF0,
-              0x01,
-              0x02,
-              0x03,
-              0x04,
-              0x05,
-              0x06,
             ];
 
             print("1. Küldés (Select)...");
@@ -252,7 +253,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
             );
             print("1. Válasz: $response1");
 
-            if (response1.length > 2 && response1[0] != 0x68) {
+            if (response1.length > 2 &&
+                response1[response1.length - 2] == 0x90) {
               var payload = response1.sublist(0, response1.length - 2);
               try {
                 foundId = utf8.decode(payload);
@@ -260,14 +262,14 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
             }
 
             if (foundId == null || foundId.isEmpty) {
-              print("Az első válasz nem az adat. Küldöm a 2. parancsot...");
+              print("Első válasz üres. Próbálkozás READ BINARY paranccsal...");
 
-              List<int> command2 = [0x80, 0x10, 0x00, 0x00, 0x00];
+              List<int> readCmd = [0x00, 0xB0, 0x00, 0x00, 0x00];
 
-              await Future.delayed(const Duration(milliseconds: 100));
+              await Future.delayed(const Duration(milliseconds: 150));
 
               Uint8List response2 = await isoDep.transceive(
-                Uint8List.fromList(command2),
+                Uint8List.fromList(readCmd),
               );
               print("2. Válasz: $response2");
 
@@ -275,17 +277,14 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                 var payload = response2.sublist(0, response2.length - 2);
                 try {
                   foundId = utf8.decode(payload);
-                } catch (e) {
-                  print("Decode hiba: $e");
-                }
+                } catch (_) {}
               }
             }
 
-            if (foundId != null && foundId.length > 1) {
+            if (foundId != null && foundId.isNotEmpty) {
               print(">>> ID FOGADVA: $foundId <<<");
               if (mounted) Navigator.pop(context);
 
-              // Letöltés backendről
               final apiResponse = await http.get(
                 Uri.parse("$apiUrl/api/Share/workout-$foundId"),
               );
@@ -310,20 +309,21 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                   );
                 }
               } else {
-                throw Exception("Backend hiba: 404");
+                print("Backend hiba: ${apiResponse.statusCode}");
+                throw Exception("Nem található az edzés.");
               }
             } else {
               print("NFC Sikertelen.");
               if (mounted) Navigator.pop(context);
-              if (mounted)
+              if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text("Nem jött adat. Próbáld újra!"),
                     backgroundColor: Colors.orange,
                   ),
                 );
+              }
             }
-
             NfcManager.instance.stopSession();
           } catch (e) {
             print("NFC Hiba: $e");
