@@ -253,6 +253,230 @@ class _AddMealPageState extends State<AddWorkoutPage> {
     }
   }
 
+  Future<void> _addExerciseWrapper(ExerciseDto exercise) async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    final langCode = lang.languageCode;
+
+    if (widget.addToTemplate) {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt("userId");
+
+      if (userId != null && widget.templateId != null) {
+        final newId = await addExerciseToTemplate(
+          widget.templateId!,
+          userId,
+          exercise,
+        );
+
+        if (newId != null) {
+          final exerciseWithId = exercise.copyWith(id: newId);
+          setState(() {
+            templateWorkouts.add(exerciseWithId);
+          });
+        }
+      }
+    } else {
+      setState(() {
+        userWorkouts.add(exercise);
+      });
+    }
+
+    final cleanName = stripHtmlTags(exercise.getName(langCode));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$cleanName ${lang.getText("added_to_list")}'),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 30, left: 16, right: 16),
+          duration: const Duration(milliseconds: 1800),
+          animation: CurvedAnimation(
+            parent: kAlwaysCompleteAnimation,
+            curve: Curves.easeInOut,
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showExerciseDetails(ExerciseDto exercise) {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    final langCode = lang.languageCode;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Dialog(
+              insetPadding: const EdgeInsets.all(20),
+              backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 40, 40, 40),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (exercise.images.isNotEmpty)
+                              Container(
+                                width: double.infinity,
+                                clipBehavior: Clip.hardEdge,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    "https://raw.githubusercontent.com/sitespectrum/zest_exercises/main/exercises/${exercise.images[0]}",
+                                    fit: BoxFit.contain,
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return const Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Center(
+                                        child: Icon(
+                                          Icons.fitness_center,
+                                          color: Colors.white24,
+                                          size: 50,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 20),
+                            Text(
+                              exercise.getName(langCode),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              lang.getText("description"),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 30, 30, 30),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Text(
+                                exercise.getInstructions(langCode).join('\n\n'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // ITT VAN A VÁLTOZÁS: Két gomb egymás mellett
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                30,
+                                30,
+                                30,
+                              ),
+                              side: const BorderSide(
+                                color: Colors.white24,
+                                width: 1,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              lang.getText("close"),
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () {
+                              _addExerciseWrapper(exercise);
+                              Navigator.pop(
+                                context,
+                              ); // Bezárjuk a popupot hozzáadás után
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                85,
+                                173,
+                                78,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              lang.getText("add"),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<int?> addExerciseToTemplate(
     int templateId,
     int userId,
@@ -529,7 +753,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                   border: Border.all(color: Colors.white24),
                                   boxShadow: [
                                     BoxShadow(
-                                      // ignore: deprecated_member_use
                                       color: Colors.black.withOpacity(0.5),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
@@ -539,49 +762,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(12),
                                   onTap: () async {
-                                    if (widget.addToTemplate) {
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      final userId = prefs.getInt("userId");
-                                      print("userId: ${userId}");
-                                      if (userId != null &&
-                                          widget.templateId != null) {
-                                        await addExerciseToTemplate(
-                                          widget.templateId!,
-                                          userId,
-                                          exercise,
-                                        );
-                                        print(widget.templateId);
-                                        setState(() {
-                                          templateWorkouts.add(exercise);
-                                        });
-                                      }
-                                    } else {
-                                      setState(() {
-                                        userWorkouts.add(exercise);
-                                      });
-                                    }
-                                    final cleanName = stripHtmlTags(
-                                      exercise.name,
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '$cleanName ${lang.getText("added_to_list")}',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
-                                        ),
-                                      ),
-                                    );
+                                    await _addExerciseWrapper(exercise);
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -592,42 +773,56 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                         45,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.white24),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          // ignore: deprecated_member_use
-                                          color: Colors.black.withOpacity(0.5),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
                                     ),
                                     child: Padding(
                                       padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                      child: Row(
+                                        // <-- ITT KEZDŐDIK A VÁLTOZÁS: Row lett a Column helyett
                                         children: [
-                                          Text(
-                                            cleanName,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)} | ${exercise.getPMuscles(langCode).join(", ")}',
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  cleanName,
                                                   style: const TextStyle(
-                                                    color: Colors.white70,
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
-                                              ),
-                                            ],
+                                                const SizedBox(height: 6),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)} | ${exercise.getPMuscles(langCode).join(", ")}',
+                                                        style: const TextStyle(
+                                                          color: Colors.white70,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          IconButton(
+                                            // <-- EZ AZ ÚJ GOMB
+                                            onPressed: () {
+                                              _showExerciseDetails(exercise);
+                                            },
+                                            icon: const Icon(
+                                              Icons.search, // Nagyító ikon
+                                              color: Color.fromARGB(
+                                                255,
+                                                85,
+                                                173,
+                                                78,
+                                              ), // Zöld szín
+                                              size: 28,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -658,11 +853,11 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: () async {
+                                  // ... (Eredeti hozzáadás logika ugyanaz, mint fent) ...
                                   if (widget.addToTemplate) {
                                     final prefs =
                                         await SharedPreferences.getInstance();
                                     final userId = prefs.getInt("userId");
-
                                     if (userId != null &&
                                         widget.templateId != null) {
                                       final newId = await addExerciseToTemplate(
@@ -670,47 +865,30 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                         userId,
                                         exercise,
                                       );
-
                                       if (newId != null) {
                                         final mealWithId = exercise.copyWith(
                                           id: newId,
                                         );
-
                                         setState(() {
                                           templateWorkouts.add(mealWithId);
                                         });
                                       }
-                                    } else {
-                                      print(
-                                        "HIBA: UserId vagy TemplateId null! User: $userId, Template: ${widget.templateId}",
-                                      );
                                     }
                                   } else {
                                     setState(() {
                                       userWorkouts.add(exercise);
                                     });
                                   }
-
                                   final cleanName = stripHtmlTags(
                                     exercise.getName(langCode),
                                   );
-                                  // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
                                         '$cleanName ${lang.getText("added_to_list")}',
                                       ),
                                       behavior: SnackBarBehavior.floating,
-                                      margin: EdgeInsets.only(
-                                        bottom: 30,
-                                        left: 16,
-                                        right: 16,
-                                      ),
-                                      duration: Duration(milliseconds: 1800),
-                                      animation: CurvedAnimation(
-                                        parent: kAlwaysCompleteAnimation,
-                                        curve: Curves.easeInOut,
-                                      ),
+                                      // ... snackbar stílus ...
                                     ),
                                   );
                                 },
@@ -726,7 +904,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                     border: Border.all(color: Colors.white24),
                                     boxShadow: [
                                       BoxShadow(
-                                        // ignore: deprecated_member_use
                                         color: Colors.black.withOpacity(0.5),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
@@ -735,30 +912,53 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    child: Row(
+                                      // <-- ITT IS ROW LETT
                                       children: [
-                                        Text(
-                                          cleanName,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)}',
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                cleanName,
                                                 style: const TextStyle(
-                                                  color: Colors.white70,
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)}',
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          // <-- ÚJ GOMB ITT IS
+                                          onPressed: () {
+                                            _showExerciseDetails(exercise);
+                                          },
+                                          icon: const Icon(
+                                            Icons.search,
+                                            color: Color.fromARGB(
+                                              255,
+                                              85,
+                                              173,
+                                              78,
                                             ),
-                                          ],
+                                            size: 28,
+                                          ),
                                         ),
                                       ],
                                     ),
