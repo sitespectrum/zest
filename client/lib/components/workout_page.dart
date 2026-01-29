@@ -448,7 +448,7 @@ class _WorkoutPageState extends State<WorkoutPage>
                                                                                     exerciseData.exercise?.getName(
                                                                                           langCode,
                                                                                         ) ??
-                                                                                        "Ismeretlen gyakorlat",
+                                                                                        lang.getText("unknown_exercise"),
                                                                                     style: const TextStyle(
                                                                                       color: Colors.green,
                                                                                       fontWeight: FontWeight.bold,
@@ -466,8 +466,29 @@ class _WorkoutPageState extends State<WorkoutPage>
                                                                                         (
                                                                                           set,
                                                                                         ) {
+                                                                                          final isCardio =
+                                                                                              exerciseData.exercise?.category?.toLowerCase() ==
+                                                                                              'cardio';
+                                                                                          final isBodyweight =
+                                                                                              exerciseData.exercise?.equipment?.toLowerCase() ==
+                                                                                                  'body only' ||
+                                                                                              exerciseData.exercise?.equipment?.toLowerCase() ==
+                                                                                                  'none';
+
+                                                                                          String textToShow = "";
+
+                                                                                          if (isCardio) {
+                                                                                            textToShow = "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+
+                                                                                            
+                                                                                          } else if (isBodyweight) {
+                                                                                            textToShow = "${set.reps} ${lang.getText("reps")}";
+                                                                                          } else {
+                                                                                            textToShow = "${set.weight} kg x ${set.reps}";
+                                                                                          }
+
                                                                                           return Text(
-                                                                                            "${set.weight} kg x ${set.reps}",
+                                                                                            textToShow,
                                                                                             style: const TextStyle(
                                                                                               color: Colors.white70,
                                                                                               fontSize: 13,

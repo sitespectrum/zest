@@ -527,9 +527,23 @@ class _HomePageState extends State<HomePage>
                                                       const Divider(
                                                         color: Colors.white12,
                                                       ),
+
                                                   itemBuilder: (context, index) {
                                                     final ex = lastWorkout
                                                         .exercises[index];
+
+                                                    final isCardio =
+                                                        ex.exercise?.category
+                                                            ?.toLowerCase() ==
+                                                        'cardio';
+                                                    final isBodyweight =
+                                                        ex.exercise?.equipment
+                                                                ?.toLowerCase() ==
+                                                            'body only' ||
+                                                        ex.exercise?.equipment
+                                                                ?.toLowerCase() ==
+                                                            'none';
+
                                                     return Column(
                                                       crossAxisAlignment:
                                                           CrossAxisAlignment
@@ -573,6 +587,35 @@ class _HomePageState extends State<HomePage>
                                                                       .isCompleted,
                                                                 )
                                                                 .map((s) {
+                                                                  String
+                                                                  bubbleContent =
+                                                                      "";
+                                                                  String
+                                                                  bottomContent =
+                                                                      "";
+
+                                                                  if (isCardio) {
+                                                                    bubbleContent =
+                                                                        "${s.weight} km";
+                                                                    bottomContent =
+                                                                        "${s.reps} ${lang.getText("min")}";
+                                                                  } else if (isBodyweight) {
+                                                                    bubbleContent =
+                                                                        "${s.reps}";
+                                                                    bottomContent =
+                                                                        lang.getText(
+                                                                          "reps",
+                                                                        );
+                                                                  } else {
+                                                                    bubbleContent = s
+                                                                        .weight
+                                                                        .toStringAsFixed(
+                                                                          0,
+                                                                        );
+                                                                    bottomContent =
+                                                                        "${s.reps}X";
+                                                                  }
+
                                                                   return Padding(
                                                                     padding: const EdgeInsets.only(
                                                                       left: 8.0,
@@ -601,9 +644,7 @@ class _HomePageState extends State<HomePage>
                                                                               10,
                                                                             ),
                                                                             child: Text(
-                                                                              s.weight.toStringAsFixed(
-                                                                                0,
-                                                                              ),
+                                                                              bubbleContent,
                                                                               style: const TextStyle(
                                                                                 color: Colors.white70,
                                                                                 fontSize: 18,
@@ -612,7 +653,7 @@ class _HomePageState extends State<HomePage>
                                                                           ),
                                                                         ),
                                                                         Text(
-                                                                          "${s.reps}X",
+                                                                          bottomContent,
                                                                           style: const TextStyle(
                                                                             color:
                                                                                 Colors.white70,
@@ -701,7 +742,8 @@ class _HomePageState extends State<HomePage>
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "${lastWorkout.workoutName.isEmpty ? lastWorkout.customName : getTranslatedName(lastWorkout.workoutName, lang)} - $formattedDate",
+                                          // ignore: unnecessary_string_interpolations
+                                          "${lastWorkout.workoutName.isEmpty ? lastWorkout.customName : getTranslatedName(lastWorkout.workoutName, lang)}",
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize:

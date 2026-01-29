@@ -16,6 +16,8 @@ namespace Zest.Api.Models
         public WorkoutExercise? WorkoutExercise { get; set; }
 
         public int Reps { get; set; }
+        public double? Distance { get; set; }
+        public double? DurationSeconds { get; set; }
         public double Weight { get; set; }
         public int Order { get; set; }
         public bool IsCompleted { get; set; } = false;

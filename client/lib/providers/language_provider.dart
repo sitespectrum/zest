@@ -179,6 +179,9 @@ class LanguageProvider with ChangeNotifier {
       'or': 'Vagy',
       'scan': 'QR kód belolvasása',
       'no_added_workout_yet': 'Nincsenek hozzáadott edzések',
+      'distance': 'Távolság',
+      'time': 'Idő',
+      'unknown_exercise': 'Ismeretlen gyakorlat',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -318,6 +321,9 @@ class LanguageProvider with ChangeNotifier {
       'or': 'Or',
       'scan': 'Scan QR code',
       'no_addded_workout_yet': 'No added workout yet',
+      'distance': 'Distance',
+      'time': 'Time',
+      'unknown_exercise': 'Unknown exercise',
     },
   };
 }

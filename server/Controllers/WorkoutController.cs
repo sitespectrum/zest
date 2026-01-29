@@ -219,6 +219,8 @@ public class WorkoutController : ControllerBase
                         order = s.Order,
                         weight = s.Weight,
                         reps = s.Reps,
+                        distance = s.Distance,
+                        durationSeconds = s.DurationSeconds,
                         isCompleted = s.IsCompleted
                     }).ToList()
                 }).ToList()
@@ -278,6 +280,8 @@ public class WorkoutController : ControllerBase
                         s.Order,
                         s.Weight,
                         s.Reps,
+                        s.Distance,
+                        s.DurationSeconds,
                         s.IsCompleted
                     }).ToList()
                 }).ToList()
@@ -430,6 +434,8 @@ public class WorkoutController : ControllerBase
                 {
                     Weight = s.Weight,
                     Reps = s.Reps,
+                    Distance = s.Distance ?? 0,
+                    DurationSeconds = s.DurationSeconds ?? 0,
                     IsCompleted = s.IsCompleted
                 }).ToList()
             }).ToList()
@@ -521,5 +527,7 @@ public class WorkoutSetDto
 {
     public double Weight { get; set; }
     public int Reps { get; set; }
+    public double? Distance { get; set; }
+    public int? DurationSeconds { get; set; }
     public bool IsCompleted { get; set; }
 }
