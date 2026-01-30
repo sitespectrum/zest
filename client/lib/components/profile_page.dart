@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:client/main.dart';
 import 'package:intl/intl.dart';
+import 'friends_page.dart';
 
 class ProfilePage extends StatefulWidget {
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
@@ -888,6 +889,38 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                         automaticallyImplyLeading: false,
                         backgroundColor: Colors.transparent,
+                        actions: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const FriendsPage(),
+                                  ),
+                                );
+                              },
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: const BoxDecoration(
+                                  color: Color.fromARGB(
+                                    255,
+                                    85,
+                                    173,
+                                    78,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.group,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

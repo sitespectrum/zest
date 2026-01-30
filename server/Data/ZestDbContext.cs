@@ -19,6 +19,7 @@ public class ZestDbContext : DbContext
     public DbSet<UserMeal> UserMeals { get; set; }
     public DbSet<SharedWorkouts> SharedWorkouts { get; set; }
     public DbSet<SharedMeals> SharedMeals { get; set; }
+    public DbSet<Friendship> Friendships { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -77,5 +78,17 @@ public class ZestDbContext : DbContext
         modelBuilder.Entity<UserMeal>()
             .Property(um => um.MealName)
             .HasConversion<string>();
+
+        modelBuilder.Entity<Friendship>()
+            .HasOne(f => f.Requester)
+            .WithMany()
+            .HasForeignKey(f => f.RequesterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Friendship>()
+            .HasOne(f => f.Addressee)
+            .WithMany()
+            .HasForeignKey(f => f.AddresseeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
