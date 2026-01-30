@@ -135,6 +135,7 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
+    final langCode = Provider.of<LanguageProvider>(context).languageCode;
     final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
     final workoutProvider = Provider.of<WorkoutProvider>(context);
     super.build(context);
@@ -411,7 +412,7 @@ class _HomePageState extends State<HomePage>
                                                     isHeader: true,
                                                   ),
                                                   _buildStatCell(
-                                                    "${lastWorkout?.totalLiftedWeight.toInt()}",
+                                                    "${lastWorkout?.totalLiftedWeight.toInt()} kg",
                                                     isHeader: true,
                                                   ),
                                                 ],
@@ -549,123 +550,103 @@ class _HomePageState extends State<HomePage>
                                                           CrossAxisAlignment
                                                               .start,
                                                       children: [
-                                                        Text(
-                                                          ex.exercise?.getName(
-                                                                lang.languageCode,
-                                                              ) ??
-                                                              '',
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 6,
-                                                        ),
-
                                                         if (ex.sets.isEmpty)
                                                           const Text(
                                                             " - Nincs sorozat",
                                                             style: TextStyle(
                                                               color:
                                                                   Colors.grey,
-                                                              fontSize: 12,
+                                                              fontSize: 16,
                                                             ),
                                                           )
                                                         else
-                                                          Wrap(
-                                                            spacing: 8.0,
-                                                            runSpacing: 4.0,
-                                                            children: ex.sets
-                                                                .where(
-                                                                  (s) => s
-                                                                      .isCompleted,
-                                                                )
-                                                                .map((s) {
-                                                                  String
-                                                                  bubbleContent =
-                                                                      "";
-                                                                  String
-                                                                  bottomContent =
-                                                                      "";
+                                                          Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              const SizedBox(
+                                                                height: 8,
+                                                              ),
+                                                              ...lastWorkout.exercises.map((
+                                                                exerciseData,
+                                                              ) {
+                                                                return Padding(
+                                                                  padding:
+                                                                      const EdgeInsets.only(
+                                                                        bottom:
+                                                                            8.0,
+                                                                      ),
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      Text(
+                                                                        exerciseData.exercise?.getName(
+                                                                              langCode,
+                                                                            ) ??
+                                                                            lang.getText(
+                                                                              "unknown_exercise",
+                                                                            ),
+                                                                        style: const TextStyle(
+                                                                          color:
+                                                                              Colors.green,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontSize:
+                                                                              16,
+                                                                        ),
+                                                                      ),
+                                                                      Padding(
+                                                                        padding: const EdgeInsets.only(
+                                                                          left:
+                                                                              10.0,
+                                                                          top:
+                                                                              2,
+                                                                        ),
+                                                                        child: Column(
+                                                                          crossAxisAlignment:
+                                                                              CrossAxisAlignment.start,
+                                                                          children: exerciseData.sets.map((
+                                                                            set,
+                                                                          ) {
+                                                                            final isCardio =
+                                                                                exerciseData.exercise?.category?.toLowerCase() ==
+                                                                                'cardio';
+                                                                            final isBodyweight =
+                                                                                exerciseData.exercise?.equipment?.toLowerCase() ==
+                                                                                    'body only' ||
+                                                                                exerciseData.exercise?.equipment?.toLowerCase() ==
+                                                                                    'none';
 
-                                                                  if (isCardio) {
-                                                                    bubbleContent =
-                                                                        "${s.weight} km";
-                                                                    bottomContent =
-                                                                        "${s.reps} ${lang.getText("min")}";
-                                                                  } else if (isBodyweight) {
-                                                                    bubbleContent =
-                                                                        "${s.reps}";
-                                                                    bottomContent =
-                                                                        lang.getText(
-                                                                          "reps",
-                                                                        );
-                                                                  } else {
-                                                                    bubbleContent = s
-                                                                        .weight
-                                                                        .toStringAsFixed(
-                                                                          0,
-                                                                        );
-                                                                    bottomContent =
-                                                                        "${s.reps}X";
-                                                                  }
+                                                                            String
+                                                                            textToShow =
+                                                                                "";
 
-                                                                  return Padding(
-                                                                    padding: const EdgeInsets.only(
-                                                                      left: 8.0,
-                                                                      bottom:
-                                                                          2.0,
-                                                                    ),
-                                                                    child: Column(
-                                                                      children: [
-                                                                        Container(
-                                                                          decoration: BoxDecoration(
-                                                                            color: const Color.fromARGB(
-                                                                              255,
-                                                                              85,
-                                                                              173,
-                                                                              78,
-                                                                            ),
-                                                                            borderRadius: BorderRadius.circular(
-                                                                              100,
-                                                                            ),
-                                                                          ),
-                                                                          child: Padding(
-                                                                            padding: const EdgeInsets.fromLTRB(
-                                                                              11,
-                                                                              10,
-                                                                              11,
-                                                                              10,
-                                                                            ),
-                                                                            child: Text(
-                                                                              bubbleContent,
+                                                                            if (isCardio) {
+                                                                              textToShow = "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+                                                                            } else if (isBodyweight) {
+                                                                              textToShow = "${set.reps} ${lang.getText("reps")}";
+                                                                            } else {
+                                                                              textToShow = "${set.weight} kg x ${set.reps}";
+                                                                            }
+
+                                                                            return Text(
+                                                                              textToShow,
                                                                               style: const TextStyle(
                                                                                 color: Colors.white70,
-                                                                                fontSize: 18,
+                                                                                fontSize: 13,
                                                                               ),
-                                                                            ),
-                                                                          ),
+                                                                            );
+                                                                          }).toList(),
                                                                         ),
-                                                                        Text(
-                                                                          bottomContent,
-                                                                          style: const TextStyle(
-                                                                            color:
-                                                                                Colors.white70,
-                                                                            fontSize:
-                                                                                18,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  );
-                                                                })
-                                                                .toList(),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              }).toList(),
+                                                            ],
                                                           ),
                                                       ],
                                                     );
@@ -1180,7 +1161,7 @@ Widget _buildStatCell(
         style: TextStyle(
           color: isHeader ? Colors.white : color,
           fontWeight: FontWeight.bold,
-          fontSize: isHeader ? 16 : 14,
+          fontSize: isHeader ? 16 : 12,
         ),
       ),
     ),
