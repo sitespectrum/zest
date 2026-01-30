@@ -200,6 +200,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
     final workoutProvider = Provider.of<WorkoutProvider>(context);
     final currentExercises = workoutProvider.userWorkouts;
     final lang = Provider.of<LanguageProvider>(context);
+    final langCode = Provider.of<LanguageProvider>(context).languageCode;
     final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
     final defWorkoutName =
         "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}";
@@ -518,82 +519,56 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                             ),
                                           )
                                         else
-                                          Wrap(
-                                            spacing: 8.0,
-                                            runSpacing: 4.0,
-                                            children: ex.sets.where((s) => s.isCompleted).map((
-                                              s,
-                                            ) {
-                                              String bubbleContent = "";
-                                              String bottomContent = "";
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const SizedBox(height: 8),
+                                              // Show only completed sets for this exercise
+                                              ...ex.sets.where((s) => s.isCompleted).map((
+                                                set,
+                                              ) {
+                                                final isCardio =
+                                                    ex.category
+                                                        ?.toLowerCase() ==
+                                                    'cardio';
+                                                final isBodyweight =
+                                                    ex.equipment
+                                                            ?.toLowerCase() ==
+                                                        'body only' ||
+                                                    ex.equipment
+                                                            ?.toLowerCase() ==
+                                                        'none';
 
-                                              if (isCardio) {
-                                                bubbleContent =
-                                                    "${s.weight} km";
-                                                bottomContent =
-                                                    "${s.reps} ${lang.getText("min")}";
-                                              } else if (isBodyweight) {
-                                                bubbleContent = "${s.reps}";
-                                                bottomContent = lang.getText(
-                                                  "reps",
+                                                String textToShow = "";
+
+                                                if (isCardio) {
+                                                  textToShow =
+                                                      "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+                                                } else if (isBodyweight) {
+                                                  textToShow =
+                                                      "${set.reps} ${lang.getText("reps")}";
+                                                } else {
+                                                  textToShow =
+                                                      "${set.weight} kg x ${set.reps}";
+                                                }
+
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        left: 10.0,
+                                                        bottom: 8.0,
+                                                      ),
+                                                  child: Text(
+                                                    textToShow,
+                                                    style: const TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
                                                 );
-                                              } else {
-                                                bubbleContent = s.weight
-                                                    .toStringAsFixed(0);
-                                                bottomContent = "${s.reps}X";
-                                              }
-
-                                              return Padding(
-                                                padding: const EdgeInsets.only(
-                                                  left: 8.0,
-                                                  bottom: 2.0,
-                                                ),
-                                                child: Column(
-                                                  children: [
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            const Color.fromARGB(
-                                                              255,
-                                                              85,
-                                                              173,
-                                                              78,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              100,
-                                                            ),
-                                                      ),
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets.fromLTRB(
-                                                              11,
-                                                              10,
-                                                              11,
-                                                              10,
-                                                            ),
-                                                        child: Text(
-                                                          bubbleContent,
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white70,
-                                                                fontSize: 18,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      bottomContent,
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            }).toList(),
+                                              }).toList(),
+                                            ],
                                           ),
                                       ],
                                     );
