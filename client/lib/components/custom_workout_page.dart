@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:client/components/running_workout_page.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:client/models/workout.dart';
+import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:http/http.dart' as http;
 import 'package:nfc_host_card_emulation/nfc_host_card_emulation_platform_interface.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -18,6 +20,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'add_workout_page.dart';
 import '../Providers/language_provider.dart';
 import '../providers/workout_provider.dart';
+import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class CWorkoutPage extends StatefulWidget {
   final DateTime selectedDay;
@@ -33,6 +38,11 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   bool showdelete = false;
   Timer? _debounce;
   String _nfcData = 'No data';
+  bool isNfcActive = false;
+  String nfcStatus = "";
+  String _statusText = "";
+  bool _isNfcReading = false;
+  String shareId = "";
 
   @override
   void initState() {
@@ -108,108 +118,178 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     });
   }
 
-  void startCloudNfcSharing(BuildContext context) async {
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
-
-    // Töltés jelzése
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (c) => const Center(child: CircularProgressIndicator()),
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
+  }
+
+  Future<void> startCloudNfcSharing(BuildContext context) async {
+    String? id = await _uploadWorkoutToBackend();
+
+    if (id == null) return;
+
+    setState(() {
+      isNfcActive = true;
+      nfcStatus = "Megosztás indítása... (Kód: $id)";
+    });
+
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothAdvertise,
+      Permission.bluetoothConnect,
+      Permission.location,
+    ].request();
+
+    if (statuses.values.any((status) => status.isDenied)) {
+      setState(() => nfcStatus = "Hiányzó Bluetooth engedélyek!");
+      return;
+    }
 
     try {
-      // 1. Feltöltés a szerverre
-      List<Map<String, dynamic>> jsonList = userWorkouts
-          .map((e) => e.toJson())
-          .toList();
+      final blePeripheral = FlutterBlePeripheral();
+      await blePeripheral.stop();
 
-      final response = await http.post(
-        Uri.parse("$apiUrl/api/Share/uploadWorkout"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(jsonList),
+      final AdvertiseData advertiseData = AdvertiseData(
+        includeDeviceName: false,
+        manufacturerId: 0xFFFF,
+        manufacturerData: Uint8List.fromList(utf8.encode(id)),
+        serviceUuid: 'bf27cf98-eda3-4875-99a3-537446d7e003',
       );
 
-      if (mounted) Navigator.pop(context); // Töltés le
+      await blePeripheral.start(advertiseData: advertiseData);
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        String shareId = responseData['shareId'].toString();
-        print(">>> GENERÁLT ID: $shareId");
+      await NfcHce.removeApduResponse(0);
+      await NfcHce.addApduResponse(0, [0x90, 0x00]);
 
-        // 2. NFC Válasz beállítása (Minden résre)
-        List<int> idBytes = utf8.encode(shareId);
-        // ID + 90 00 (Siker kód)
-        List<int> responsePayload = [...idBytes, 0x90, 0x00];
+      await NfcHce.init(
+        aid: Uint8List.fromList([0xA0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10]),
+        permanentApduResponses: true,
+        listenOnlyConfiguredPorts: false,
+      );
 
-        await NfcHce.removeApduResponse(0);
-        await NfcHce.removeApduResponse(1);
-
-        // Mindkét "slotra" betesszük a választ, biztos ami biztos
-        await NfcHce.addApduResponse(0, responsePayload);
-        await NfcHce.addApduResponse(1, responsePayload);
-
-        // 3. FÜLELÉS BEKAPCSOLÁSA (Ez a diagnosztika!)
-        // Ez fogja megmondani, hogy egyáltalán eljut-e a kérés az appig
-        NfcHce.stream.listen((command) {
-          print(">>> BEJÖVŐ NFC PARANCS: $command");
-          // Ha ezt látod a konzolon, akkor a kapcsolat ÉL!
-        });
-
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.nfc, size: 80, color: Colors.green),
-                  const SizedBox(height: 20),
-                  Text(
-                    lang.getText("share_via_NFC"),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "ID: $shareId",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    stopNfcSharing();
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    lang.getText("close"),
-                    style: const TextStyle(color: Colors.white),
-                  ),
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.nfc, size: 80, color: Colors.green),
+                const SizedBox(height: 20),
+                const Text(
+                  "NFC és Bluetooth Aktív",
+                  style: TextStyle(color: Colors.white),
                 ),
+                Text("ID: $id", style: const TextStyle(color: Colors.grey)),
               ],
             ),
-          );
-        }
-      } else {
-        throw Exception("Szerver hiba: ${response.statusCode}");
+            actions: [
+              TextButton(
+                onPressed: () {
+                  stopNfcSharing();
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  "Bezárás",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        );
       }
     } catch (e) {
-      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
-      print("Hiba: $e");
+      _showError("Hiba: $e");
     }
   }
 
   void stopNfcSharing() async {
     await NfcHce.removeApduResponse(0);
-    print("NFC megosztás kikapcsolva.");
+    final blePeripheral = FlutterBlePeripheral();
+    await blePeripheral.stop();
+    print("Megosztás (NFC + BLE) leállítva.");
   }
 
-  void startNfcReceivingCloud() {
+  Future<void> _fetchAndShowSharedWorkout(String shareId) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
-    print("NFC Keresés indítása...");
+    setState(() {
+      _statusText = "Edzés betöltése...";
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/Share/workout-$shareId"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> decodedData = jsonDecode(response.body);
+        List<ExerciseDto> newWorkouts = decodedData
+            .map((item) => ExerciseDto.fromJson(item))
+            .toList();
+
+        if (mounted) {
+          setState(() {
+            userWorkouts.addAll(newWorkouts);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "${newWorkouts.length} ${lang.getText("added_to_list")}",
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        int addedCount = 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("$addedCount gyakorlat hozzáadva a listához!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        await Future.delayed(Duration(milliseconds: 800));
+
+        if (!mounted) return;
+
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      _showError("Hiba az edzés betöltésekor: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isNfcReading = false;
+          _statusText = "";
+        });
+      }
+    }
+  }
+
+  Future<void> startNfcReceivingCloud() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.location,
+    ].request();
+
+    if (statuses.values.any((status) => status.isDenied)) {
+      _showError("Hiányzó Bluetooth engedélyek!");
+      return;
+    }
 
     showDialog(
       context: context,
@@ -219,10 +299,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
+            Icon(Icons.nfc, size: 60, color: Colors.white),
             SizedBox(height: 20),
             Text(
-              "Tartsd oda a telefont...",
+              "Érintsd a másik telefonhoz...",
               style: TextStyle(color: Colors.white),
             ),
           ],
@@ -230,157 +310,155 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
       ),
     );
 
-    NfcManager.instance.startSession(
-      pollingOptions: {NfcPollingOption.iso14443},
-      onDiscovered: (NfcTag tag) async {
-        IsoDepAndroid? isoDep = IsoDepAndroid.from(tag);
-
-        if (isoDep != null) {
-          try {
-            isoDep.setTimeout(5000);
-
-            String? foundId;
-            List<int> selectCmd = [
-              0x00, 0xA4, 0x04, 0x00,
-              0x07, // Hossz
-              0xA0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10,
-              0x00,
-            ];
-
-            print("1. Küldés (Select)...");
-            Uint8List response1 = await isoDep.transceive(
-              Uint8List.fromList(selectCmd),
-            );
-            print("1. Válasz: $response1");
-
-            if (response1.length > 2 &&
-                response1[response1.length - 2] == 0x90) {
-              var payload = response1.sublist(0, response1.length - 2);
-              try {
-                foundId = utf8.decode(payload);
-              } catch (_) {}
-            }
-
-            if (foundId == null || foundId.isEmpty) {
-              print("Első válasz üres. Próbálkozás READ BINARY paranccsal...");
-
-              List<int> readCmd = [0x00, 0xB0, 0x00, 0x00, 0x00];
-
-              await Future.delayed(const Duration(milliseconds: 150));
-
-              Uint8List response2 = await isoDep.transceive(
-                Uint8List.fromList(readCmd),
-              );
-              print("2. Válasz: $response2");
-
-              if (response2.length > 2) {
-                var payload = response2.sublist(0, response2.length - 2);
-                try {
-                  foundId = utf8.decode(payload);
-                } catch (_) {}
-              }
-            }
-
-            if (foundId != null && foundId.isNotEmpty) {
-              print(">>> ID FOGADVA: $foundId <<<");
-              if (mounted) Navigator.pop(context);
-
-              final apiResponse = await http.get(
-                Uri.parse("$apiUrl/api/Share/workout-$foundId"),
-              );
-
-              if (apiResponse.statusCode == 200) {
-                List<dynamic> decodedData = jsonDecode(apiResponse.body);
-                List<ExerciseDto> newWorkouts = decodedData
-                    .map((item) => ExerciseDto.fromJson(item))
-                    .toList();
-
-                if (mounted) {
-                  setState(() {
-                    userWorkouts.addAll(newWorkouts);
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "${newWorkouts.length} ${lang.getText("added_to_list")}",
-                      ),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } else {
-                print("Backend hiba: ${apiResponse.statusCode}");
-                throw Exception("Nem található az edzés.");
-              }
-            } else {
-              print("NFC Sikertelen.");
-              if (mounted) Navigator.pop(context);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Nem jött adat. Próbáld újra!"),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            }
-            NfcManager.instance.stopSession();
-          } catch (e) {
-            print("NFC Hiba: $e");
-            NfcManager.instance.stopSession();
-            if (mounted && Navigator.canPop(context)) Navigator.pop(context);
-          }
-        } else {
-          NfcManager.instance.stopSession();
-        }
-      },
-    );
-  }
-
-  Future<Widget> showQrCode(
-    BuildContext context,
-    List<dynamic> workouts,
-  ) async {
-    String jsonString = jsonEncode(workouts);
-    String shareId = await _uploadWorkoutAndGenerateQr(context, jsonString);
-    return userWorkouts.isNotEmpty
-        ? Center(
-            child: QrImageView(
-              data: shareId,
-              version: QrVersions.auto,
-              size: MediaQuery.of(context).size.width * 0.5,
-            ),
-          )
-        : Container();
-  }
-
-  Future<String> _uploadWorkoutAndGenerateQr(
-    BuildContext context,
-    String jsonString,
-  ) async {
     try {
-      final response = await http.post(
-        Uri.parse("$apiUrl/api/share/uploadWorkout"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(userWorkouts),
+      await FlutterNfcKit.poll(
+        timeout: Duration(seconds: 30),
+        iosMultipleTagMessage: "Több címke",
+        iosAlertMessage: "Érintsd oda",
       );
+
+      await FlutterNfcKit.finish();
+
+      if (mounted) Navigator.pop(context);
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => const AlertDialog(
+          backgroundColor: Color.fromARGB(255, 30, 30, 30),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 20),
+              Text(
+                "Adatok fogadása Bluetooth-on...",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      bool found = false;
+
+      await FlutterBluePlus.startScan(
+        timeout: Duration(seconds: 8),
+        withServices: [Guid("bf27cf98-eda3-4875-99a3-537446d7e003")],
+      );
+
+      var subscription = FlutterBluePlus.scanResults.listen((results) async {
+        for (ScanResult r in results) {
+          final manufacturerData = r.advertisementData.manufacturerData;
+
+          if (manufacturerData.containsKey(0xFFFF)) {
+            try {
+              String id = utf8.decode(manufacturerData[0xFFFF]!);
+              print(">>> MEGVAN AZ ID BLUETOOTH-ON: $id");
+
+              if (!found) {
+                found = true;
+                FlutterBluePlus.stopScan();
+
+                if (mounted) Navigator.pop(context);
+
+                await _fetchAndShowSharedWorkout(id);
+              }
+              return;
+            } catch (e) {
+              print("Dekódolási hiba: $e");
+            }
+          }
+        }
+      });
+
+      await Future.delayed(Duration(seconds: 8));
+
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
+      subscription.cancel();
+
+      if (!found) {
+        if (mounted) Navigator.pop(context);
+        _showError("Nem sikerült azonosítani a telefont.");
+      }
+    } catch (e) {
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+
+      if (!e.toString().contains("poll timeout")) {
+        _showError("Hiba: $e");
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    FlutterBlePeripheral().stop();
+    super.dispose();
+  }
+
+  Future<String?> _uploadWorkoutToBackend() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(
+        'jwt_token',
+      );
+
+      List<Map<String, dynamic>> jsonList = userWorkouts
+          .map((e) => e.toJson())
+          .toList();
+
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/Share/uploadWorkout"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(jsonList),
+      );
+
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        return responseData['shareId'];
+        String newId = responseData['shareId'].toString();
+        print(">>> SZERVERRŐL KAPOTT ID: $newId");
+
+        setState(() {
+          shareId = newId;
+        });
+
+        return newId;
       } else {
-        throw Exception(
-          "Szerver hiba: ${response.statusCode} - ${response.body}",
-        );
+        throw Exception("Szerver hiba: ${response.statusCode}");
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Hiba: $e")));
-      }
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+      _showError("Feltöltési hiba: $e");
+      return null;
     }
-    return '';
+  }
+
+  Future<void> _generateQrCodeOnly() async {
+    String? id = await _uploadWorkoutToBackend();
+
+    if (id != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("QR kód legenerálva!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   void startScanning(BuildContext context) async {
@@ -516,7 +594,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                     child: Container(
                                       height:
                                           MediaQuery.of(context).size.height *
-                                          0.6,
+                                          0.7,
                                       clipBehavior: Clip.hardEdge,
                                       decoration: const BoxDecoration(
                                         color: Color.fromARGB(255, 35, 35, 35),
@@ -698,72 +776,60 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                     MediaQuery.of(
                                                                       context,
                                                                     ).size.width *
-                                                                    0.5,
+                                                                    0.6,
+                                                                padding:
+                                                                    const EdgeInsets.all(
+                                                                      20,
+                                                                    ),
                                                                 decoration: BoxDecoration(
                                                                   color: Colors
                                                                       .white,
                                                                   borderRadius:
                                                                       BorderRadius.circular(
-                                                                        11,
+                                                                        20,
                                                                       ),
                                                                 ),
-                                                                child: FutureBuilder<Widget>(
-                                                                  future: showQrCode(
-                                                                    context,
-                                                                    userWorkouts,
-                                                                  ),
-                                                                  builder:
-                                                                      (
-                                                                        context,
-                                                                        snapshot,
-                                                                      ) {
-                                                                        if (snapshot.connectionState ==
-                                                                            ConnectionState.waiting) {
-                                                                          return Center(
-                                                                            child:
-                                                                                CircularProgressIndicator(),
-                                                                          );
-                                                                        } else if (snapshot
-                                                                            .hasError) {
-                                                                          return Center(
-                                                                            child: Text(
-                                                                              'Error: ${snapshot.error}',
+                                                                child:
+                                                                    shareId
+                                                                        .isNotEmpty
+                                                                    ? QrImageView(
+                                                                        data:
+                                                                            shareId,
+                                                                        version:
+                                                                            QrVersions.auto,
+                                                                        size:
+                                                                            200.0,
+                                                                      )
+                                                                    : Column(
+                                                                        mainAxisSize:
+                                                                            MainAxisSize.min,
+                                                                        children: [
+                                                                          Icon(
+                                                                            Icons.qr_code,
+                                                                            size:
+                                                                                60,
+                                                                            color:
+                                                                                Colors.black54,
+                                                                          ),
+                                                                          SizedBox(
+                                                                            height:
+                                                                                10,
+                                                                          ),
+                                                                          Text(
+                                                                            "Még nincs QR kód",
+                                                                            style: TextStyle(
+                                                                              color: Colors.black87,
                                                                             ),
-                                                                          );
-                                                                        } else {
-                                                                          return snapshot.data ??
-                                                                              SizedBox.shrink();
-                                                                        }
-                                                                      },
-                                                                ),
+                                                                            textAlign:
+                                                                                TextAlign.center,
+                                                                          ),
+                                                                        ],
+                                                                      ),
                                                               ),
                                                               SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.01,
+                                                                height: 20,
                                                               ),
-                                                              Text(
-                                                                lang.getText(
-                                                                  "or",
-                                                                ),
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white24,
-                                                                  fontSize: 20,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.01,
-                                                              ),
+
                                                               FilledButton(
                                                                 style: FilledButton.styleFrom(
                                                                   backgroundColor:
@@ -773,16 +839,59 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                         173,
                                                                         78,
                                                                       ),
-                                                                  fixedSize: Size(
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.width *
-                                                                        0.55,
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.height *
-                                                                        0.07,
+                                                                  padding:
+                                                                      EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            30,
+                                                                        vertical:
+                                                                            15,
+                                                                      ),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          11,
+                                                                        ),
                                                                   ),
+                                                                ),
+                                                                onPressed: () {
+                                                                  _generateQrCodeOnly();
+                                                                },
+                                                                child: Text(
+                                                                  shareId.isEmpty
+                                                                      ? "QR Kód Generálása"
+                                                                      : "QR Kód Frissítése",
+                                                                  style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        18,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ),
+
+                                                              SizedBox(
+                                                                height: 20,
+                                                              ),
+
+                                                              FilledButton(
+                                                                style: FilledButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      const Color.fromARGB(
+                                                                        255,
+                                                                        85,
+                                                                        173,
+                                                                        78,
+                                                                      ),
+                                                                  padding:
+                                                                      EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            30,
+                                                                        vertical:
+                                                                            15,
+                                                                      ),
                                                                   shape: RoundedRectangleBorder(
                                                                     borderRadius:
                                                                         BorderRadius.circular(
@@ -796,14 +905,12 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                   );
                                                                 },
                                                                 child: Text(
-                                                                  lang.getText(
-                                                                    "scan",
-                                                                  ),
+                                                                  "Olvasás",
                                                                   style: TextStyle(
                                                                     color: Colors
                                                                         .white,
                                                                     fontSize:
-                                                                        20,
+                                                                        18,
                                                                     fontWeight:
                                                                         FontWeight
                                                                             .bold,

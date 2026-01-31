@@ -744,7 +744,7 @@ class _HomePageState extends State<HomePage>
                                           ),
                                         ),
                                         Text(
-                                          "${lang.getText("protein")}: ${lastWorkout.totalBurntCalories} kcal",
+                                          "${lang.getText("burnt_calories")}: ${lastWorkout.totalBurntCalories} kcal",
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 18,

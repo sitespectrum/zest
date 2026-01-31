@@ -43,7 +43,7 @@ class LanguageProvider with ChangeNotifier {
   static final Map<String, Map<String, String>> _localizedValues = {
     'hu': {
       'register_button_main': 'Még nincs fiókod? Regisztráció',
-      'login_button_main': 'Már van fiókod? Bejelntkezés',
+      'login_button_main': 'Már van fiókod? Bejelentkezés',
       'username_hint': 'Felhasználónév',
       'email_hint': 'Email',
       'password_hint': 'Jelszó',
@@ -211,6 +211,7 @@ class LanguageProvider with ChangeNotifier {
       "exercises_count": "gyakorlat",
       "minutes": "perc",
       "ingredients_count": "összetevő",
+      'burnt_calories': 'Elégetett kalóriák',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -382,6 +383,7 @@ class LanguageProvider with ChangeNotifier {
       "exercises_count": "exercises",
       "minutes": "min",
       "ingredients_count": "ingredients",
+      'burnt_calories': 'Burnt calories',
     },
   };
 }
