@@ -134,12 +134,10 @@ namespace server.Migrations
                         .HasAnnotation("Relational:JsonPropertyName", "images");
 
                     b.Property<string>("Instructions")
-                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasAnnotation("Relational:JsonPropertyName", "instructions");
 
                     b.Property<string>("InstructionsHu")
-                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasAnnotation("Relational:JsonPropertyName", "instructions_hu");
 

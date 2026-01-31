@@ -503,7 +503,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                         Text(
                                           ex.getName(lang.languageCode),
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: Colors.green,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -524,7 +524,6 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               const SizedBox(height: 8),
-                                              // Show only completed sets for this exercise
                                               ...ex.sets.where((s) => s.isCompleted).map((
                                                 set,
                                               ) {
