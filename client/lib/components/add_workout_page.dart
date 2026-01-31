@@ -650,6 +650,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                     margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
                     child: AppBar(
                       title: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Padding(
@@ -719,7 +720,22 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                             ),
                           ),
 
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 85, 173, 78),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: IconButton(
+                              onPressed: () {},
+                              icon: const Icon(
+                                CupertinoIcons.add_circled,
+                                size: 25,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       backgroundColor: const Color.fromARGB(255, 58, 58, 58),

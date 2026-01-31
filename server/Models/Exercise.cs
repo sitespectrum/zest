@@ -52,9 +52,9 @@ public class Exercise
     public List<string> SecondaryMusclesHu { get; set; } = new();
 
     [JsonPropertyName("instructions")]
-    public List<string> Instructions { get; set; } = new();
+    public List<string>? Instructions { get; set; } = new();
     [JsonPropertyName("instructions_hu")]
-    public List<string> InstructionsHu { get; set; } = new();
+    public List<string>? InstructionsHu { get; set; } = new();
 
     [JsonPropertyName("images")]
     public List<string> Images { get; set; } = new();
