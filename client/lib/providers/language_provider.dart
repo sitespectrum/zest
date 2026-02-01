@@ -212,6 +212,12 @@ class LanguageProvider with ChangeNotifier {
       "minutes": "perc",
       "ingredients_count": "összetevő",
       'burnt_calories': 'Elégetett kalóriák',
+      'create_exercise': 'Gyak. létrehozása',
+      'name': 'Név',
+      'primaryMuscle': 'Fő izom',
+      'secondaryMuscle': 'Másodl. izom',
+      'select': 'kiválasztása',
+      'read' : 'Olvasás',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -384,6 +390,12 @@ class LanguageProvider with ChangeNotifier {
       "minutes": "min",
       "ingredients_count": "ingredients",
       'burnt_calories': 'Burnt calories',
+      'create_exercise': 'Create exercise',
+      'name': 'Name',
+      'primaryMuscle': 'Primary muscle',
+      'secondaryMuscle': 'Sec. muscle',
+      'select': 'select',
+      'read' : 'Read',
     },
   };
 }

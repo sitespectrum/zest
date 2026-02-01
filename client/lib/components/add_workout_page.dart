@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:client/components/create_workout_page.dart';
 import 'package:client/models/workout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -728,7 +729,9 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                               borderRadius: BorderRadius.circular(11),
                             ),
                             child: IconButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateWorkoutPage()));
+                              },
                               icon: const Icon(
                                 CupertinoIcons.add_circled,
                                 size: 25,

@@ -290,7 +290,7 @@ public class MealsController : ControllerBase
         {
             MealName = Enum.Parse<MealName>(request.MealName),
             UserId = userId,
-            EatenAt = request.EatenAt,
+            EatenAt = request.EatenAt ?? DateTime.MinValue,
             TotalCalories = request.Meals.Sum(m => m.Calories * m.Quantity),
             TotalProtein = request.Meals.Sum(m => m.Protein * m.Quantity),
             TotalCarbs = request.Meals.Sum(m => m.Carbs * m.Quantity),
@@ -332,7 +332,7 @@ public class MealsController : ControllerBase
         {
             CustomName = request.CustomName,
             UserId = userId,
-            EatenAt = request.EatenAt,
+            EatenAt = request.EatenAt ?? DateTime.MinValue,
             TotalCalories = request.Meals.Sum(m => m.Calories * m.Quantity),
             TotalProtein = request.Meals.Sum(m => m.Protein * m.Quantity),
             TotalCarbs = request.Meals.Sum(m => m.Carbs * m.Quantity),
@@ -688,7 +688,7 @@ public class AddUserMealGroupRequest
     public string? MealName { get; set; }
     public string? CustomName { get; set; }
     public int UserId { get; set; }
-    public DateTime EatenAt { get; set; }
+    public DateTime? EatenAt { get; set; }
     public List<MealsDto> Meals { get; set; } = new();
     public double TotalCalories { get; set; }
     public double TotalProtein { get; set; }
