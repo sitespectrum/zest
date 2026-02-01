@@ -198,14 +198,18 @@ class ExerciseDto {
 class WorkoutSetDto {
   double weight;
   int reps;
+  double? distance;
+  int? durationSeconds;
   bool isCompleted;
 
-  WorkoutSetDto({this.weight = 0.0, this.reps = 0, this.isCompleted = false});
+  WorkoutSetDto({this.weight = 0.0, this.reps = 0, this.distance, this.durationSeconds, this.isCompleted = false});
 
   factory WorkoutSetDto.fromJson(Map<String, dynamic> json) {
     return WorkoutSetDto(
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
       reps: json['reps'] as int? ?? 0,
+      distance: json['distance'] != null ? (json['distance'] as num).toDouble() : null,
+      durationSeconds: json['duration'],
       isCompleted: json['isCompleted'] as bool? ?? false,
     );
   }

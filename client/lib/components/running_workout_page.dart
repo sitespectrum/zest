@@ -201,12 +201,13 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
     final workoutProvider = Provider.of<WorkoutProvider>(context);
     final currentExercises = workoutProvider.userWorkouts;
     final lang = Provider.of<LanguageProvider>(context);
+    final langCode = Provider.of<LanguageProvider>(context).languageCode;
     final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
     final defWorkoutName =
         "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}";
     final defWorkoutNameB =
         "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHourB()}";
-    Timer? debounce;
+    Timer? _debounce;
     return Scaffold(
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
@@ -370,11 +371,11 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                   }
                 }
                 showDialog(
-                  //barrierDismissible: false,
+                  barrierDismissible: false,
                   context: context,
                   builder: (builderContext) {
                     return PopScope(
-                      //canPop: false,
+                      canPop: false,
                       child: Dialog(
                         insetPadding: const EdgeInsets.all(20),
                         backgroundColor: const Color.fromARGB(255, 30, 30, 30),
@@ -485,8 +486,17 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                   itemCount: finishedExercises.length,
                                   separatorBuilder: (ctx, i) =>
                                       const Divider(color: Colors.white12),
+
                                   itemBuilder: (context, index) {
                                     final ex = finishedExercises[index];
+
+                                    final isCardio =
+                                        ex.category?.toLowerCase() == 'cardio';
+                                    final isBodyweight =
+                                        ex.equipment?.toLowerCase() ==
+                                            'body only' ||
+                                        ex.equipment?.toLowerCase() == 'none';
+
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -494,7 +504,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                         Text(
                                           ex.getName(lang.languageCode),
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: Colors.green,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -510,66 +520,55 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                             ),
                                           )
                                         else
-                                          Wrap(
-                                            spacing: 8.0,
-                                            runSpacing: 4.0,
-                                            children: ex.sets.where((s) => s.isCompleted).map((
-                                              s,
-                                            ) {
-                                              return Padding(
-                                                padding: const EdgeInsets.only(
-                                                  left: 8.0,
-                                                  bottom: 2.0,
-                                                ),
-                                                child: Column(
-                                                  children: [
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            const Color.fromARGB(
-                                                              255,
-                                                              85,
-                                                              173,
-                                                              78,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              100,
-                                                            ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const SizedBox(height: 8),
+                                              ...ex.sets.where((s) => s.isCompleted).map((
+                                                set,
+                                              ) {
+                                                final isCardio =
+                                                    ex.category
+                                                        ?.toLowerCase() ==
+                                                    'cardio';
+                                                final isBodyweight =
+                                                    ex.equipment
+                                                            ?.toLowerCase() ==
+                                                        'body only' ||
+                                                    ex.equipment
+                                                            ?.toLowerCase() ==
+                                                        'none';
+
+                                                String textToShow = "";
+
+                                                if (isCardio) {
+                                                  textToShow =
+                                                      "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+                                                } else if (isBodyweight) {
+                                                  textToShow =
+                                                      "${set.reps} ${lang.getText("reps")}";
+                                                } else {
+                                                  textToShow =
+                                                      "${set.weight} kg x ${set.reps}";
+                                                }
+
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        left: 10.0,
+                                                        bottom: 8.0,
                                                       ),
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets.fromLTRB(
-                                                              11,
-                                                              10,
-                                                              11,
-                                                              10,
-                                                            ),
-                                                        child: Text(
-                                                          s.weight
-                                                              .toStringAsFixed(
-                                                                0,
-                                                              ),
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white70,
-                                                                fontSize: 18,
-                                                              ),
-                                                        ),
-                                                      ),
+                                                  child: Text(
+                                                    textToShow,
+                                                    style: const TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 13,
                                                     ),
-                                                    Text(
-                                                      "${s.reps}X",
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            }).toList(),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ],
                                           ),
                                       ],
                                     );
@@ -582,10 +581,10 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                   child: FilledButton(
                                     onPressed: () async {
                                       Navigator.pop(context);
-                                      if (debounce?.isActive ?? false) {
-                                        debounce!.cancel();
+                                      if (_debounce?.isActive ?? false) {
+                                        _debounce!.cancel();
                                       }
-                                      debounce = Timer(
+                                      _debounce = Timer(
                                         const Duration(milliseconds: 1500),
                                         () {
                                           ScaffoldMessenger.of(
@@ -595,554 +594,540 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                       );
                                       showDialog(
                                         context: context,
+                                        barrierDismissible: false,
                                         builder: (BuildContext context) {
-                                          return Dialog(
-                                            insetPadding: const EdgeInsets.all(
-                                              20,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            child: Container(
-                                              width: double.infinity,
-                                              decoration: BoxDecoration(
-                                                color: const Color.fromARGB(
-                                                  255,
-                                                  40,
-                                                  40,
-                                                  40,
-                                                ),
+                                          return PopScope(
+                                            canPop: false,
+                                            child: Dialog(
+                                              insetPadding:
+                                                  const EdgeInsets.all(20),
+                                              shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(16),
-                                                border: Border.all(
-                                                  color: Colors.white24,
-                                                ),
                                               ),
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(
-                                                  20,
+                                              child: Container(
+                                                width: double.infinity,
+                                                decoration: BoxDecoration(
+                                                  color: const Color.fromARGB(
+                                                    255,
+                                                    40,
+                                                    40,
+                                                    40,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                  border: Border.all(
+                                                    color: Colors.white24,
+                                                  ),
                                                 ),
-                                                child: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      lang.getText(
-                                                        "save_sample",
-                                                      ),
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 20,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    Stack(
-                                                      children: [
-                                                        Container(
-                                                          width:
-                                                              double.infinity,
-                                                          height: null,
-                                                          margin:
-                                                              const EdgeInsets.fromLTRB(
-                                                                0,
-                                                                20,
-                                                                0,
-                                                                20,
-                                                              ),
-                                                          padding:
-                                                              const EdgeInsets.fromLTRB(
-                                                                0,
-                                                                0,
-                                                                5,
-                                                                5,
-                                                              ),
-                                                          decoration: BoxDecoration(
-                                                            color:
-                                                                const Color.fromARGB(
-                                                                  255,
-                                                                  72,
-                                                                  72,
-                                                                  72,
-                                                                ),
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
-                                                          ),
-                                                          child: TextField(
-                                                            cursorColor:
-                                                                Colors.white,
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 18,
-                                                                ),
-                                                            controller:
-                                                                workoutcontroller,
-                                                            decoration: InputDecoration(
-                                                              border: OutlineInputBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12,
-                                                                    ),
-                                                              ),
-                                                              focusedBorder: OutlineInputBorder(
-                                                                borderSide:
-                                                                    const BorderSide(
-                                                                      color: Colors
-                                                                          .transparent,
-                                                                      width: 2,
-                                                                    ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12,
-                                                                    ),
-                                                              ),
-                                                              enabledBorder: OutlineInputBorder(
-                                                                borderSide:
-                                                                    const BorderSide(
-                                                                      color: Colors
-                                                                          .transparent,
-                                                                      width: 1,
-                                                                    ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12,
-                                                                    ),
-                                                              ),
-                                                            ),
-                                                            keyboardType:
-                                                                TextInputType
-                                                                    .text,
-                                                          ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                    20,
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        lang.getText(
+                                                          "save_sample",
                                                         ),
-
-                                                        Positioned(
-                                                          top:
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).size.height *
-                                                              0.01,
-                                                          left:
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).size.width *
-                                                              0.04,
-                                                          child: Text(
-                                                            lang.getText(
-                                                              "sample_name",
-                                                            ),
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 18,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
-                                                      ],
-                                                    ),
-
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        FilledButton(
-                                                          onPressed: () async {
-                                                            try {
-                                                              final prefs =
-                                                                  await SharedPreferences.getInstance();
-                                                              final userId =
-                                                                  prefs.getInt(
-                                                                    'userId',
-                                                                  );
-                                                              if (userId ==
-                                                                  null) {
-                                                                throw Exception(
-                                                                  lang.getText(
-                                                                    "no_userId_found",
-                                                                  ),
-                                                                );
-                                                              }
-
-                                                              await saveUserExercises(
-                                                                workoutProvider
-                                                                    .userWorkouts,
-                                                                defWorkoutNameB,
-                                                                userId,
-                                                                workoutProvider
-                                                                        .minutes +
-                                                                    workoutProvider
-                                                                            .hours *
-                                                                        60,
-                                                                burntCalories,
-                                                                totalVolume
-                                                                    .toInt(),
-                                                              );
-
-                                                              ScaffoldMessenger.of(
-                                                                // ignore: use_build_context_synchronously
-                                                                context,
-                                                              ).showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                    lang.getText(
-                                                                      "saved_successfully",
-                                                                    ),
-                                                                  ),
-                                                                  showCloseIcon:
-                                                                      true,
-                                                                  behavior:
-                                                                      SnackBarBehavior
-                                                                          .floating,
-                                                                  margin:
-                                                                      EdgeInsets.only(
-                                                                        bottom:
-                                                                            30,
-                                                                        left:
-                                                                            16,
-                                                                        right:
-                                                                            16,
-                                                                      ),
-                                                                  duration: Duration(
-                                                                    milliseconds:
-                                                                        1800,
-                                                                  ),
-                                                                  animation: CurvedAnimation(
-                                                                    parent:
-                                                                        kAlwaysCompleteAnimation,
-                                                                    curve: Curves
-                                                                        .easeInOut,
-                                                                  ),
+                                                      ),
+                                                      Stack(
+                                                        children: [
+                                                          Container(
+                                                            width:
+                                                                double.infinity,
+                                                            height: null,
+                                                            margin:
+                                                                const EdgeInsets.fromLTRB(
+                                                                  0,
+                                                                  20,
+                                                                  0,
+                                                                  20,
                                                                 ),
-                                                              );
-                                                            } catch (e) {
-                                                              ScaffoldMessenger.of(
-                                                                // ignore: use_build_context_synchronously
-                                                                context,
-                                                              ).showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                    "Hiba: $e",
-                                                                  ),
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .red,
-                                                                  behavior:
-                                                                      SnackBarBehavior
-                                                                          .floating,
-                                                                  margin:
-                                                                      EdgeInsets.only(
-                                                                        bottom:
-                                                                            30,
-                                                                        left:
-                                                                            16,
-                                                                        right:
-                                                                            16,
-                                                                      ),
-                                                                  duration: Duration(
-                                                                    milliseconds:
-                                                                        1800,
-                                                                  ),
-                                                                  animation: CurvedAnimation(
-                                                                    parent:
-                                                                        kAlwaysCompleteAnimation,
-                                                                    curve: Curves
-                                                                        .easeInOut,
-                                                                  ),
-                                                                ),
-                                                              );
-                                                              return;
-                                                            }
-                                                            if (debounce
-                                                                    ?.isActive ??
-                                                                false) {
-                                                              debounce!
-                                                                  .cancel();
-                                                            }
-                                                            debounce = Timer(
-                                                              const Duration(
-                                                                milliseconds:
-                                                                    1500,
-                                                              ),
-                                                              () {
-                                                                ScaffoldMessenger.of(
-                                                                  context,
-                                                                ).hideCurrentSnackBar();
-                                                                Navigator.push<
-                                                                  List<
-                                                                    ExerciseDto
-                                                                  >
-                                                                >(
-                                                                  context,
-                                                                  MaterialPageRoute(
-                                                                    builder:
-                                                                        (
-                                                                          context,
-                                                                        ) =>
-                                                                            const Pages(),
-                                                                  ),
-                                                                );
-                                                              },
-                                                            );
-                                                          },
-                                                          style: FilledButton.styleFrom(
-                                                            backgroundColor:
-                                                                const Color.fromARGB(
-                                                                  255,
-                                                                  85,
-                                                                  173,
-                                                                  78,
-                                                                ),
-                                                            fixedSize: Size(
-                                                              MediaQuery.of(
-                                                                    context,
-                                                                  ).size.width *
-                                                                  0.36,
-                                                              MediaQuery.of(
-                                                                        context,
-                                                                      )
-                                                                      .size
-                                                                      .height *
-                                                                  0.07,
-                                                            ),
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    11,
-                                                                  ),
-                                                            ),
                                                             padding:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal:
-                                                                      10,
+                                                                const EdgeInsets.fromLTRB(
+                                                                  0,
+                                                                  0,
+                                                                  5,
+                                                                  5,
                                                                 ),
-                                                          ),
-                                                          child: Text(
-                                                            lang.getText(
-                                                              "save_without_sample",
-                                                            ),
-                                                            style: TextStyle(
+                                                            decoration: BoxDecoration(
                                                               color:
-                                                                  Colors.white,
-                                                              fontSize: 17,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                        ),
-
-                                                        FilledButton(
-                                                          onPressed: () async {
-                                                            if (workoutcontroller
-                                                                .text
-                                                                .trim()
-                                                                .isEmpty) {
-                                                              ScaffoldMessenger.of(
-                                                                context,
-                                                              ).showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                    lang.getText(
-                                                                      "name_the_template",
-                                                                    ),
+                                                                  const Color.fromARGB(
+                                                                    255,
+                                                                    72,
+                                                                    72,
+                                                                    72,
                                                                   ),
-                                                                  behavior:
-                                                                      SnackBarBehavior
-                                                                          .floating,
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .red,
-                                                                ),
-                                                              );
-                                                              return;
-                                                            }
-                                                            try {
-                                                              final prefs =
-                                                                  await SharedPreferences.getInstance();
-                                                              final userId =
-                                                                  prefs.getInt(
-                                                                    'userId',
-                                                                  );
-                                                              if (userId ==
-                                                                  null) {
-                                                                throw Exception(
-                                                                  lang.getText(
-                                                                    "no_userId_found",
-                                                                  ),
-                                                                );
-                                                              }
-
-                                                              await saveUserExercisesS(
-                                                                workoutProvider
-                                                                    .userWorkouts,
-                                                                workoutcontroller
-                                                                    .text,
-                                                                userId,
-                                                                workoutProvider
-                                                                        .minutes +
-                                                                    workoutProvider
-                                                                            .hours *
-                                                                        60,
-                                                                burntCalories,
-                                                                totalVolume
-                                                                    .toInt(),
-                                                              );
-
-                                                              ScaffoldMessenger.of(
-                                                                // ignore: use_build_context_synchronously
-                                                                context,
-                                                              ).showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                    lang.getText(
-                                                                      "saved_successfully",
-                                                                    ),
-                                                                  ),
-                                                                  showCloseIcon:
-                                                                      true,
-                                                                  behavior:
-                                                                      SnackBarBehavior
-                                                                          .floating,
-                                                                  margin:
-                                                                      EdgeInsets.only(
-                                                                        bottom:
-                                                                            30,
-                                                                        left:
-                                                                            16,
-                                                                        right:
-                                                                            16,
-                                                                      ),
-                                                                  duration: Duration(
-                                                                    milliseconds:
-                                                                        1800,
-                                                                  ),
-                                                                  animation: CurvedAnimation(
-                                                                    parent:
-                                                                        kAlwaysCompleteAnimation,
-                                                                    curve: Curves
-                                                                        .easeInOut,
-                                                                  ),
-                                                                ),
-                                                              );
-                                                            } catch (e) {
-                                                              ScaffoldMessenger.of(
-                                                                // ignore: use_build_context_synchronously
-                                                                context,
-                                                              ).showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                    "Hiba: $e",
-                                                                  ),
-                                                                  behavior:
-                                                                      SnackBarBehavior
-                                                                          .floating,
-                                                                  margin:
-                                                                      EdgeInsets.only(
-                                                                        bottom:
-                                                                            30,
-                                                                        left:
-                                                                            16,
-                                                                        right:
-                                                                            16,
-                                                                      ),
-                                                                  duration: Duration(
-                                                                    milliseconds:
-                                                                        1800,
-                                                                  ),
-                                                                  animation: CurvedAnimation(
-                                                                    parent:
-                                                                        kAlwaysCompleteAnimation,
-                                                                    curve: Curves
-                                                                        .easeInOut,
-                                                                  ),
-                                                                ),
-                                                              );
-                                                              return;
-                                                            }
-                                                            if (debounce
-                                                                    ?.isActive ??
-                                                                false) {
-                                                              debounce!
-                                                                  .cancel();
-                                                            }
-                                                            debounce = Timer(
-                                                              const Duration(
-                                                                milliseconds:
-                                                                    1500,
-                                                              ),
-                                                              () {
-                                                                ScaffoldMessenger.of(
-                                                                  context,
-                                                                ).hideCurrentSnackBar();
-                                                                Navigator.push<
-                                                                  List<
-                                                                    ExerciseDto
-                                                                  >
-                                                                >(
-                                                                  context,
-                                                                  MaterialPageRoute(
-                                                                    builder:
-                                                                        (
-                                                                          context,
-                                                                        ) =>
-                                                                            const Pages(),
-                                                                  ),
-                                                                );
-                                                              },
-                                                            );
-                                                          },
-                                                          style: FilledButton.styleFrom(
-                                                            backgroundColor:
-                                                                const Color.fromARGB(
-                                                                  255,
-                                                                  85,
-                                                                  173,
-                                                                  78,
-                                                                ),
-                                                            fixedSize: Size(
-                                                              MediaQuery.of(
-                                                                    context,
-                                                                  ).size.width *
-                                                                  0.36,
-                                                              MediaQuery.of(
-                                                                        context,
-                                                                      )
-                                                                      .size
-                                                                      .height *
-                                                                  0.07,
-                                                            ),
-                                                            shape: RoundedRectangleBorder(
                                                               borderRadius:
                                                                   BorderRadius.circular(
-                                                                    11,
+                                                                    12,
                                                                   ),
                                                             ),
-                                                          ),
-                                                          child: Text(
-                                                            lang.getText(
-                                                              "save",
-                                                            ),
-                                                            style: TextStyle(
-                                                              color:
+                                                            child: TextField(
+                                                              cursorColor:
                                                                   Colors.white,
-                                                              fontSize: 17,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
+                                                              style:
+                                                                  const TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        18,
+                                                                  ),
+                                                              controller:
+                                                                  workoutcontroller,
+                                                              decoration: InputDecoration(
+                                                                border: OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                ),
+                                                                focusedBorder: OutlineInputBorder(
+                                                                  borderSide: const BorderSide(
+                                                                    color: Colors
+                                                                        .transparent,
+                                                                    width: 2,
+                                                                  ),
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                ),
+                                                                enabledBorder: OutlineInputBorder(
+                                                                  borderSide: const BorderSide(
+                                                                    color: Colors
+                                                                        .transparent,
+                                                                    width: 1,
+                                                                  ),
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                ),
+                                                              ),
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .text,
                                                             ),
                                                           ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
+
+                                                          Positioned(
+                                                            top:
+                                                                MediaQuery.of(
+                                                                  context,
+                                                                ).size.height *
+                                                                0.01,
+                                                            left:
+                                                                MediaQuery.of(
+                                                                  context,
+                                                                ).size.width *
+                                                                0.04,
+                                                            child: Text(
+                                                              lang.getText(
+                                                                "sample_name",
+                                                              ),
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 18,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          FilledButton(
+                                                            onPressed: () async {
+                                                              try {
+                                                                final prefs =
+                                                                    await SharedPreferences.getInstance();
+                                                                final userId =
+                                                                    prefs.getInt(
+                                                                      'userId',
+                                                                    );
+                                                                if (userId ==
+                                                                    null) {
+                                                                  throw Exception(
+                                                                    lang.getText(
+                                                                      "no_userId_found",
+                                                                    ),
+                                                                  );
+                                                                }
+
+                                                                await saveUserExercises(
+                                                                  workoutProvider
+                                                                      .userWorkouts,
+                                                                  defWorkoutNameB,
+                                                                  userId,
+                                                                  workoutProvider
+                                                                          .minutes +
+                                                                      workoutProvider
+                                                                              .hours *
+                                                                          60,
+                                                                  burntCalories,
+                                                                  totalVolume
+                                                                      .toInt(),
+                                                                );
+
+                                                                ScaffoldMessenger.of(
+                                                                  // ignore: use_build_context_synchronously
+                                                                  context,
+                                                                ).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                      lang.getText(
+                                                                        "saved_successfully",
+                                                                      ),
+                                                                    ),
+                                                                    showCloseIcon:
+                                                                        true,
+                                                                    behavior:
+                                                                        SnackBarBehavior
+                                                                            .floating,
+                                                                    margin: EdgeInsets.only(
+                                                                      bottom:
+                                                                          30,
+                                                                      left: 16,
+                                                                      right: 16,
+                                                                    ),
+                                                                    duration: Duration(
+                                                                      milliseconds:
+                                                                          1800,
+                                                                    ),
+                                                                    animation: CurvedAnimation(
+                                                                      parent:
+                                                                          kAlwaysCompleteAnimation,
+                                                                      curve: Curves
+                                                                          .easeInOut,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } catch (e) {
+                                                                ScaffoldMessenger.of(
+                                                                  // ignore: use_build_context_synchronously
+                                                                  context,
+                                                                ).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                      "Hiba: $e",
+                                                                    ),
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .red,
+                                                                    behavior:
+                                                                        SnackBarBehavior
+                                                                            .floating,
+                                                                    margin: EdgeInsets.only(
+                                                                      bottom:
+                                                                          30,
+                                                                      left: 16,
+                                                                      right: 16,
+                                                                    ),
+                                                                    duration: Duration(
+                                                                      milliseconds:
+                                                                          1800,
+                                                                    ),
+                                                                    animation: CurvedAnimation(
+                                                                      parent:
+                                                                          kAlwaysCompleteAnimation,
+                                                                      curve: Curves
+                                                                          .easeInOut,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                                return;
+                                                              }
+                                                              if (_debounce
+                                                                      ?.isActive ??
+                                                                  false) {
+                                                                _debounce!
+                                                                    .cancel();
+                                                              }
+                                                              _debounce = Timer(
+                                                                const Duration(
+                                                                  milliseconds:
+                                                                      1500,
+                                                                ),
+                                                                () {
+                                                                  ScaffoldMessenger.of(
+                                                                    context,
+                                                                  ).hideCurrentSnackBar();
+                                                                  Navigator.push<
+                                                                    List<
+                                                                      ExerciseDto
+                                                                    >
+                                                                  >(
+                                                                    context,
+                                                                    MaterialPageRoute(
+                                                                      builder:
+                                                                          (
+                                                                            context,
+                                                                          ) =>
+                                                                              const Pages(),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              );
+                                                            },
+                                                            style: FilledButton.styleFrom(
+                                                              backgroundColor:
+                                                                  const Color.fromARGB(
+                                                                    255,
+                                                                    85,
+                                                                    173,
+                                                                    78,
+                                                                  ),
+                                                              fixedSize: Size(
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.width *
+                                                                    0.36,
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.height *
+                                                                    0.07,
+                                                              ),
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      11,
+                                                                    ),
+                                                              ),
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        10,
+                                                                  ),
+                                                            ),
+                                                            child: Text(
+                                                              lang.getText(
+                                                                "save_without_sample",
+                                                              ),
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 17,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+
+                                                          FilledButton(
+                                                            onPressed: () async {
+                                                              if (workoutcontroller
+                                                                  .text
+                                                                  .trim()
+                                                                  .isEmpty) {
+                                                                ScaffoldMessenger.of(
+                                                                  context,
+                                                                ).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                      lang.getText(
+                                                                        "name_the_template",
+                                                                      ),
+                                                                    ),
+                                                                    behavior:
+                                                                        SnackBarBehavior
+                                                                            .floating,
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .red,
+                                                                  ),
+                                                                );
+                                                                return;
+                                                              }
+                                                              try {
+                                                                final prefs =
+                                                                    await SharedPreferences.getInstance();
+                                                                final userId =
+                                                                    prefs.getInt(
+                                                                      'userId',
+                                                                    );
+                                                                if (userId ==
+                                                                    null) {
+                                                                  throw Exception(
+                                                                    lang.getText(
+                                                                      "no_userId_found",
+                                                                    ),
+                                                                  );
+                                                                }
+
+                                                                await saveUserExercisesS(
+                                                                  workoutProvider
+                                                                      .userWorkouts,
+                                                                  workoutcontroller
+                                                                      .text,
+                                                                  userId,
+                                                                  workoutProvider
+                                                                          .minutes +
+                                                                      workoutProvider
+                                                                              .hours *
+                                                                          60,
+                                                                  burntCalories,
+                                                                  totalVolume
+                                                                      .toInt(),
+                                                                );
+
+                                                                ScaffoldMessenger.of(
+                                                                  // ignore: use_build_context_synchronously
+                                                                  context,
+                                                                ).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                      lang.getText(
+                                                                        "saved_successfully",
+                                                                      ),
+                                                                    ),
+                                                                    showCloseIcon:
+                                                                        true,
+                                                                    behavior:
+                                                                        SnackBarBehavior
+                                                                            .floating,
+                                                                    margin: EdgeInsets.only(
+                                                                      bottom:
+                                                                          30,
+                                                                      left: 16,
+                                                                      right: 16,
+                                                                    ),
+                                                                    duration: Duration(
+                                                                      milliseconds:
+                                                                          1800,
+                                                                    ),
+                                                                    animation: CurvedAnimation(
+                                                                      parent:
+                                                                          kAlwaysCompleteAnimation,
+                                                                      curve: Curves
+                                                                          .easeInOut,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } catch (e) {
+                                                                ScaffoldMessenger.of(
+                                                                  // ignore: use_build_context_synchronously
+                                                                  context,
+                                                                ).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                      "Hiba: $e",
+                                                                    ),
+                                                                    behavior:
+                                                                        SnackBarBehavior
+                                                                            .floating,
+                                                                    margin: EdgeInsets.only(
+                                                                      bottom:
+                                                                          30,
+                                                                      left: 16,
+                                                                      right: 16,
+                                                                    ),
+                                                                    duration: Duration(
+                                                                      milliseconds:
+                                                                          1800,
+                                                                    ),
+                                                                    animation: CurvedAnimation(
+                                                                      parent:
+                                                                          kAlwaysCompleteAnimation,
+                                                                      curve: Curves
+                                                                          .easeInOut,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                                return;
+                                                              }
+                                                              if (_debounce
+                                                                      ?.isActive ??
+                                                                  false) {
+                                                                _debounce!
+                                                                    .cancel();
+                                                              }
+                                                              _debounce = Timer(
+                                                                const Duration(
+                                                                  milliseconds:
+                                                                      1500,
+                                                                ),
+                                                                () {
+                                                                  ScaffoldMessenger.of(
+                                                                    context,
+                                                                  ).hideCurrentSnackBar();
+                                                                  Navigator.push<
+                                                                    List<
+                                                                      ExerciseDto
+                                                                    >
+                                                                  >(
+                                                                    context,
+                                                                    MaterialPageRoute(
+                                                                      builder:
+                                                                          (
+                                                                            context,
+                                                                          ) =>
+                                                                              const Pages(),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              );
+                                                            },
+                                                            style: FilledButton.styleFrom(
+                                                              backgroundColor:
+                                                                  const Color.fromARGB(
+                                                                    255,
+                                                                    85,
+                                                                    173,
+                                                                    78,
+                                                                  ),
+                                                              fixedSize: Size(
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.width *
+                                                                    0.36,
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.height *
+                                                                    0.07,
+                                                              ),
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      11,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                            child: Text(
+                                                              lang.getText(
+                                                                "save",
+                                                              ),
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 17,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -1279,6 +1264,11 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
     final lang = Provider.of<LanguageProvider>(context);
     final langCode = Provider.of<LanguageProvider>(context).languageCode;
 
+    bool isCardio = widget.exercise.category?.toLowerCase() == 'cardio';
+    bool isBodyweight =
+        widget.exercise.equipment?.toLowerCase() == 'body only' ||
+        widget.exercise.equipment?.toLowerCase() == 'none';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10),
       padding: const EdgeInsets.all(12),
@@ -1372,28 +1362,68 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
                   ),
                 ),
               ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    "KG",
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
+
+              if (isCardio) ...[
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      lang.getText("distance"),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    lang.getText("reps"),
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      lang.getText("time"),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ] else if (isBodyweight) ...[
+                Expanded(child: SizedBox()),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      lang.getText("reps"),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      "KG",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      lang.getText("reps"),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
               SizedBox(
                 width: 50,
                 child: Center(
@@ -1440,39 +1470,49 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
                       ),
                     ),
                     Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2C2C2E),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextFormField(
-                          initialValue: set.weight == 0
-                              ? ""
-                              : set.weight.toString(),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "-",
-                            hintStyle: TextStyle(color: Colors.white24),
-                            contentPadding: EdgeInsets.only(bottom: 10),
-                          ),
-                          onChanged: (val) {
-                            set.weight =
-                                double.tryParse(val.replaceAll(',', '.')) ??
-                                0.0;
-                          },
-                        ),
-                      ),
+                      child: isBodyweight
+                          ? Container()
+                          : Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2C2C2E),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: TextFormField(
+                                initialValue: isCardio
+                                    ? (set.weight == 0
+                                          ? ""
+                                          : set.weight.toString())
+                                    : (set.weight == 0
+                                          ? ""
+                                          : set.weight.toString()),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: isCardio ? "km" : "-",
+                                  hintStyle: TextStyle(color: Colors.white24),
+                                  contentPadding: EdgeInsets.only(bottom: 10),
+                                ),
+                                onChanged: (val) {
+                                  set.weight =
+                                      double.tryParse(
+                                        val.replaceAll(',', '.'),
+                                      ) ??
+                                      0.0;
+                                },
+                              ),
+                            ),
                     ),
+
                     Expanded(
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -1491,9 +1531,9 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: InputBorder.none,
-                            hintText: "-",
+                            hintText: isCardio ? lang.getText("min") : "-",
                             hintStyle: TextStyle(color: Colors.white24),
                             contentPadding: EdgeInsets.only(bottom: 10),
                           ),
@@ -1503,6 +1543,7 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
                         ),
                       ),
                     ),
+
                     SizedBox(
                       width: 50,
                       child: Center(

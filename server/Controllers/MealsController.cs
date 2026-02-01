@@ -538,6 +538,33 @@ public class MealsController : ControllerBase
         return Ok(new { message = "Étel törlés sikeres" });
     }
 
+    [HttpDelete("DeleteTemplate")]
+    [Authorize]
+    public async Task<IActionResult> DeleteTemplate([FromQuery] int id)
+    {
+        var meal = await _context.UserMeals
+            .Include(m => m.Meals)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (meal == null)
+            return NotFound("Nincs ilyen étkezés");
+
+        var userIdClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim == null)
+            return Unauthorized("Nincs érvényes azonosító a tokenben.");
+
+        var userId = int.Parse(userIdClaim);
+
+        if (meal.UserId != userId)
+            return Unauthorized("Nincs jogosultsága törölni ezt a sablont.");
+
+        _context.UserMeals.Remove(meal);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Étkezés törlés sikeres" });
+    }
+
     [HttpPost("AddFoodToTemplate")]
     public async Task<IActionResult> AddFoodToTemplate([FromBody] AddFoodToTemplateDto dto)
     {
@@ -568,7 +595,52 @@ public class MealsController : ControllerBase
         return Ok(new { id = newMeal.Id });
     }
 
+    [HttpGet("getFriendCustomMeals/{friendId}")]
+    [Authorize]
+    public async Task<IActionResult> GetFriendCustomMeals(int friendId)
+    {
+        var currentUserIdClaim = User.FindFirst("id")?.Value;
+        if (currentUserIdClaim == null) return Unauthorized();
+        var currentUserId = int.Parse(currentUserIdClaim);
 
+        var isFriend = await _context.Friendships.AnyAsync(f =>
+            ((f.RequesterId == currentUserId && f.AddresseeId == friendId) ||
+             (f.RequesterId == friendId && f.AddresseeId == currentUserId)) &&
+            f.Status == FriendshipStatus.Accepted);
+
+        if (!isFriend) return BadRequest("Nem vagytok barátok.");
+
+        var meals = await _context.UserMeals
+            .Where(m => m.UserId == friendId && m.IsCustom == true)
+            .Include(m => m.Meals)
+            .OrderByDescending(m => m.EatenAt)
+            .Select(m => new
+            {
+                m.Id,
+                m.CustomName,
+                m.TotalCalories,
+                m.TotalProtein,
+                m.TotalCarbs,
+                m.TotalFat,
+                m.EatenAt,
+                m.IsCustom,
+                Meals = m.Meals.Select(mi => new
+                {
+                    mi.FoodId,
+                    mi.Name,
+                    mi.Calories,
+                    mi.Proteins,
+                    mi.Carbs,
+                    mi.Fat,
+                    mi.Quantity,
+                    mi.Unit,
+                    mi.BaseWeight
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(meals);
+    }
 }
 
 public class AddFoodToTemplateDto

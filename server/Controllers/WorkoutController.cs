@@ -208,7 +208,9 @@ public class WorkoutController : ControllerBase
                         force = we.Exercise.Force,
                         level = we.Exercise.Level,
                         mechanic = we.Exercise.Mechanic,
-                        images = we.Exercise.Images
+                        images = we.Exercise.Images,
+                        instructions = we.Exercise.Instructions,
+                        instructionsHu = we.Exercise.InstructionsHu
                     },
 
                     sets = we.Sets.OrderBy(s => s.Order).Select(s => new
@@ -217,6 +219,8 @@ public class WorkoutController : ControllerBase
                         order = s.Order,
                         weight = s.Weight,
                         reps = s.Reps,
+                        distance = s.Distance,
+                        durationSeconds = s.DurationSeconds,
                         isCompleted = s.IsCompleted
                     }).ToList()
                 }).ToList()
@@ -276,6 +280,8 @@ public class WorkoutController : ControllerBase
                         s.Order,
                         s.Weight,
                         s.Reps,
+                        s.Distance,
+                        s.DurationSeconds,
                         s.IsCompleted
                     }).ToList()
                 }).ToList()
@@ -428,6 +434,8 @@ public class WorkoutController : ControllerBase
                 {
                     Weight = s.Weight,
                     Reps = s.Reps,
+                    Distance = s.Distance ?? 0,
+                    DurationSeconds = s.DurationSeconds ?? 0,
                     IsCompleted = s.IsCompleted
                 }).ToList()
             }).ToList()
@@ -458,6 +466,97 @@ public class WorkoutController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpDelete("DeleteTemplate")]
+    [Authorize]
+    public async Task<IActionResult> DeleteTemplate([FromQuery] int id)
+    {
+        Console.WriteLine($"[DeleteTemplate] Kérés érkezett ID: {id}");
+
+        var workout = await _context.UserWorkouts
+            .Include(w => w.Exercises)
+            .ThenInclude(e => e.Sets)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workout == null)
+        {
+            Console.WriteLine($"[DeleteTemplate] Hiba: Nincs ilyen ID ({id}) az adatbázisban.");
+            return NotFound("Nincs ilyen edzés sablon");
+        }
+
+        var userIdClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim == null)
+            return Unauthorized("Nincs érvényes azonosító a tokenben.");
+
+        var userId = int.Parse(userIdClaim);
+
+        if (workout.UserId != userId)
+            return Unauthorized("Nincs jogosultsága törölni ezt a sablont.");
+
+        _context.UserWorkouts.Remove(workout);
+        await _context.SaveChangesAsync();
+
+        Console.WriteLine($"[DeleteTemplate] Sikeres törlés ID: {id}");
+
+        return Ok(new { message = "Edzés sablon törlése sikeres" });
+    }
+
+    [HttpGet("getFriendCustomWorkouts/{friendId}")]
+    [Authorize]
+    public async Task<IActionResult> GetFriendCustomWorkouts(int friendId)
+    {
+        var currentUserIdClaim = User.FindFirst("id")?.Value;
+        if (currentUserIdClaim == null) return Unauthorized();
+        var currentUserId = int.Parse(currentUserIdClaim);
+
+        var isFriend = await _context.Friendships.AnyAsync(f =>
+            ((f.RequesterId == currentUserId && f.AddresseeId == friendId) ||
+             (f.RequesterId == friendId && f.AddresseeId == currentUserId)) &&
+            f.Status == FriendshipStatus.Accepted);
+
+        if (!isFriend) return BadRequest("Nem vagytok barátok, vagy a barátság nincs elfogadva.");
+
+        var workouts = await _context.UserWorkouts
+            .Where(w => w.UserId == friendId && w.IsCustom == true)
+            .OrderByDescending(w => w.Date)
+            .Select(w => new
+            {
+                w.Id,
+                w.CustomName,
+                w.TotalBurntCalories,
+                w.TotalLiftedWeight,
+                w.DurationMinutes,
+                w.Date,
+                w.IsCustom,
+                Exercises = w.Exercises.Select(we => new
+                {
+                    we.Id,
+                    we.ExerciseId,
+                    Exercise = we.Exercise == null ? null : new
+                    {
+                        we.Exercise.Id,
+                        we.Exercise.Name,
+                        we.Exercise.NameHu,
+                        we.Exercise.PrimaryMusclesHu,
+                        we.Exercise.Images
+                    },
+                    Sets = we.Sets.OrderBy(s => s.Order).Select(s => new
+                    {
+                        s.Id,
+                        s.Order,
+                        s.Weight,
+                        s.Reps,
+                        s.Distance,
+                        s.DurationSeconds,
+                        s.IsCompleted
+                    }).ToList()
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(workouts);
+    }
 }
 
 public class AddUserWorkoutRequest
@@ -484,5 +583,7 @@ public class WorkoutSetDto
 {
     public double Weight { get; set; }
     public int Reps { get; set; }
+    public double? Distance { get; set; }
+    public int? DurationSeconds { get; set; }
     public bool IsCompleted { get; set; }
 }

@@ -44,10 +44,7 @@ Widget pages(BuildContext context) {
 
     bottomNavigationBar: Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      child: ClipRRect(
-        borderRadius: BorderRadiusGeometry.circular(24),
-        child: NavBar(selectedIndex: selectedIndex.value, onNavTap: onNavTap),
-      ),
+      child: NavBar(selectedIndex: selectedIndex.value, onNavTap: onNavTap),
     ),
 
     // floatingActionButton: ,
@@ -64,82 +61,89 @@ Widget navBar(
 }) {
   final lang = pr.Provider.of<LanguageProvider>(context);
 
-  return BackdropFilter(
-    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-    child: Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          colors: [Colors.transparent, Color.fromARGB(200, 64, 255, 50)],
-          transform: GradientRotation(0.5 * pi),
-        ),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 4),
-      child: NavigationBar(
-        height: 72,
-        backgroundColor: Colors.transparent,
-        indicatorColor: Color.fromARGB(80, 64, 255, 50),
-        labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
-          (states) => states.contains(WidgetState.selected)
-              ? const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                )
-              : const TextStyle(color: Colors.white),
-        ),
-        selectedIndex: selectedIndex,
-        onDestinationSelected: onNavTap,
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.home_rounded, color: Colors.white),
-            label: lang.getText("home_page"),
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(24),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            colors: [Colors.transparent, Color.fromARGB(200, 64, 255, 50)],
+            transform: GradientRotation(0.5 * pi),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center_rounded, color: Colors.white),
-            label: lang.getText("workout_page"),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 4),
+        child: NavigationBar(
+          height: 72,
+          backgroundColor: Colors.transparent,
+          indicatorColor: Color.fromARGB(80, 64, 255, 50),
+          labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
+            (states) => states.contains(WidgetState.selected)
+                ? const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  )
+                : const TextStyle(color: Colors.white),
           ),
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onNavTap,
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.home_rounded, color: Colors.white),
+              label: lang.getText("home_page"),
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.fitness_center_rounded, color: Colors.white),
+              label: lang.getText("workout_page"),
+            ),
 
-          IconButton(
-            style: ButtonStyle(
-              backgroundBuilder: (context, states, child) => Container(
-                margin: EdgeInsets.all(6),
-                height: double.infinity,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      Color.fromARGB(50, 64, 255, 50),
-                    ],
-                    transform: GradientRotation(0.75 * pi),
+            IconButton(
+              style: ButtonStyle(
+                backgroundBuilder: (context, states, child) => Container(
+                  margin: EdgeInsets.all(6),
+                  height: double.infinity,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Color.fromARGB(50, 64, 255, 50),
+                      ],
+                      transform: GradientRotation(0.75 * pi),
+                    ),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.add_rounded,
-                  size: 38,
-                  color: Colors.white,
+                  child: const Icon(
+                    Icons.add_rounded,
+                    size: 38,
+                    color: Colors.white,
+                  ),
                 ),
               ),
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 38,
+                color: Colors.white,
+              ),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (BuildContext context) => AddDrawer(),
+              ),
             ),
-            icon: const Icon(Icons.add_rounded, size: 38, color: Colors.white),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (BuildContext context) => AddDrawer(),
-            ),
-          ),
 
-          NavigationDestination(
-            icon: Icon(Icons.favorite_rounded, color: Colors.white),
-            label: lang.getText("health_page"),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_rounded, color: Colors.white),
-            label: lang.getText("profile_page"),
-          ),
-        ],
+            NavigationDestination(
+              icon: Icon(Icons.favorite_rounded, color: Colors.white),
+              label: lang.getText("health_page"),
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_rounded, color: Colors.white),
+              label: lang.getText("profile_page"),
+            ),
+          ],
+        ),
       ),
     ),
   );

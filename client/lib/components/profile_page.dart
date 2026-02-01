@@ -9,6 +9,8 @@ import 'package:zest_client/constants.dart';
 import 'package:zest_client/main.dart';
 import 'package:zest_client/providers/language_provider.dart';
 
+import 'friends_page.dart';
+
 class ProfilePage extends StatefulWidget {
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
 
@@ -209,7 +211,15 @@ class _ProfilePageState extends State<ProfilePage>
                                           72,
                                         ),
                                         onSurface: Colors.white,
-                                      ), dialogTheme: DialogThemeData(backgroundColor: const Color.fromARGB(255, 72, 72, 72)),
+                                      ),
+                                      dialogTheme: DialogThemeData(
+                                        backgroundColor: const Color.fromARGB(
+                                          255,
+                                          72,
+                                          72,
+                                          72,
+                                        ),
+                                      ),
                                     ),
                                     child: child!,
                                   ),
@@ -888,6 +898,33 @@ class _ProfilePageState extends State<ProfilePage>
                           ),
                           automaticallyImplyLeading: false,
                           backgroundColor: Colors.transparent,
+                          actions: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 10),
+                              child: IconButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const FriendsPage(),
+                                    ),
+                                  );
+                                },
+                                icon: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Color.fromARGB(255, 85, 173, 78),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.group,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

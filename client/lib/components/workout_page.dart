@@ -382,14 +382,84 @@ Widget workoutPage(BuildContext context) {
                                                                       height: 6,
                                                                     ),
 
-                                                                    Text(
-                                                                      '${lang.getText('exercises')}: ${workout.exercises.length} \n${workout.exercises.map((e) => e.exercise?.getName(langCode) ?? "").join(' | ')}',
-                                                                      style: const TextStyle(
-                                                                        color: Colors
-                                                                            .white70,
-                                                                        fontSize:
-                                                                            13,
-                                                                      ),
+                                                                    Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .start,
+                                                                      children: [
+                                                                        const SizedBox(
+                                                                          height:
+                                                                              8,
+                                                                        ),
+                                                                        ...workout.exercises.map((
+                                                                          exerciseData,
+                                                                        ) {
+                                                                          return Padding(
+                                                                            padding: const EdgeInsets.only(
+                                                                              bottom: 8.0,
+                                                                            ),
+                                                                            child: Column(
+                                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                                              children: [
+                                                                                Text(
+                                                                                  exerciseData.exercise?.getName(
+                                                                                        langCode,
+                                                                                      ) ??
+                                                                                      lang.getText(
+                                                                                        "unknown_exercise",
+                                                                                      ),
+                                                                                  style: const TextStyle(
+                                                                                    color: Colors.green,
+                                                                                    fontWeight: FontWeight.bold,
+                                                                                    fontSize: 14,
+                                                                                  ),
+                                                                                ),
+                                                                                Padding(
+                                                                                  padding: const EdgeInsets.only(
+                                                                                    left: 10.0,
+                                                                                    top: 2,
+                                                                                  ),
+                                                                                  child: Column(
+                                                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                    children: exerciseData.sets.map(
+                                                                                      (
+                                                                                        set,
+                                                                                      ) {
+                                                                                        final isCardio =
+                                                                                            exerciseData.exercise?.category?.toLowerCase() ==
+                                                                                            'cardio';
+                                                                                        final isBodyweight =
+                                                                                            exerciseData.exercise?.equipment?.toLowerCase() ==
+                                                                                                'body only' ||
+                                                                                            exerciseData.exercise?.equipment?.toLowerCase() ==
+                                                                                                'none';
+
+                                                                                        String textToShow = "";
+
+                                                                                        if (isCardio) {
+                                                                                          textToShow = "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+                                                                                        } else if (isBodyweight) {
+                                                                                          textToShow = "${set.reps} ${lang.getText("reps")}";
+                                                                                        } else {
+                                                                                          textToShow = "${set.weight} kg x ${set.reps}";
+                                                                                        }
+
+                                                                                        return Text(
+                                                                                          textToShow,
+                                                                                          style: const TextStyle(
+                                                                                            color: Colors.white70,
+                                                                                            fontSize: 13,
+                                                                                          ),
+                                                                                        );
+                                                                                      },
+                                                                                    ).toList(),
+                                                                                  ),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                          );
+                                                                        }).toList(),
+                                                                      ],
                                                                     ),
                                                                   ],
                                                                 ),
@@ -412,9 +482,9 @@ Widget workoutPage(BuildContext context) {
                                                         ),
                                                       );
 
-                                                      newSelectedDay =
-                                                          DateTime.now();
                                                       selectedDay.value =
+                                                          DateTime.now();
+                                                      newSelectedDay =
                                                           DateTime.now();
                                                       focusedDay.value =
                                                           DateTime.now();
@@ -492,40 +562,6 @@ Widget workoutPage(BuildContext context) {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ),
-              ],
-            ),
-
-            Center(
-              child: Text(
-                lang.getText("my_templates"),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: MediaQuery.of(context).size.height * 0.15,
-                  margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 45, 45, 45),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                 ),
               ],

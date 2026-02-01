@@ -1,10 +1,19 @@
+import 'dart:typed_data';
+import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:nfc_host_card_emulation/nfc_host_card_emulation.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'package:nfc_manager/nfc_manager_android.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/models/meal.dart';
@@ -101,6 +110,32 @@ class _CMealPageState extends State<CMealPage> {
       }
     } catch (e) {
       print("Hiba törlés közben: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteUserMealTemplate(int id) async {
+    final url = Uri.parse("$apiUrl/api/Meals/DeleteTemplate?id=$id");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Szerver hiba (${response.statusCode}): ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Hálózati hiba: $e");
       return false;
     }
   }
@@ -264,6 +299,127 @@ class _CMealPageState extends State<CMealPage> {
     }
   }
 
+  Future<Widget> showQrCode(
+    BuildContext context,
+    List<dynamic> workouts,
+  ) async {
+    String jsonString = jsonEncode(workouts);
+    String shareId = await _uploadWorkoutAndGenerateQr(context, jsonString);
+    return userMeals.isNotEmpty
+        ? Center(
+            child: QrImageView(
+              data: shareId,
+              version: QrVersions.auto,
+              size: MediaQuery.of(context).size.width * 0.5,
+            ),
+          )
+        : Container();
+  }
+
+  Future<String> _uploadWorkoutAndGenerateQr(
+    BuildContext context,
+    String jsonString,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/share/uploadWorkout"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(userMeals),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['shareId'];
+      } else {
+        throw Exception(
+          "Szerver hiba: ${response.statusCode} - ${response.body}",
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Hiba: $e")));
+      }
+    }
+    return '';
+  }
+
+  void startScanning(BuildContext context) async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AiBarcodeScanner(
+          onDetect: (BarcodeCapture capture) async {
+            String scannedValue = capture.barcodes.first.rawValue ?? "";
+
+            if (scannedValue.isEmpty) return;
+
+            Navigator.of(context).pop();
+
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (c) => const Center(child: CircularProgressIndicator()),
+            );
+
+            try {
+              List<MealDto> newMeals = [];
+
+              if (scannedValue.startsWith("[")) {
+                List<dynamic> decodedData = jsonDecode(scannedValue);
+                newMeals = decodedData
+                    .map((item) => MealDto.fromJson(item))
+                    .toList();
+              } else {
+                final response = await http.get(
+                  Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
+                );
+
+                if (response.statusCode == 200) {
+                  List<dynamic> decodedData = jsonDecode(response.body);
+                  newMeals = decodedData
+                      .map((item) => MealDto.fromJson(item))
+                      .toList();
+                } else {
+                  throw Exception("Nem található vagy lejárt megosztás.");
+                }
+              }
+
+              Navigator.pop(context);
+
+              setState(() {
+                userMeals.addAll(newMeals);
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "${newMeals.length} ${lang.getText("added_to_list")}",
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } catch (e) {
+              Navigator.pop(context);
+              debugPrint("Hiba az importálásnál: $e");
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Hiba: ${e.toString()}"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          controller: MobileScannerController(
+            detectionSpeed: DetectionSpeed.noDuplicates,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
@@ -283,13 +439,517 @@ class _CMealPageState extends State<CMealPage> {
                 child: Container(
                   margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
                   child: AppBar(
-                    title: Text(
-                      lang.getText("new_meal"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Text(
+                              lang.getText("new_meal"),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 85, 173, 78),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: IconButton(
+                            onPressed: () async {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                builder: (context) => StatefulBuilder(
+                                  builder: (context, setPopupState) => Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: MediaQuery.of(
+                                        context,
+                                      ).viewInsets.bottom,
+                                    ),
+                                    child: Container(
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                          0.6,
+                                      clipBehavior: Clip.hardEdge,
+                                      decoration: const BoxDecoration(
+                                        color: Color.fromARGB(255, 35, 35, 35),
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(25),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(20),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  lang.getText("share"),
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 24,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(context),
+                                                  icon: const Icon(
+                                                    Icons.close,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: DefaultTabController(
+                                              initialIndex: 0,
+                                              length: 2,
+                                              child: Column(
+                                                children: [
+                                                  const TabBar(
+                                                    labelColor: Colors.white,
+                                                    unselectedLabelColor:
+                                                        Colors.grey,
+                                                    indicatorColor:
+                                                        Colors.green,
+                                                    tabs: <Widget>[
+                                                      Tab(text: "NFC"),
+                                                      Tab(text: "QR"),
+                                                    ],
+                                                  ),
+                                                  Expanded(
+                                                    child: TabBarView(
+                                                      children: <Widget>[
+                                                        Center(
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Container(
+                                                                decoration: BoxDecoration(
+                                                                  color:
+                                                                      const Color.fromARGB(
+                                                                        255,
+                                                                        85,
+                                                                        173,
+                                                                        78,
+                                                                      ),
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        11,
+                                                                      ),
+                                                                ),
+                                                                child: IconButton(
+                                                                  onPressed: () {
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                    );
+                                                                    showDialog(
+                                                                      context:
+                                                                          context,
+                                                                      builder: (context) {
+                                                                        return StatefulBuilder(
+                                                                          builder:
+                                                                              (
+                                                                                context,
+                                                                                setStateDialog,
+                                                                              ) {
+                                                                                return Dialog(
+                                                                                  insetPadding: const EdgeInsets.all(
+                                                                                    20,
+                                                                                  ),
+                                                                                  backgroundColor: const Color.fromARGB(
+                                                                                    255,
+                                                                                    30,
+                                                                                    30,
+                                                                                    30,
+                                                                                  ),
+                                                                                  shape: RoundedRectangleBorder(
+                                                                                    borderRadius: BorderRadius.circular(
+                                                                                      16,
+                                                                                    ),
+                                                                                  ),
+                                                                                  child: Container(
+                                                                                    width: double.infinity,
+                                                                                    padding: const EdgeInsets.all(
+                                                                                      16,
+                                                                                    ),
+                                                                                    decoration: BoxDecoration(
+                                                                                      color: const Color.fromARGB(
+                                                                                        255,
+                                                                                        40,
+                                                                                        40,
+                                                                                        40,
+                                                                                      ),
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        16,
+                                                                                      ),
+                                                                                      border: Border.all(
+                                                                                        color: Colors.white24,
+                                                                                      ),
+                                                                                    ),
+                                                                                    child: Column(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      children: [
+                                                                                        Expanded(
+                                                                                          child: SingleChildScrollView(
+                                                                                            child: Column(
+                                                                                              mainAxisSize: MainAxisSize.min,
+                                                                                              children: [
+                                                                                                Text(
+                                                                                                  lang.getText(
+                                                                                                    "share_via_NFC",
+                                                                                                  ),
+                                                                                                  style: TextStyle(
+                                                                                                    color: Colors.white,
+                                                                                                    fontSize: 20,
+                                                                                                    fontWeight: FontWeight.bold,
+                                                                                                    decoration: TextDecoration.underline,
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ],
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ),
+                                                                                );
+                                                                              },
+                                                                        );
+                                                                      },
+                                                                    );
+                                                                    //startNfcSharing(userMeals,);
+                                                                  },
+                                                                  icon:
+                                                                      const Icon(
+                                                                        Icons
+                                                                            .nfc,
+                                                                      ),
+                                                                  color: Colors
+                                                                      .white70,
+                                                                  iconSize:
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).size.width *
+                                                                      0.35,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                height:
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).size.height *
+                                                                    0.03,
+                                                              ),
+                                                              Text(
+                                                                lang.getText(
+                                                                  "or",
+                                                                ),
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .white24,
+                                                                  fontSize: 20,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                height:
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).size.height *
+                                                                    0.03,
+                                                              ),
+                                                              FilledButton(
+                                                                style: FilledButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      const Color.fromARGB(
+                                                                        255,
+                                                                        85,
+                                                                        173,
+                                                                        78,
+                                                                      ),
+                                                                  fixedSize: Size(
+                                                                    MediaQuery.of(
+                                                                          context,
+                                                                        ).size.width *
+                                                                        0.55,
+                                                                    MediaQuery.of(
+                                                                          context,
+                                                                        ).size.height *
+                                                                        0.07,
+                                                                  ),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          11,
+                                                                        ),
+                                                                  ),
+                                                                ),
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                  );
+                                                                  showDialog(
+                                                                    context:
+                                                                        context,
+                                                                    builder: (context) {
+                                                                      return StatefulBuilder(
+                                                                        builder:
+                                                                            (
+                                                                              context,
+                                                                              setStateDialog,
+                                                                            ) {
+                                                                              return Dialog(
+                                                                                insetPadding: const EdgeInsets.all(
+                                                                                  20,
+                                                                                ),
+                                                                                backgroundColor: const Color.fromARGB(
+                                                                                  255,
+                                                                                  30,
+                                                                                  30,
+                                                                                  30,
+                                                                                ),
+                                                                                shape: RoundedRectangleBorder(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    16,
+                                                                                  ),
+                                                                                ),
+                                                                                child: Container(
+                                                                                  width: double.infinity,
+                                                                                  padding: const EdgeInsets.all(
+                                                                                    16,
+                                                                                  ),
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: const Color.fromARGB(
+                                                                                      255,
+                                                                                      40,
+                                                                                      40,
+                                                                                      40,
+                                                                                    ),
+                                                                                    borderRadius: BorderRadius.circular(
+                                                                                      16,
+                                                                                    ),
+                                                                                    border: Border.all(
+                                                                                      color: Colors.white24,
+                                                                                    ),
+                                                                                  ),
+                                                                                  child: Column(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    children: [
+                                                                                      Expanded(
+                                                                                        child: SingleChildScrollView(
+                                                                                          child: Column(
+                                                                                            mainAxisSize: MainAxisSize.min,
+                                                                                            children: [
+                                                                                              Text(
+                                                                                                lang.getText(
+                                                                                                  "recive_workout",
+                                                                                                ),
+                                                                                                style: TextStyle(
+                                                                                                  color: Colors.white,
+                                                                                                  fontSize: 20,
+                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                ),
+                                                                                              ),
+                                                                                            ],
+                                                                                          ),
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                ),
+                                                                              );
+                                                                            },
+                                                                      );
+                                                                    },
+                                                                  );
+                                                                  //startNfcReceiving();
+                                                                },
+                                                                child: Text(
+                                                                  lang.getText(
+                                                                    "recive_workout",
+                                                                  ),
+                                                                  style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        20,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+
+                                                        Center(
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Container(
+                                                                width:
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).size.width *
+                                                                    0.5,
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        11,
+                                                                      ),
+                                                                ),
+                                                                child: FutureBuilder<Widget>(
+                                                                  future:
+                                                                      showQrCode(
+                                                                        context,
+                                                                        userMeals,
+                                                                      ),
+                                                                  builder:
+                                                                      (
+                                                                        context,
+                                                                        snapshot,
+                                                                      ) {
+                                                                        if (snapshot.connectionState ==
+                                                                            ConnectionState.waiting) {
+                                                                          return Center(
+                                                                            child:
+                                                                                CircularProgressIndicator(),
+                                                                          );
+                                                                        } else if (snapshot
+                                                                            .hasError) {
+                                                                          return Center(
+                                                                            child: Text(
+                                                                              'Error: ${snapshot.error}',
+                                                                            ),
+                                                                          );
+                                                                        } else {
+                                                                          return snapshot.data ??
+                                                                              SizedBox.shrink();
+                                                                        }
+                                                                      },
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                height:
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).size.height *
+                                                                    0.01,
+                                                              ),
+                                                              Text(
+                                                                lang.getText(
+                                                                  "or",
+                                                                ),
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .white24,
+                                                                  fontSize: 20,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                height:
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).size.height *
+                                                                    0.01,
+                                                              ),
+                                                              FilledButton(
+                                                                style: FilledButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      const Color.fromARGB(
+                                                                        255,
+                                                                        85,
+                                                                        173,
+                                                                        78,
+                                                                      ),
+                                                                  fixedSize: Size(
+                                                                    MediaQuery.of(
+                                                                          context,
+                                                                        ).size.width *
+                                                                        0.55,
+                                                                    MediaQuery.of(
+                                                                          context,
+                                                                        ).size.height *
+                                                                        0.07,
+                                                                  ),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          11,
+                                                                        ),
+                                                                  ),
+                                                                ),
+                                                                onPressed: () {
+                                                                  startScanning(
+                                                                    context,
+                                                                  );
+                                                                },
+                                                                child: Text(
+                                                                  lang.getText(
+                                                                    "scan",
+                                                                  ),
+                                                                  style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        20,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(
+                              CupertinoIcons.share,
+                              size: 25,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     iconTheme: const IconThemeData(color: Colors.white),
                   ),
@@ -1171,6 +1831,205 @@ class _CMealPageState extends State<CMealPage> {
                                       color: Colors.white70,
                                     ),
                                   ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onPressed: () async {
+                                          final confirmed = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => Dialog(
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    30,
+                                                    30,
+                                                    30,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                side: const BorderSide(
+                                                  color: Colors.white24,
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  20,
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      lang.getText("delete"),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 22,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 16),
+                                                    Text(
+                                                      "${lang.getText("sure_delete_template")}\n'${meal.customName}'?",
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 24),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      children: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                false,
+                                                              ),
+                                                          style:
+                                                              TextButton.styleFrom(
+                                                                foregroundColor:
+                                                                    Colors
+                                                                        .white54,
+                                                              ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "cancel",
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        FilledButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                true,
+                                                              ),
+                                                          style: FilledButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .redAccent,
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      20,
+                                                                  vertical: 10,
+                                                                ),
+                                                          ),
+                                                          child: Text(
+                                                            lang.getText(
+                                                              "delete",
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 16,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+
+                                          if (confirmed == true) {
+                                            final success =
+                                                await deleteUserMealTemplate(
+                                                  meal.id,
+                                                );
+
+                                            if (success) {
+                                              setState(() {
+                                                meals.removeAt(index);
+                                              });
+
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      lang.getText(
+                                                        "deleted_successfully",
+                                                      ),
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    showCloseIcon: true,
+                                                    closeIconColor:
+                                                        Colors.white70,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    backgroundColor:
+                                                        const Color.fromARGB(
+                                                          255,
+                                                          45,
+                                                          45,
+                                                          45,
+                                                        ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      side: const BorderSide(
+                                                        color: Colors.white24,
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 30,
+                                                          left: 16,
+                                                          right: 16,
+                                                        ),
+                                                    duration: const Duration(
+                                                      milliseconds: 1800,
+                                                    ),
+                                                    animation: CurvedAnimation(
+                                                      parent:
+                                                          kAlwaysCompleteAnimation,
+                                                      curve: Curves.easeInOut,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -1494,6 +2353,39 @@ class _CMealPageState extends State<CMealPage> {
                                           );
                                           return;
                                         }
+
+                                        final existingTemplates =
+                                            await futureCustomMeals;
+                                        final newName = mealnamecontroller.text
+                                            .trim();
+
+                                        final bool isDuplicate =
+                                            existingTemplates.any(
+                                              (template) =>
+                                                  template.customName
+                                                      .trim()
+                                                      .toLowerCase() ==
+                                                  newName.toLowerCase(),
+                                            );
+
+                                        if (isDuplicate) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                lang.getText(
+                                                  'duplicate_template',
+                                                ),
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
+
                                         try {
                                           final prefs =
                                               await SharedPreferences.getInstance();

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:zest_client/models/workout.dart';
+import 'package:zest_client/providers/workout_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
@@ -55,6 +57,25 @@ Future<List<UserMealDto>> fetchUserMeals() async {
   }
 }
 
+Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  if (token == null) throw Exception("Nincs token");
+
+  final response = await http.get(
+    Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
+    headers: {"Authorization": "Bearer $token"},
+  );
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+  } else {
+    throw Exception(response.body);
+  }
+}
+
 Future<double> fetchTodayCalories() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
@@ -91,6 +112,7 @@ String getTranslatedName(String mealName, LanguageProvider lang) {
 @hwidget
 Widget homePage(BuildContext context) {
   final futureMeals = useState(fetchUserMeals());
+  final futureWorkouts = useState(fetchUserWorkouts());
   final todayCalories = useState(fetchTodayCalories());
   final calorieGoal = useState(fetchCalorieGoal());
 
@@ -770,6 +792,25 @@ Widget lastMealCardContent(BuildContext context, {UserMealDto? lastMeal}) {
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+Widget _buildStatCell(
+  String text, {
+  bool isHeader = false,
+  Color color = Colors.white,
+}) {
+  return Expanded(
+    child: Center(
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isHeader ? Colors.white : color,
+          fontWeight: FontWeight.bold,
+          fontSize: isHeader ? 16 : 12,
+        ),
       ),
     ),
   );

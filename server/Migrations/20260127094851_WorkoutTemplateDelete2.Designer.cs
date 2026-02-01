@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Zest.Api.Data;
 
@@ -10,9 +11,11 @@ using Zest.Api.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    partial class ZestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260127094851_WorkoutTemplateDelete2")]
+    partial class WorkoutTemplateDelete2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -134,10 +137,12 @@ namespace server.Migrations
                         .HasAnnotation("Relational:JsonPropertyName", "images");
 
                     b.Property<string>("Instructions")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasAnnotation("Relational:JsonPropertyName", "instructions");
 
                     b.Property<string>("InstructionsHu")
+                        .IsRequired()
                         .HasColumnType("TEXT")
                         .HasAnnotation("Relational:JsonPropertyName", "instructions_hu");
 
@@ -195,33 +200,6 @@ namespace server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Exercises");
-                });
-
-            modelBuilder.Entity("Zest.Api.Models.Friendship", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("AddresseeId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("RequesterId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddresseeId");
-
-                    b.HasIndex("RequesterId");
-
-                    b.ToTable("Friendships");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
@@ -410,12 +388,6 @@ namespace server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<double?>("Distance")
-                        .HasColumnType("REAL");
-
-                    b.Property<double?>("DurationSeconds")
-                        .HasColumnType("REAL");
-
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("INTEGER");
 
@@ -458,25 +430,6 @@ namespace server.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Zest.Api.Models.Friendship", b =>
-                {
-                    b.HasOne("Zest.Api.Models.User", "Addressee")
-                        .WithMany()
-                        .HasForeignKey("AddresseeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Zest.Api.Models.User", "Requester")
-                        .WithMany()
-                        .HasForeignKey("RequesterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Addressee");
-
-                    b.Navigation("Requester");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.Meals", b =>
