@@ -1,4 +1,4 @@
-package com.example.client
+package dev.sitespectrum.zest_dave
 
 import io.flutter.embedding.android.FlutterActivity
 
