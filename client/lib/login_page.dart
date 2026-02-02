@@ -1,6 +1,7 @@
 import 'package:client/Providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'pages.dart';
@@ -122,6 +123,11 @@ class _LoginPageState extends State<LoginPage> {
                   if (response.statusCode == 200) {
                     final json = jsonDecode(response.body);
                     print(json);
+
+                    final userId = json['userId'].toString();
+
+                    OneSignal.login(userId);
+
                     final token = json['token'];
                     final refreshToken = json['refreshToken'];
                     String username = json['username'];

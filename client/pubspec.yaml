@@ -59,6 +59,7 @@ dependencies:
   flutter_ble_peripheral: ^2.1.0
   flutter_blue_plus: ^1.31.17
   permission_handler: ^11.3.0
+  onesignal_flutter: ^5.4.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1

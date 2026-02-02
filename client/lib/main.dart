@@ -9,9 +9,18 @@ import "pages.dart";
 import "register_page.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:client/providers/workout_provider.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  //debugging OneSignal setup
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+  OneSignal.Debug.setAlertLevel(OSLogLevel.none);
+
+  OneSignal.initialize("97f76fd4-6bb9-40f0-9b62-57104ec90eea");
+  OneSignal.Notifications.requestPermission(true);
+
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final prefs = await SharedPreferences.getInstance();
   final savedUsername = prefs.getString('username');
