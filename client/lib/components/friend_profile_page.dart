@@ -72,6 +72,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
       if (mounted) setState(() => isLoading = false);
     }
   }
+
   void _showMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -81,6 +82,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
       ),
     );
   }
+
   Future<void> importWorkout(dynamic workout, LanguageProvider lang) async {
     final token = await _getToken();
     if (token == null) return;
@@ -88,7 +90,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
     final requestBody = {
       "userId": 0,
       "customName": "${workout['customName']} (Copy)",
-      "date": DateTime.now().toIso8601String(),
+      "date": null,
       "durationMinutes": workout['durationMinutes'],
       "caloriesBurnt": workout['totalBurntCalories'],
       "totalVolume": workout['totalLiftedWeight'],
@@ -134,6 +136,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
       if (mounted) _showMessage(lang.getText("error_occurred"), isError: true);
     }
   }
+
   Future<void> importMeal(dynamic meal, LanguageProvider lang) async {
     final token = await _getToken();
     if (token == null) return;
@@ -141,7 +144,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
     final requestBody = {
       "customName": "${meal['customName']} (Copy)",
       "userId": 0,
-      "eatenAt": DateTime.now().toIso8601String(),
+      "eatenAt": null,
       "isCustom": true,
       "meals": (meal['meals'] as List).map((m) {
         return {

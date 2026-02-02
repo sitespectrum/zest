@@ -429,7 +429,7 @@ class _ProfilePageState extends State<ProfilePage>
           "Content-Type": "application/json",
           if (token != null) "Authorization": "Bearer $token",
         },
-        body: jsonEncode({refreshToken ?? ""}),
+        body: jsonEncode(refreshToken ?? ""),
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
