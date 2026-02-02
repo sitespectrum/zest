@@ -32,6 +32,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
     int totalVolume,
   ) async {
     final prefs = await SharedPreferences.getInstance();
+
     final token = prefs.getString('jwt_token');
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
@@ -49,6 +50,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
         .toList();
 
     final dto = {
+      "userId": userId,
       "WorkoutName": workoutName,
       "UserId": userId,
       "Date": DateTime.now().toIso8601String(),
@@ -92,6 +94,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
     int totalVolume,
   ) async {
     final prefs = await SharedPreferences.getInstance();
+
     final token = prefs.getString('jwt_token');
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
@@ -109,6 +112,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
         .toList();
 
     final dto = {
+      "userId": userId,
       "CustomName": customName,
       "UserId": userId,
       "Date": DateTime.now().toIso8601String(),
