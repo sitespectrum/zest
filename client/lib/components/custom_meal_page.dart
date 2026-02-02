@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,6 +33,12 @@ final mealtypecontroller = TextEditingController();
 final mealnamecontroller = TextEditingController();
 
 class _CMealPageState extends State<CMealPage> {
+  String _nfcData = 'No data';
+  bool isNfcActive = false;
+  String nfcStatus = "";
+  String _statusText = "";
+  bool _isNfcReading = false;
+  String shareId = "";
   Future<void> saveUserMeals(
     List<MealDto> meals,
     String mealName,
@@ -297,50 +304,334 @@ class _CMealPageState extends State<CMealPage> {
     }
   }
 
-  Future<Widget> showQrCode(
-    BuildContext context,
-    List<dynamic> workouts,
-  ) async {
-    String jsonString = jsonEncode(workouts);
-    String shareId = await _uploadWorkoutAndGenerateQr(context, jsonString);
-    return userMeals.isNotEmpty
-        ? Center(
-            child: QrImageView(
-              data: shareId,
-              version: QrVersions.auto,
-              size: MediaQuery.of(context).size.width * 0.5,
-            ),
-          )
-        : Container();
-  }
+  Future<void> startCloudNfcSharing(BuildContext context) async {
+    String? id = await _uploadWorkoutToBackend();
 
-  Future<String> _uploadWorkoutAndGenerateQr(
-    BuildContext context,
-    String jsonString,
-  ) async {
+    if (id == null) return;
+
+    setState(() {
+      isNfcActive = true;
+      nfcStatus = "Megosztás indítása... (Kód: $id)";
+    });
+
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothAdvertise,
+      Permission.bluetoothConnect,
+      Permission.location,
+    ].request();
+
+    if (statuses.values.any((status) => status.isDenied)) {
+      setState(() => nfcStatus = "Hiányzó Bluetooth engedélyek!");
+      return;
+    }
+
     try {
-      final response = await http.post(
-        Uri.parse("$apiUrl/api/share/uploadWorkout"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(userMeals),
+      final blePeripheral = FlutterBlePeripheral();
+      await blePeripheral.stop();
+
+      final AdvertiseData advertiseData = AdvertiseData(
+        includeDeviceName: false,
+        manufacturerId: 0xFFFF,
+        manufacturerData: Uint8List.fromList(utf8.encode(id)),
+        serviceUuid: 'bf27cf98-eda3-4875-99a3-537446d7e003',
       );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        return responseData['shareId'];
-      } else {
-        throw Exception(
-          "Szerver hiba: ${response.statusCode} - ${response.body}",
+      await blePeripheral.start(advertiseData: advertiseData);
+
+      await NfcHce.removeApduResponse(0);
+      await NfcHce.addApduResponse(0, [0x90, 0x00]);
+
+      await NfcHce.init(
+        aid: Uint8List.fromList([0xA0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10]),
+        permanentApduResponses: true,
+        listenOnlyConfiguredPorts: false,
+      );
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.nfc, size: 80, color: Colors.green),
+                const SizedBox(height: 20),
+                const Text(
+                  "NFC és Bluetooth Aktív",
+                  style: TextStyle(color: Colors.white),
+                ),
+                Text("ID: $id", style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  stopNfcSharing();
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  "Bezárás",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         );
       }
     } catch (e) {
+      _showError("Hiba: $e");
+    }
+  }
+
+  void stopNfcSharing() async {
+    await NfcHce.removeApduResponse(0);
+    final blePeripheral = FlutterBlePeripheral();
+    await blePeripheral.stop();
+    print("Megosztás (NFC + BLE) leállítva.");
+  }
+
+  Future<void> _fetchAndShowSharedWorkout(String shareId) async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    setState(() {
+      _statusText = "Edzés betöltése...";
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/Share/workout-$shareId"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> decodedData = jsonDecode(response.body);
+        List<MealDto> newWorkouts = decodedData
+            .map((item) => MealDto.fromJson(item))
+            .toList();
+
+        if (mounted) {
+          setState(() {
+            userMeals.addAll(newWorkouts);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "${newWorkouts.length} ${lang.getText("added_to_list")}",
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        int addedCount = 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("$addedCount gyakorlat hozzáadva a listához!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        await Future.delayed(Duration(milliseconds: 800));
+
+        if (!mounted) return;
+
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      _showError("Hiba az edzés betöltésekor: $e");
+    } finally {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Hiba: $e")));
+        setState(() {
+          _isNfcReading = false;
+          _statusText = "";
+        });
       }
     }
-    return '';
+  }
+
+  Future<void> startNfcReceivingCloud() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.location,
+    ].request();
+
+    if (statuses.values.any((status) => status.isDenied)) {
+      _showError("Hiányzó Bluetooth engedélyek!");
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const AlertDialog(
+        backgroundColor: Color.fromARGB(255, 30, 30, 30),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.nfc, size: 60, color: Colors.white),
+            SizedBox(height: 20),
+            Text(
+              "Érintsd a másik telefonhoz...",
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      await FlutterNfcKit.poll(
+        timeout: Duration(seconds: 30),
+        iosMultipleTagMessage: "Több címke",
+        iosAlertMessage: "Érintsd oda",
+      );
+
+      await FlutterNfcKit.finish();
+
+      if (mounted) Navigator.pop(context);
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => const AlertDialog(
+          backgroundColor: Color.fromARGB(255, 30, 30, 30),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 20),
+              Text(
+                "Adatok fogadása Bluetooth-on...",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      bool found = false;
+
+      await FlutterBluePlus.startScan(
+        timeout: Duration(seconds: 8),
+        withServices: [Guid("bf27cf98-eda3-4875-99a3-537446d7e003")],
+      );
+
+      var subscription = FlutterBluePlus.scanResults.listen((results) async {
+        for (ScanResult r in results) {
+          final manufacturerData = r.advertisementData.manufacturerData;
+
+          if (manufacturerData.containsKey(0xFFFF)) {
+            try {
+              String id = utf8.decode(manufacturerData[0xFFFF]!);
+              print(">>> MEGVAN AZ ID BLUETOOTH-ON: $id");
+
+              if (!found) {
+                found = true;
+                FlutterBluePlus.stopScan();
+
+                if (mounted) Navigator.pop(context);
+
+                await _fetchAndShowSharedWorkout(id);
+              }
+              return;
+            } catch (e) {
+              print("Dekódolási hiba: $e");
+            }
+          }
+        }
+      });
+
+      await Future.delayed(Duration(seconds: 8));
+
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
+      subscription.cancel();
+
+      if (!found) {
+        if (mounted) Navigator.pop(context);
+        _showError("Nem sikerült azonosítani a telefont.");
+      }
+    } catch (e) {
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+
+      if (!e.toString().contains("poll timeout")) {
+        _showError("Hiba: $e");
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    FlutterBlePeripheral().stop();
+    super.dispose();
+  }
+
+  Future<String?> _uploadWorkoutToBackend() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      List<Map<String, dynamic>> jsonList = userMeals
+          .map((e) => e.toJson())
+          .toList();
+
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/Share/uploadWorkout"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(jsonList),
+      );
+
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        String newId = responseData['shareId'].toString();
+        print(">>> SZERVERRŐL KAPOTT ID: $newId");
+
+        setState(() {
+          shareId = newId;
+        });
+
+        return newId;
+      } else {
+        throw Exception("Szerver hiba: ${response.statusCode}");
+      }
+    } catch (e) {
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+      _showError("Feltöltési hiba: $e");
+      return null;
+    }
+  }
+
+  Future<void> _generateQrCodeOnly() async {
+    String? id = await _uploadWorkoutToBackend();
+
+    if (id != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("QR kód legenerálva!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   void startScanning(BuildContext context) async {
@@ -418,6 +709,17 @@ class _CMealPageState extends State<CMealPage> {
     );
   }
 
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
@@ -443,7 +745,7 @@ class _CMealPageState extends State<CMealPage> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Text(
-                              lang.getText("new_meal"),
+                              lang.getText("new_workout"),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 30,
@@ -475,7 +777,7 @@ class _CMealPageState extends State<CMealPage> {
                                     child: Container(
                                       height:
                                           MediaQuery.of(context).size.height *
-                                          0.6,
+                                          0.7,
                                       clipBehavior: Clip.hardEdge,
                                       decoration: const BoxDecoration(
                                         color: Color.fromARGB(255, 35, 35, 35),
@@ -553,85 +855,9 @@ class _CMealPageState extends State<CMealPage> {
                                                                 ),
                                                                 child: IconButton(
                                                                   onPressed: () {
-                                                                    Navigator.pop(
+                                                                    startCloudNfcSharing(
                                                                       context,
                                                                     );
-                                                                    showDialog(
-                                                                      context:
-                                                                          context,
-                                                                      builder: (context) {
-                                                                        return StatefulBuilder(
-                                                                          builder:
-                                                                              (
-                                                                                context,
-                                                                                setStateDialog,
-                                                                              ) {
-                                                                                return Dialog(
-                                                                                  insetPadding: const EdgeInsets.all(
-                                                                                    20,
-                                                                                  ),
-                                                                                  backgroundColor: const Color.fromARGB(
-                                                                                    255,
-                                                                                    30,
-                                                                                    30,
-                                                                                    30,
-                                                                                  ),
-                                                                                  shape: RoundedRectangleBorder(
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      16,
-                                                                                    ),
-                                                                                  ),
-                                                                                  child: Container(
-                                                                                    width: double.infinity,
-                                                                                    padding: const EdgeInsets.all(
-                                                                                      16,
-                                                                                    ),
-                                                                                    decoration: BoxDecoration(
-                                                                                      color: const Color.fromARGB(
-                                                                                        255,
-                                                                                        40,
-                                                                                        40,
-                                                                                        40,
-                                                                                      ),
-                                                                                      borderRadius: BorderRadius.circular(
-                                                                                        16,
-                                                                                      ),
-                                                                                      border: Border.all(
-                                                                                        color: Colors.white24,
-                                                                                      ),
-                                                                                    ),
-                                                                                    child: Column(
-                                                                                      mainAxisSize: MainAxisSize.min,
-                                                                                      children: [
-                                                                                        Expanded(
-                                                                                          child: SingleChildScrollView(
-                                                                                            child: Column(
-                                                                                              mainAxisSize: MainAxisSize.min,
-                                                                                              children: [
-                                                                                                Text(
-                                                                                                  lang.getText(
-                                                                                                    "share_via_NFC",
-                                                                                                  ),
-                                                                                                  style: TextStyle(
-                                                                                                    color: Colors.white,
-                                                                                                    fontSize: 20,
-                                                                                                    fontWeight: FontWeight.bold,
-                                                                                                    decoration: TextDecoration.underline,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ],
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ],
-                                                                                    ),
-                                                                                  ),
-                                                                                );
-                                                                              },
-                                                                        );
-                                                                      },
-                                                                    );
-                                                                    //startNfcSharing(userMeals,);
                                                                   },
                                                                   icon:
                                                                       const Icon(
@@ -701,84 +927,7 @@ class _CMealPageState extends State<CMealPage> {
                                                                   ),
                                                                 ),
                                                                 onPressed: () {
-                                                                  Navigator.pop(
-                                                                    context,
-                                                                  );
-                                                                  showDialog(
-                                                                    context:
-                                                                        context,
-                                                                    builder: (context) {
-                                                                      return StatefulBuilder(
-                                                                        builder:
-                                                                            (
-                                                                              context,
-                                                                              setStateDialog,
-                                                                            ) {
-                                                                              return Dialog(
-                                                                                insetPadding: const EdgeInsets.all(
-                                                                                  20,
-                                                                                ),
-                                                                                backgroundColor: const Color.fromARGB(
-                                                                                  255,
-                                                                                  30,
-                                                                                  30,
-                                                                                  30,
-                                                                                ),
-                                                                                shape: RoundedRectangleBorder(
-                                                                                  borderRadius: BorderRadius.circular(
-                                                                                    16,
-                                                                                  ),
-                                                                                ),
-                                                                                child: Container(
-                                                                                  width: double.infinity,
-                                                                                  padding: const EdgeInsets.all(
-                                                                                    16,
-                                                                                  ),
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: const Color.fromARGB(
-                                                                                      255,
-                                                                                      40,
-                                                                                      40,
-                                                                                      40,
-                                                                                    ),
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      16,
-                                                                                    ),
-                                                                                    border: Border.all(
-                                                                                      color: Colors.white24,
-                                                                                    ),
-                                                                                  ),
-                                                                                  child: Column(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    children: [
-                                                                                      Expanded(
-                                                                                        child: SingleChildScrollView(
-                                                                                          child: Column(
-                                                                                            mainAxisSize: MainAxisSize.min,
-                                                                                            children: [
-                                                                                              Text(
-                                                                                                lang.getText(
-                                                                                                  "recive_workout",
-                                                                                                ),
-                                                                                                style: TextStyle(
-                                                                                                  color: Colors.white,
-                                                                                                  fontSize: 20,
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                ),
-                                                                                              ),
-                                                                                            ],
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                              );
-                                                                            },
-                                                                      );
-                                                                    },
-                                                                  );
-                                                                  //startNfcReceiving();
+                                                                  startNfcReceivingCloud();
                                                                 },
                                                                 child: Text(
                                                                   lang.getText(
@@ -810,73 +959,60 @@ class _CMealPageState extends State<CMealPage> {
                                                                     MediaQuery.of(
                                                                       context,
                                                                     ).size.width *
-                                                                    0.5,
+                                                                    0.6,
+                                                                padding:
+                                                                    const EdgeInsets.all(
+                                                                      20,
+                                                                    ),
                                                                 decoration: BoxDecoration(
                                                                   color: Colors
                                                                       .white,
                                                                   borderRadius:
                                                                       BorderRadius.circular(
-                                                                        11,
+                                                                        20,
                                                                       ),
                                                                 ),
-                                                                child: FutureBuilder<Widget>(
-                                                                  future:
-                                                                      showQrCode(
-                                                                        context,
-                                                                        userMeals,
-                                                                      ),
-                                                                  builder:
-                                                                      (
-                                                                        context,
-                                                                        snapshot,
-                                                                      ) {
-                                                                        if (snapshot.connectionState ==
-                                                                            ConnectionState.waiting) {
-                                                                          return Center(
-                                                                            child:
-                                                                                CircularProgressIndicator(),
-                                                                          );
-                                                                        } else if (snapshot
-                                                                            .hasError) {
-                                                                          return Center(
-                                                                            child: Text(
-                                                                              'Error: ${snapshot.error}',
+                                                                child:
+                                                                    shareId
+                                                                        .isNotEmpty
+                                                                    ? QrImageView(
+                                                                        data:
+                                                                            shareId,
+                                                                        version:
+                                                                            QrVersions.auto,
+                                                                        size:
+                                                                            200.0,
+                                                                      )
+                                                                    : Column(
+                                                                        mainAxisSize:
+                                                                            MainAxisSize.min,
+                                                                        children: [
+                                                                          Icon(
+                                                                            Icons.qr_code,
+                                                                            size:
+                                                                                60,
+                                                                            color:
+                                                                                Colors.black54,
+                                                                          ),
+                                                                          SizedBox(
+                                                                            height:
+                                                                                10,
+                                                                          ),
+                                                                          Text(
+                                                                            "Még nincs QR kód",
+                                                                            style: TextStyle(
+                                                                              color: Colors.black87,
                                                                             ),
-                                                                          );
-                                                                        } else {
-                                                                          return snapshot.data ??
-                                                                              SizedBox.shrink();
-                                                                        }
-                                                                      },
-                                                                ),
+                                                                            textAlign:
+                                                                                TextAlign.center,
+                                                                          ),
+                                                                        ],
+                                                                      ),
                                                               ),
                                                               SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.01,
+                                                                height: 20,
                                                               ),
-                                                              Text(
-                                                                lang.getText(
-                                                                  "or",
-                                                                ),
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white24,
-                                                                  fontSize: 20,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.01,
-                                                              ),
+
                                                               FilledButton(
                                                                 style: FilledButton.styleFrom(
                                                                   backgroundColor:
@@ -886,16 +1022,59 @@ class _CMealPageState extends State<CMealPage> {
                                                                         173,
                                                                         78,
                                                                       ),
-                                                                  fixedSize: Size(
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.width *
-                                                                        0.55,
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.height *
-                                                                        0.07,
+                                                                  padding:
+                                                                      EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            30,
+                                                                        vertical:
+                                                                            15,
+                                                                      ),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          11,
+                                                                        ),
                                                                   ),
+                                                                ),
+                                                                onPressed: () {
+                                                                  _generateQrCodeOnly();
+                                                                },
+                                                                child: Text(
+                                                                  shareId.isEmpty
+                                                                      ? "QR Kód Generálása"
+                                                                      : "QR Kód Frissítése",
+                                                                  style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        18,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ),
+
+                                                              SizedBox(
+                                                                height: 20,
+                                                              ),
+
+                                                              FilledButton(
+                                                                style: FilledButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      const Color.fromARGB(
+                                                                        255,
+                                                                        85,
+                                                                        173,
+                                                                        78,
+                                                                      ),
+                                                                  padding:
+                                                                      EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            30,
+                                                                        vertical:
+                                                                            15,
+                                                                      ),
                                                                   shape: RoundedRectangleBorder(
                                                                     borderRadius:
                                                                         BorderRadius.circular(
@@ -910,13 +1089,13 @@ class _CMealPageState extends State<CMealPage> {
                                                                 },
                                                                 child: Text(
                                                                   lang.getText(
-                                                                    "scan",
+                                                                    "read",
                                                                   ),
                                                                   style: TextStyle(
                                                                     color: Colors
                                                                         .white,
                                                                     fontSize:
-                                                                        20,
+                                                                        18,
                                                                     fontWeight:
                                                                         FontWeight
                                                                             .bold,

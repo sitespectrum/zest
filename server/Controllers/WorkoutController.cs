@@ -102,6 +102,8 @@ public class WorkoutController : ControllerBase
                 }
             }
             await _context.SaveChangesAsync();
+            var fixSql = "UPDATE sqlite_sequence SET seq = (SELECT MAX(Id) FROM Exercises) WHERE name = 'Exercises'";
+            await _context.Database.ExecuteSqlRawAsync(fixSql);
 
             return Ok(new
             {
@@ -115,6 +117,29 @@ public class WorkoutController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, $"Hiba: {ex.Message}");
+        }
+    }
+
+    [HttpPost("fix-sequence")]
+    public async Task<IActionResult> FixSqliteSequence()
+    {
+        try
+        {
+            var maxId = await _context.Exercises.MaxAsync(e => (int?)e.Id) ?? 0;
+
+            Console.WriteLine($"[FixSequence] Talált legnagyobb ID: {maxId}");
+
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name = 'Exercises'");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name = 'exercises'");
+
+            var sql = $"INSERT INTO sqlite_sequence (name, seq) VALUES ('Exercises', {maxId})";
+            await _context.Database.ExecuteSqlRawAsync(sql);
+
+            return Ok($"Siker! Adatbázis Max ID: {maxId}. A számláló beállítva {maxId}-ra. Próbálj menteni!");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Kritikus hiba a javítás közben: {ex.Message}");
         }
     }
 
@@ -380,7 +405,7 @@ public class WorkoutController : ControllerBase
         {
             UserId = userId,
             WorkoutName = request.WorkoutName,
-            Date = request.Date,
+            Date = request.Date ?? DateTime.MinValue,
             DurationMinutes = request.DurationMinutes,
             TotalBurntCalories = request.CaloriesBurnt,
             TotalLiftedWeight = request.TotalVolume,
@@ -406,6 +431,128 @@ public class WorkoutController : ControllerBase
         return Ok(new { Message = "Edzés mentése sikeres", UserWorkoutId = userWorkout.Id });
     }
 
+    [HttpPost("newExercise")]
+    public async Task<IActionResult> SaveNewExercise([FromBody] AddExerciseRequest request)
+    {
+        var maxId = await _context.Exercises.MaxAsync(e => (int?)e.Id) ?? 0;
+        var nextId = maxId + 1;
+
+        var exercise = new Exercise
+        {
+            Id = nextId,
+            Name = request.Name,
+            NameHu = request.Lang == "hu" ? request.Name : null,
+            Instructions = new List<string> { "Custom exercise created by user." },
+            InstructionsHu = new List<string> { "Felhasználó által létrehozott gyakorlat." },
+        };
+
+        var equipPair = await ResolveTerm(request.Equipment, "Equipment", request.Lang);
+        exercise.Equipment = equipPair.En;
+        exercise.EquipmentHu = equipPair.Hu;
+
+        var forcePair = await ResolveTerm(request.Force, "Force", request.Lang);
+        exercise.Force = forcePair.En;
+        exercise.ForceHu = forcePair.Hu;
+
+        var primaryPair = await ResolveMuscleList(request.PrimaryMuscles, request.Lang);
+        exercise.PrimaryMuscles = primaryPair.En;
+        exercise.PrimaryMusclesHu = primaryPair.Hu;
+
+        var secondaryPair = await ResolveMuscleList(request.SecondaryMuscles, request.Lang);
+        exercise.SecondaryMuscles = secondaryPair.En;
+        exercise.SecondaryMusclesHu = secondaryPair.Hu;
+
+        _context.Exercises.Add(exercise);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Sikeres mentés!", id = nextId });
+    }
+
+    private async Task<(List<string> En, List<string> Hu)> ResolveMuscleList(List<string> values, string fallbackLang)
+    {
+        var enList = new List<string>();
+        var huList = new List<string>();
+
+        if (values == null || !values.Any()) return (enList, huList);
+
+        var allMuscles = await _context.Exercises
+            .AsNoTracking()
+            .Select(e => new { e.PrimaryMuscles, e.PrimaryMusclesHu, e.SecondaryMuscles, e.SecondaryMusclesHu })
+            .ToListAsync();
+
+        foreach (var val in values)
+        {
+            var valLower = val.ToLower().Trim();
+            bool found = false;
+
+            foreach (var m in allMuscles)
+            {
+                bool isEnglish = (m.PrimaryMuscles != null && m.PrimaryMuscles.Any(x => x.ToLower().Trim() == valLower)) ||
+                                 (m.SecondaryMuscles != null && m.SecondaryMuscles.Any(x => x.ToLower().Trim() == valLower));
+
+                bool isHungarian = (m.PrimaryMusclesHu != null && m.PrimaryMusclesHu.Any(x => x.ToLower().Trim() == valLower)) ||
+                                   (m.SecondaryMusclesHu != null && m.SecondaryMusclesHu.Any(x => x.ToLower().Trim() == valLower));
+
+                if (isEnglish || isHungarian)
+                {
+
+                    string? foundEn = null;
+                    string? foundHu = null;
+
+                    if (m.PrimaryMuscles != null && m.PrimaryMuscles.Count > 0) foundEn = m.PrimaryMuscles[0];
+                    else if (m.SecondaryMuscles != null && m.SecondaryMuscles.Count > 0) foundEn = m.SecondaryMuscles[0];
+
+                    if (m.PrimaryMusclesHu != null && m.PrimaryMusclesHu.Count > 0) foundHu = m.PrimaryMusclesHu[0];
+                    else if (m.SecondaryMusclesHu != null && m.SecondaryMusclesHu.Count > 0) foundHu = m.SecondaryMusclesHu[0];
+
+                    if (isEnglish) foundEn = val;
+
+                    if (!string.IsNullOrEmpty(foundEn)) enList.Add(foundEn);
+                    if (!string.IsNullOrEmpty(foundHu)) huList.Add(foundHu);
+
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                if (fallbackLang == "hu") huList.Add(val);
+                else enList.Add(val);
+            }
+        }
+
+        return (enList.Distinct().ToList(), huList.Distinct().ToList());
+    }
+
+    private async Task<(string? En, string? Hu)> ResolveTerm(string? value, string fieldType, string fallbackLang)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return (null, null);
+
+        var valLower = value.ToLower().Trim();
+
+        var lookupData = await _context.Exercises
+            .AsNoTracking()
+            .Select(e => new { e.Equipment, e.EquipmentHu, e.Force, e.ForceHu })
+            .ToListAsync();
+
+        var match = lookupData.FirstOrDefault(e =>
+            (e.Equipment != null && e.Equipment.ToLower().Trim() == valLower) ||
+            (e.EquipmentHu != null && e.EquipmentHu.ToLower().Trim() == valLower) ||
+            (e.Force != null && e.Force.ToLower().Trim() == valLower) ||
+            (e.ForceHu != null && e.ForceHu.ToLower().Trim() == valLower)
+        );
+
+        if (match != null)
+        {
+            if (fieldType == "Equipment") return (match.Equipment, match.EquipmentHu);
+            if (fieldType == "Force") return (match.Force, match.ForceHu);
+        }
+
+        if (fallbackLang == "hu") return (null, value);
+        else return (value, null);
+    }
+
     [HttpPost("AddWorkoutS")]
     [Authorize]
     public async Task<IActionResult> AddUserWorkoutS([FromBody] AddUserWorkoutRequest request)
@@ -421,7 +568,7 @@ public class WorkoutController : ControllerBase
         {
             UserId = userId,
             CustomName = request.CustomName,
-            Date = request.Date,
+            Date = request.Date ?? DateTime.MinValue,
             DurationMinutes = request.DurationMinutes,
             TotalBurntCalories = request.CaloriesBurnt,
             TotalLiftedWeight = request.TotalVolume,
@@ -557,6 +704,56 @@ public class WorkoutController : ControllerBase
 
         return Ok(workouts);
     }
+
+    private async Task<List<string>> GetDistinctValues(Func<Zest.Api.Models.Exercise, string> selectorEn, Func<Zest.Api.Models.Exercise, string> selectorHu, string lang)
+    {
+        var exercises = await _context.Exercises.ToListAsync();
+
+        var selector = lang == "hu" ? selectorHu : selectorEn;
+
+        return exercises
+            .Select(selector)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+    }
+
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories([FromQuery] string lang = "hu")
+    {
+        var values = await GetDistinctValues(e => e.Category, e => e.CategoryHu, lang);
+        return Ok(values);
+    }
+
+    [HttpGet("equipment")]
+    public async Task<IActionResult> GetEquipment([FromQuery] string lang = "hu")
+    {
+        var values = await GetDistinctValues(e => e.Equipment, e => e.EquipmentHu, lang);
+        return Ok(values);
+    }
+
+    [HttpGet("forces")]
+    public async Task<IActionResult> GetForces([FromQuery] string lang = "hu")
+    {
+        var values = await GetDistinctValues(e => e.Force, e => e.ForceHu ?? e.Force, lang);
+        return Ok(values);
+    }
+
+    [HttpGet("levels")]
+    public async Task<IActionResult> GetLevels([FromQuery] string lang = "hu")
+    {
+        var values = await GetDistinctValues(e => e.Level, e => e.LevelHu, lang);
+        return Ok(values);
+    }
+
+    [HttpGet("mechanics")]
+    public async Task<IActionResult> GetMechanics([FromQuery] string lang = "hu")
+    {
+        var values = await GetDistinctValues(e => e.Mechanic, e => e.MechanicHu, lang);
+        return Ok(values);
+    }
 }
 
 public class AddUserWorkoutRequest
@@ -564,12 +761,22 @@ public class AddUserWorkoutRequest
     public int UserId { get; set; }
     public string? WorkoutName { get; set; }
     public string? CustomName { get; set; }
-    public DateTime Date { get; set; }
+    public DateTime? Date { get; set; }
     public int DurationMinutes { get; set; }
     public int CaloriesBurnt { get; set; }
     public int TotalVolume { get; set; }
     public List<WorkoutExerciseDto> Exercises { get; set; }
     public bool IsCustom { get; set; }
+}
+
+public class AddExerciseRequest
+{
+    public string Name { get; set; }
+    public string? Force { get; set; }
+    public string? Equipment { get; set; } = string.Empty;
+    public List<string> PrimaryMuscles { get; set; } = new();
+    public List<string> SecondaryMuscles { get; set; } = new();
+    public string Lang { get; set; } = "hu";
 }
 
 public class WorkoutExerciseDto

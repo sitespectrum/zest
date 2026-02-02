@@ -905,7 +905,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                   );
                                                                 },
                                                                 child: Text(
-                                                                  "Olvasás",
+                                                                  lang.getText("read"),
                                                                   style: TextStyle(
                                                                     color: Colors
                                                                         .white,
