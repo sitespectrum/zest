@@ -420,6 +420,7 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
+    final refreshToken = prefs.getString('refresh_token');
 
     try {
       final response = await http.post(
@@ -428,6 +429,7 @@ class _ProfilePageState extends State<ProfilePage>
           "Content-Type": "application/json",
           if (token != null) "Authorization": "Bearer $token",
         },
+        body: jsonEncode({refreshToken ?? ""}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
@@ -904,12 +906,7 @@ class _ProfilePageState extends State<ProfilePage>
                               icon: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: const BoxDecoration(
-                                  color: Color.fromARGB(
-                                    255,
-                                    85,
-                                    173,
-                                    78,
-                                  ),
+                                  color: Color.fromARGB(255, 85, 173, 78),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(

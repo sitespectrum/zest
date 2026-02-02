@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Zest.Api.Data;
 using Zest.Api.Models;
 using System.Security.Claims;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace ZestApi.Controllers;
 
@@ -13,6 +15,7 @@ namespace ZestApi.Controllers;
 public class FriendsController : ControllerBase
 {
     private readonly ZestDbContext _context;
+    private static readonly HttpClient _httpClient = new HttpClient();
 
     public FriendsController(ZestDbContext context)
     {
@@ -48,16 +51,21 @@ public class FriendsController : ControllerBase
     [HttpPost("request/{targetUserId}")]
     public async Task<IActionResult> SendRequest(int targetUserId)
     {
+        // A bejelentkezett felhasználó ID-ja és neve a Tokenből
         var currentUserId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+        var currentUserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Valaki";
 
-        if (currentUserId == targetUserId) return BadRequest("Magadat nem jelölheted be.");
+        if (currentUserId == targetUserId)
+            return BadRequest("Magadat nem jelölheted be.");
 
+        // Ellenőrizzük, van-e már kapcsolat
         var existing = await _context.Friendships
             .FirstOrDefaultAsync(f =>
                 (f.RequesterId == currentUserId && f.AddresseeId == targetUserId) ||
                 (f.RequesterId == targetUserId && f.AddresseeId == currentUserId));
 
-        if (existing != null) return BadRequest("Már van kapcsolat köztetek.");
+        if (existing != null)
+            return BadRequest("Már van kapcsolat köztetek.");
 
         var friendship = new Friendship
         {
@@ -69,7 +77,47 @@ public class FriendsController : ControllerBase
         _context.Friendships.Add(friendship);
         await _context.SaveChangesAsync();
 
+        // Értesítés küldése a háttérben, hogy ne lassítsa a választ
+        _ = SendPushNotification(targetUserId, currentUserName);
+
         return Ok(new { message = "Jelölés elküldve!" });
+    }
+
+    private async Task SendPushNotification(int targetUserId, string requesterName)
+    {
+        try
+        {
+            // OneSignal azonosítók (Ezt a OneSignal Dashboardon találod)
+            string appId = "97f76fd4-6bb9-40f0-9b62-57104ec90eea";
+            string restApiKey = "os_v2_app_s73w7vdlxfapbg3ck4ie5sio5jromw2v7dgusqfganbwi7jipvs5rhggngjl2as5j5wg7cy2lttycq22mitfqzg24mk2u7jgj5q4gai";
+
+            var notificationData = new
+            {
+                app_id = appId,
+                // A célzott felhasználó ID-ja (External User ID), amit a Flutterben is beállítasz
+                include_external_user_ids = new[] { targetUserId.ToString() },
+                headings = new { en = "New Friend Request", hu = "Új barátkérelem" },
+                contents = new { en = $"{requesterName} sent you a friend request!", hu = $"{requesterName} barátnak jelölt téged!" },
+                // Opcionális: kis ikon vagy hang beállítása
+                android_accent_color = "FF55AD4E"
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
+            request.Headers.Add("Authorization", $"Basic {restApiKey}");
+            request.Content = new StringContent(JsonSerializer.Serialize(notificationData), System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"OneSignal hiba: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba az értesítés küldésekor: {ex.Message}");
+        }
     }
 
     [HttpGet("requests")]
@@ -141,7 +189,7 @@ public class FriendsController : ControllerBase
         var currentUserId = int.Parse(User.FindFirst("id")?.Value ?? "0");
 
         var friendship = await _context.Friendships
-            .FirstOrDefaultAsync(f => 
+            .FirstOrDefaultAsync(f =>
                 (f.RequesterId == currentUserId && f.AddresseeId == friendId) ||
                 (f.RequesterId == friendId && f.AddresseeId == currentUserId));
 
