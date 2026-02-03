@@ -118,7 +118,7 @@ Widget homePage(BuildContext context) {
   final lang = Provider.of<LanguageProvider>(context);
 
   return SingleChildScrollView(
-    padding: const EdgeInsets.only(bottom: 88),
+    padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
     child: Stack(
       children: [
         Container(

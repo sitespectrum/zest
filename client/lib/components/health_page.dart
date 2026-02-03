@@ -221,7 +221,9 @@ class _HealthPageState extends State<HealthPage>
           }
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 88),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -860,8 +862,6 @@ class _HealthPageState extends State<HealthPage>
                         ),
                       ),
                     ),
-
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.40),
                   ],
                 ),
               ],
