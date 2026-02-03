@@ -1,6 +1,7 @@
 import "package:client/Providers/language_provider.dart";
 import 'package:flutter/material.dart';
 import "package:flutter/services.dart";
+import "package:flutter_dotenv/flutter_dotenv.dart";
 import 'package:flutter_hooks/flutter_hooks.dart';
 import "package:provider/provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
@@ -18,7 +19,7 @@ void main() async {
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
   OneSignal.Debug.setAlertLevel(OSLogLevel.none);
 
-  OneSignal.initialize("97f76fd4-6bb9-40f0-9b62-57104ec90eea");
+  OneSignal.initialize(dotenv.env['ONESIGNAL_APP_ID']!);
   OneSignal.Notifications.requestPermission(true);
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

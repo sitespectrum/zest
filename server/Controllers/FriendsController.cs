@@ -88,8 +88,8 @@ public class FriendsController : ControllerBase
         try
         {
             // OneSignal azonosítók (Ezt a OneSignal Dashboardon találod)
-            string appId = "97f76fd4-6bb9-40f0-9b62-57104ec90eea";
-            string restApiKey = "os_v2_app_s73w7vdlxfapbg3ck4ie5sio5jromw2v7dgusqfganbwi7jipvs5rhggngjl2as5j5wg7cy2lttycq22mitfqzg24mk2u7jgj5q4gai";
+            string appId = Environment.GetEnvironmentVariable("ONESIGNAL_APP_ID") ?? "";
+            string restApiKey = Environment.GetEnvironmentVariable("ONESIGNAL_REST_API_KEY") ?? "";
 
             var notificationData = new
             {

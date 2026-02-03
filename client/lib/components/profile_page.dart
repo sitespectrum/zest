@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:client/main.dart';
 import 'package:intl/intl.dart';
 import 'friends_page.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class ProfilePage extends StatefulWidget {
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
@@ -418,6 +419,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _logout() async {
+    OneSignal.logout();
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
     final refreshToken = prefs.getString('refresh_token');
