@@ -1213,6 +1213,44 @@ Widget _buildStatCell(
   );
 }
 
+class HistoryItem {
+  final int workoutId;
+  final String date;
+  final String workoutName;
+  final List<WorkoutSetDto> sets;
+
+  HistoryItem({
+    required this.workoutId,
+    required this.date,
+    required this.workoutName,
+    required this.sets,
+  });
+
+  factory HistoryItem.fromJson(Map<String, dynamic> json) {
+    var setsList = (json['sets'] as List)
+        .map(
+          (s) => WorkoutSetDto(
+            weight: (s['weight'] as num).toDouble(),
+            reps: (s['reps'] as num).toInt(),
+            distance: s['distance'] != null
+                ? (s['distance'] as num).toDouble()
+                : 0.0,
+            durationSeconds: s['durationSeconds'] != null
+                ? (s['durationSeconds'] as num).toInt()
+                : 0,
+          ),
+        )
+        .toList();
+
+    return HistoryItem(
+      workoutId: json['workoutId'],
+      date: json['date'],
+      workoutName: json['workoutName'],
+      sets: setsList,
+    );
+  }
+}
+
 class ExerciseTrackerCard extends StatefulWidget {
   final ExerciseDto exercise;
   final VoidCallback? onremoveExercise;
@@ -1229,6 +1267,12 @@ class ExerciseTrackerCard extends StatefulWidget {
 
 class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
     with AutomaticKeepAliveClientMixin {
+  List<HistoryItem> history = [];
+  bool isLoadingHistory = true;
+  final PageController _historyPageController = PageController(
+    viewportFraction: 0.85,
+  );
+
   @override
   bool get wantKeepAlive => true;
 
@@ -1238,6 +1282,79 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
     if (widget.exercise.sets.isEmpty) {
       widget.exercise.sets.add(WorkoutSetDto(weight: 0, reps: 0));
     }
+  }
+
+  Future<void> _fetchHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse(
+          "$apiUrl/api/Workout/getExerciseHistory/${widget.exercise.id}",
+        ),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            history = data.map((json) => HistoryItem.fromJson(json)).toList();
+            isLoadingHistory = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Hiba az előzmények betöltésekor: $e");
+      if (mounted) setState(() => isLoadingHistory = false);
+    }
+  }
+
+  void _applyHistory(HistoryItem item) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          "Adatok betöltése",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          "Szeretnéd felülírni a jelenlegi mezőket ezzel a korábbi edzéssel?",
+          style: TextStyle(color: Colors.white70),
+        ),
+        backgroundColor: const Color.fromARGB(255, 45, 45, 45),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Mégse", style: TextStyle(color: Colors.grey)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 85, 173, 78),
+            ),
+            onPressed: () {
+              setState(() {
+                widget.exercise.sets = item.sets
+                    .map(
+                      (s) => WorkoutSetDto(
+                        weight: s.weight,
+                        reps: s.reps,
+                        distance: s.distance,
+                        durationSeconds: s.durationSeconds,
+                        isCompleted: false,
+                      ),
+                    )
+                    .toList();
+              });
+              Navigator.pop(context);
+            },
+            child: const Text("Betöltés"),
+          ),
+        ],
+      ),
+    );
   }
 
   void _addSet() {
