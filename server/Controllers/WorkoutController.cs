@@ -705,6 +705,40 @@ public class WorkoutController : ControllerBase
         return Ok(workouts);
     }
 
+    [HttpGet("getExerciseHistory/{exerciseId}")]
+    [Authorize]
+    public async Task<IActionResult> GetExerciseHistory(int exerciseId)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized();
+        var userId = int.Parse(userIdClaim);
+
+        var history = await _context.UserWorkouts
+            .Where(w => w.UserId == userId && w.Exercises.Any(e => e.ExerciseId == exerciseId))
+            .OrderByDescending(w => w.Date)
+            .Take(10)
+            .Select(w => new
+            {
+                WorkoutId = w.Id,
+                Date = w.Date,
+                WorkoutName = w.WorkoutName ?? w.CustomName,
+                Sets = w.Exercises
+                        .Where(e => e.ExerciseId == exerciseId)
+                        .SelectMany(e => e.Sets)
+                        .OrderBy(s => s.Order)
+                        .Select(s => new
+                        {
+                            Weight = s.Weight,
+                            Reps = s.Reps,
+                            Distance = s.Distance,
+                            DurationSeconds = s.DurationSeconds
+                        }).ToList()
+            })
+            .ToListAsync();
+        
+        return Ok(history);
+    }
+
     private async Task<List<string>> GetDistinctValues(Func<Zest.Api.Models.Exercise, string> selectorEn, Func<Zest.Api.Models.Exercise, string> selectorHu, string lang)
     {
         var exercises = await _context.Exercises.ToListAsync();
