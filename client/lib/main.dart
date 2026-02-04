@@ -7,6 +7,7 @@ import "package:provider/provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
 import "package:zest_client/providers/language_provider.dart";
 import 'package:zest_client/providers/workout_provider.dart';
+import "package:zest_client/servers.dart";
 
 import "login_page.dart";
 import "pages.dart";
@@ -18,6 +19,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final prefs = await SharedPreferences.getInstance();
+  apiUrl = (await getSelectedInstance()).baseUrl;
   final savedUsername = prefs.getString('username');
   runApp(
     MultiProvider(

@@ -12,34 +12,38 @@ part "add_drawer.g.dart";
 Widget addDrawer(BuildContext context) {
   final lang = Provider.of<LanguageProvider>(context);
 
-  return Dialog(
-    insetPadding: const EdgeInsets.all(20),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 40, 40, 40),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white24),
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(24).copyWith(top: 16),
+    decoration: BoxDecoration(
+      color: const Color.fromARGB(255, 40, 40, 40),
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(24),
+        topRight: Radius.circular(24),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            lang.getText("create_new"),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 24,
+      children: [
+        Container(
+          height: 4,
+          width: 96,
+          decoration: BoxDecoration(
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(4),
           ),
-          const SizedBox(height: 12),
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
+        ),
+        Flex(
+          direction: Axis.horizontal,
+          spacing: 24,
+          children: [
+            // Workout
+            Expanded(
+              flex: 1,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
@@ -50,46 +54,45 @@ Widget addDrawer(BuildContext context) {
                     );
                   },
                   child: Container(
-                    width: double.infinity,
+                    // width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 30, 30, 30),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
+                      color: const Color.fromARGB(50, 64, 255, 50),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color.fromARGB(150, 64, 255, 50),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      spacing: 16,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Icon(
+                          Icons.fitness_center_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
                         Text(
                           lang.getText("new_workout"),
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize:
-                                MediaQuery.of(context).size.height * 0.042,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 40, 40, 40),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+              ),
+            ),
 
-                const SizedBox(height: 12),
-
-                GestureDetector(
+            // Meal
+            Expanded(
+              flex: 1,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
@@ -100,65 +103,61 @@ Widget addDrawer(BuildContext context) {
                     );
                   },
                   child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(10),
+                    // width: double.infinity,
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 30, 30, 30),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white24),
+                      color: const Color.fromARGB(50, 50, 146, 255),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color.fromARGB(150, 50, 146, 255),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      spacing: 16,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Icon(
+                          Icons.fastfood_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
                         Text(
                           lang.getText("new_meal"),
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize:
-                                MediaQuery.of(context).size.height * 0.042,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 40, 40, 40),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
-                Positioned(
-                  child: FilledButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-                      side: const BorderSide(color: Colors.white24, width: 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      lang.getText("close"),
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ),
-              ],
+              ),
+            ),
+          ],
+        ),
+
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color.fromARGB(50, 0, 0, 0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
-        ],
-      ),
+          child: Center(
+            widthFactor: double.infinity,
+            heightFactor: 3,
+            child: SizedBox(
+              child: Text(
+                lang.getText("close"),
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ],
     ),
   );
 }

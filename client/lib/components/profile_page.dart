@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zest_client/components/settings/server_settings.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/main.dart';
 import 'package:zest_client/providers/language_provider.dart';
@@ -981,6 +982,10 @@ class _ProfilePageState extends State<ProfilePage>
                           ),
                         ],
                       ),
+                      ServerSettings(),
+
+                      const SizedBox(height: 10),
+
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,

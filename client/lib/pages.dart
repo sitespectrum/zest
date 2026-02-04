@@ -131,7 +131,7 @@ Widget navBar(
                   size: 38,
                   color: Colors.white,
                 ),
-                onPressed: () => showDialog(
+                onPressed: () => showModalBottomSheet(
                   context: context,
                   builder: (BuildContext context) => AddDrawer(),
                 ),
