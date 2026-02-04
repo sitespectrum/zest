@@ -1,17 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/cupertino.dart';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:http/http.dart' as http;
-import 'package:nfc_host_card_emulation/nfc_host_card_emulation_platform_interface.dart';
-import 'package:nfc_manager/nfc_manager.dart';
-import 'dart:typed_data';
 import 'package:nfc_host_card_emulation/nfc_host_card_emulation.dart';
-import 'package:nfc_manager/nfc_manager_android.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,9 +20,6 @@ import 'package:zest_client/models/workout.dart';
 
 import '../providers/language_provider.dart';
 import '../providers/workout_provider.dart';
-import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'add_workout_page.dart';
 
 class CWorkoutPage extends StatefulWidget {
@@ -38,12 +34,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
   bool showdelete = false;
-  Timer? _debounce;
-  String _nfcData = 'No data';
   bool isNfcActive = false;
   String nfcStatus = "";
-  String _statusText = "";
-  bool _isNfcReading = false;
   String shareId = "";
 
   @override
@@ -51,14 +43,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     super.initState();
     futureCustomWorkouts = fetchCustomUserWorkouts().catchError((e) {
       return <CustomUserWorkoutDto>[];
-    });
-    NfcManager.instance.isAvailable().then((isAvailable) {
-      if (isAvailable) {
-      } else {
-        setState(() {
-          _nfcData = 'NFC is not available';
-        });
-      }
     });
   }
 
@@ -221,9 +205,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
   Future<void> _fetchAndShowSharedWorkout(String shareId) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
-    setState(() {
-      _statusText = "Edzés betöltése...";
-    });
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -271,13 +252,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
       }
     } catch (e) {
       _showError("Hiba az edzés betöltésekor: $e");
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isNfcReading = false;
-          _statusText = "";
-        });
-      }
     }
   }
 
@@ -409,9 +383,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(
-        'jwt_token',
-      );
+      final token = prefs.getString('jwt_token');
 
       List<Map<String, dynamic>> jsonList = userWorkouts
           .map((e) => e.toJson())
@@ -552,32 +524,54 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
+            children: [
               PreferredSize(
                 preferredSize: const Size.fromHeight(60),
                 child: Container(
                   margin: const EdgeInsets.all(6),
                   child: AppBar(
+                    automaticallyImplyLeading: false,
                     title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Text(
-                              lang.getText("new_workout"),
-                              style: TextStyle(
+                        Container(
+                          padding: const EdgeInsets.only(
+                            left: 16,
+                            right: 20,
+                            top: 8,
+                            bottom: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color.fromARGB(20, 255, 255, 255),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Row(
+                            spacing: 8,
+                            children: [
+                              Icon(
+                                Icons.arrow_back_ios_new_rounded,
                                 color: Colors.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
+                                size: 24,
                               ),
-                            ),
+                              Text(
+                                lang.getText("new_workout"),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(width: 8),
+
                         Container(
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 85, 173, 78),
-                            borderRadius: BorderRadius.circular(11),
+                            color: const Color.fromARGB(50, 64, 255, 50),
+                            border: Border.all(
+                              color: const Color.fromARGB(100, 64, 255, 50),
+                            ),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                           child: IconButton(
                             onPressed: () async {
@@ -945,7 +939,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                         ),
                       ],
                     ),
-                    backgroundColor: const Color.fromARGB(255, 58, 58, 58),
                     iconTheme: const IconThemeData(color: Colors.white),
                   ),
                 ),
@@ -1813,7 +1806,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
           ),
         ),
         bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: userWorkouts.isNotEmpty
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1885,44 +1878,48 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     ),
                   ],
                 )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    FilledButton(
-                      onPressed: () async {
-                        final result = await Navigator.push<List<ExerciseDto>>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddWorkoutPage(),
-                          ),
-                        );
-
-                        if (result != null) {
-                          setState(() {
-                            userWorkouts.addAll(result);
-                          });
-                        }
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                        fixedSize: Size(
-                          MediaQuery.of(context).size.width * 0.8888,
-                          MediaQuery.of(context).size.height * 0.07,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(11),
-                        ),
+              : FilledButton(
+                  onPressed: () async {
+                    final result = await Navigator.push<List<ExerciseDto>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddWorkoutPage(),
                       ),
-                      child: Text(
+                    );
+
+                    if (result != null) {
+                      setState(() {
+                        userWorkouts.addAll(result);
+                      });
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(50, 64, 255, 50),
+                    side: BorderSide(
+                      color: const Color.fromARGB(100, 64, 255, 50),
+                    ),
+
+                    fixedSize: Size(double.infinity, 64),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    spacing: 8,
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_rounded, size: 24),
+                      Text(
                         lang.getText("add"),
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
         ),
       ),
