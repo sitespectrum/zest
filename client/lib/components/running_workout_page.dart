@@ -1282,6 +1282,7 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
     if (widget.exercise.sets.isEmpty) {
       widget.exercise.sets.add(WorkoutSetDto(weight: 0, reps: 0));
     }
+    _fetchHistory();
   }
 
   Future<void> _fetchHistory() async {
@@ -1569,6 +1570,7 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
                   ? const Color.fromARGB(50, 85, 173, 78)
                   : Color.fromARGB(255, 58, 58, 58);
               return Container(
+                key: ObjectKey(set),
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
@@ -1719,6 +1721,164 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
                 ),
               ],
             ],
+          ),
+
+          const Divider(color: Colors.white24, height: 38),
+          Text(
+            "${lang.getText("recent_exercises")} (${history.length})",
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          if (isLoadingHistory)
+            const Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.grey,
+              ),
+            )
+          else if (history.isEmpty)
+            const Center(
+              child: Text(
+                "Nincs korábbi adat ehhez a gyakorlathoz.",
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            )
+          else
+            _buildHistorySection(lang, isCardio),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistorySection(LanguageProvider lang, bool isCardio) {
+    return SizedBox(
+      height: 110,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          PageView.builder(
+            controller: _historyPageController,
+            itemCount: history.length,
+            itemBuilder: (context, index) {
+              final item = history[index];
+              final dateStr = DateFormat(
+                'yyyy. MM. dd.',
+              ).format(DateTime.parse(item.date));
+
+              return GestureDetector(
+                onTap: () => _applyHistory(item),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 60, 60, 60),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        dateStr,
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.workoutName,
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 10,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Divider(color: Colors.white12, height: 8),
+                      Flexible(
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: item.sets.length > 2
+                              ? 2
+                              : item.sets.length,
+                          itemBuilder: (ctx, i) {
+                            final s = item.sets[i];
+                            String txt = isCardio
+                                ? "${s.weight}km / ${s.reps}p"
+                                : "${s.weight}kg x ${s.reps}";
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 1.0,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  txt,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      if (item.sets.length > 2)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2.0),
+                          child: Text(
+                            "...",
+                            style: TextStyle(
+                              color: Colors.white30,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+
+          Positioned(
+            left: 0,
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios,
+                size: 16,
+                color: Colors.white24,
+              ),
+              onPressed: () => _historyPageController.previousPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.white24,
+              ),
+              onPressed: () => _historyPageController.nextPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              ),
+            ),
           ),
         ],
       ),

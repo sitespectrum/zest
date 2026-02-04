@@ -217,7 +217,8 @@ class LanguageProvider with ChangeNotifier {
       'primaryMuscle': 'Fő izom',
       'secondaryMuscle': 'Másodl. izom',
       'select': 'kiválasztása',
-      'read' : 'Olvasás',
+      'read': 'Olvasás',
+      'recent_exercises': 'Korábbi gyakorlatok',
     },
     'en': {
       'register_button_main': "Don't have an account yet? Register",
@@ -395,7 +396,8 @@ class LanguageProvider with ChangeNotifier {
       'primaryMuscle': 'Primary muscle',
       'secondaryMuscle': 'Sec. muscle',
       'select': 'select',
-      'read' : 'Read',
+      'read': 'Read',
+      'recent_exercises': 'Recent exercises',
     },
   };
 }

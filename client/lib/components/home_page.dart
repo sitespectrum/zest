@@ -105,14 +105,23 @@ class _HomePageState extends State<HomePage>
   bool get wantKeepAlive => false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
+    _refreshData();
+  }
+
+  void _refreshData() {
     setState(() {
       _futureMeals = fetchUserMeals();
       _todaycalories = fetchTodayCalories();
       _calorieGoal = fetchCalorieGoal();
       _futureWorkouts = fetchUserWorkouts();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   String getTranslatedName(String mealName, LanguageProvider lang) {
