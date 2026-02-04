@@ -51,14 +51,12 @@ public class FriendsController : ControllerBase
     [HttpPost("request/{targetUserId}")]
     public async Task<IActionResult> SendRequest(int targetUserId)
     {
-        // A bejelentkezett felhasználó ID-ja és neve a Tokenből
         var currentUserId = int.Parse(User.FindFirst("id")?.Value ?? "0");
         var currentUserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Valaki";
 
         if (currentUserId == targetUserId)
             return BadRequest("Magadat nem jelölheted be.");
 
-        // Ellenőrizzük, van-e már kapcsolat
         var existing = await _context.Friendships
             .FirstOrDefaultAsync(f =>
                 (f.RequesterId == currentUserId && f.AddresseeId == targetUserId) ||
@@ -77,7 +75,6 @@ public class FriendsController : ControllerBase
         _context.Friendships.Add(friendship);
         await _context.SaveChangesAsync();
 
-        // Értesítés küldése a háttérben, hogy ne lassítsa a választ
         _ = SendPushNotification(targetUserId, currentUserName);
 
         return Ok(new { message = "Jelölés elküldve!" });
@@ -87,31 +84,43 @@ public class FriendsController : ControllerBase
     {
         try
         {
-            // OneSignal azonosítók (Ezt a OneSignal Dashboardon találod)
-            string appId = Environment.GetEnvironmentVariable("ONESIGNAL_APP_ID") ?? "";
+            string appId = _context.Database.GetDbConnection().ConnectionString.Contains("onesignal") ? "" : "ONESIGNAL_APP_ID";
+            string actualAppId = Environment.GetEnvironmentVariable("ONESIGNAL_APP_ID") ?? "";
             string restApiKey = Environment.GetEnvironmentVariable("ONESIGNAL_REST_API_KEY") ?? "";
 
             var notificationData = new
             {
-                app_id = appId,
-                // A célzott felhasználó ID-ja (External User ID), amit a Flutterben is beállítasz
-                include_external_user_ids = new[] { targetUserId.ToString() },
+                app_id = actualAppId,
+                include_aliases = new 
+                { 
+                    external_id = new[] { targetUserId.ToString() } 
+                },
+
+                target_channel = "push",
+
                 headings = new { en = "New Friend Request", hu = "Új barátkérelem" },
                 contents = new { en = $"{requesterName} sent you a friend request!", hu = $"{requesterName} barátnak jelölt téged!" },
-                // Opcionális: kis ikon vagy hang beállítása
-                android_accent_color = "FF55AD4E"
+                
+                android_accent_color = "FF55AD4E",
+                small_icon = "ic_stat_onesignal_default"
             };
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
             request.Headers.Add("Authorization", $"Basic {restApiKey}");
-            request.Content = new StringContent(JsonSerializer.Serialize(notificationData), System.Text.Encoding.UTF8, "application/json");
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            
+            var jsonContent = JsonSerializer.Serialize(notificationData);
+            request.Content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine($"OneSignal Válasz Kód: {response.StatusCode}");
+            Console.WriteLine($"OneSignal Válasz Body: {responseBody}");
 
             if (!response.IsSuccessStatusCode)
             {
-                var error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"OneSignal hiba: {error}");
+                Console.WriteLine($"Kritikus OneSignal hiba: {responseBody}");
             }
         }
         catch (Exception ex)
