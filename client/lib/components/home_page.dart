@@ -315,7 +315,7 @@ class _HomePageState extends State<HomePage>
                               child: Padding(
                                 padding: EdgeInsets.all(20),
                                 child: Text(
-                                  lang.getText("no_added_meal_yet"),
+                                  lang.getText("no_added_workout_yet"),
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontSize: 18,
