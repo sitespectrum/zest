@@ -11,3 +11,5 @@ services:
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:10000
     restart: unless-stopped
+    env_file:
+      - ".env"
