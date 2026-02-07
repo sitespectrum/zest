@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:client/Providers/language_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:client/constants.dart';
@@ -775,24 +776,24 @@ class _ProfilePageState extends State<ProfilePage>
         Container(
           width: double.infinity,
           margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.fromLTRB(16, 35, 16, 16),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 45, 45, 45),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(45, 45, 45, 0.5),
+                ),
+                child: Column(children: rows),
               ),
-            ],
+            ),
           ),
-          child: Column(children: rows),
         ),
         Positioned(
-          top: 10,
-          left: 35,
+          top: MediaQuery.of(context).size.height * 0.005,
+          left: MediaQuery.of(context).size.width * 0.09,
           child: Text(
             title,
             style: const TextStyle(
@@ -867,7 +868,7 @@ class _ProfilePageState extends State<ProfilePage>
     super.build(context);
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 58, 58, 58),
+      backgroundColor: Colors.transparent,
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(
@@ -883,12 +884,29 @@ class _ProfilePageState extends State<ProfilePage>
                     child: Container(
                       margin: const EdgeInsets.all(6),
                       child: AppBar(
-                        title: Text(
-                          lang.getText("profile_page"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
+                        title: RepaintBoundary(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: 5.0,
+                                sigmaY: 5.0,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(45, 45, 45, 0.5),
+                                ),
+                                child: Text(
+                                  lang.getText("profile_page"),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                         automaticallyImplyLeading: false,
