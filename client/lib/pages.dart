@@ -70,10 +70,11 @@ Widget navBar(
           decoration: BoxDecoration(
             border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
             borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              colors: [Colors.transparent, Color.fromARGB(200, 64, 255, 50)],
-              transform: GradientRotation(0.5 * pi),
-            ),
+            // gradient: LinearGradient(
+            //   colors: [Colors.transparent, Color.fromARGB(200, 64, 255, 50)],
+            //   transform: GradientRotation(0.5 * pi),
+            // ),
+            color: Color.fromARGB(40, 64, 255, 50),
           ),
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: NavigationBar(

@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zest_client/components/topo_background.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/models/meal.dart';
 import 'package:zest_client/models/workout.dart';
@@ -128,9 +129,17 @@ Widget homePage(BuildContext context) {
             // border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
             // borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
-              colors: [Colors.transparent, Color.fromARGB(75, 64, 255, 50)],
+              colors: [Colors.transparent, Color.fromARGB(50, 64, 255, 50)],
               transform: GradientRotation(-0.5 * pi),
             ),
+          ),
+          child: ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white38, Colors.transparent],
+            ).createShader(bounds),
+            child: TopoBackground(),
           ),
         ),
         FutureBuilder<List<UserMealDto>>(
@@ -172,7 +181,7 @@ Widget homePage(BuildContext context) {
                               bottom: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(50, 0, 0, 0),
+                              color: Color.fromARGB(75, 0, 0, 0),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Row(
@@ -260,21 +269,15 @@ Widget homePage(BuildContext context) {
                           children: [
                             Expanded(
                               flex: 13,
-                              child: Container(
-                                color: const Color.fromARGB(195, 33, 149, 243),
-                              ),
+                              child: Container(color: const Color(0xFF1f84d8)),
                             ),
                             Expanded(
                               flex: 15,
-                              child: Container(
-                                color: const Color.fromARGB(195, 255, 235, 59),
-                              ),
+                              child: Container(color: const Color(0xFFe3d135)),
                             ),
                             Expanded(
                               flex: 7,
-                              child: Container(
-                                color: const Color.fromARGB(195, 244, 67, 54),
-                              ),
+                              child: Container(color: const Color(0xFFd93c30)),
                             ),
                           ],
                         ),
@@ -300,7 +303,7 @@ Widget homePage(BuildContext context) {
                             width: 16,
                             height: 16,
                             decoration: BoxDecoration(
-                              color: const Color.fromARGB(195, 33, 149, 243),
+                              color: const Color(0xFF1f84d8),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -321,7 +324,7 @@ Widget homePage(BuildContext context) {
                             width: 16,
                             height: 16,
                             decoration: BoxDecoration(
-                              color: const Color.fromARGB(195, 255, 235, 59),
+                              color: const Color(0xFFe3d135),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -342,7 +345,7 @@ Widget homePage(BuildContext context) {
                             width: 16,
                             height: 16,
                             decoration: BoxDecoration(
-                              color: const Color.fromARGB(195, 244, 67, 54),
+                              color: const Color(0xFFd93c30),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -382,7 +385,7 @@ Widget homePage(BuildContext context) {
                           right: 18,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(20, 255, 255, 255),
+                          color: const Color(0xFF272727),
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(16),
                             topRight: Radius.circular(16),
@@ -411,7 +414,7 @@ Widget homePage(BuildContext context) {
                       Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(20, 255, 255, 255),
+                          color: const Color(0xFF272727),
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(8),
                             topRight: Radius.circular(8),
@@ -672,7 +675,7 @@ Widget lastMealCardContent(BuildContext context, {UserMealDto? lastMeal}) {
     },
     child: Container(
       width: double.infinity,
-      margin: const EdgeInsets.all(20),
+      // margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 45, 45, 45),

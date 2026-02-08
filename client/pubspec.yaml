@@ -40,6 +40,8 @@ dependencies:
   hooks_riverpod: ^3.0.0
   riverpod_annotation:
   functional_widget_annotation:
+  fast_noise: ^2.0.0
+  flutter_query: ^0.6.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1
@@ -74,6 +76,9 @@ flutter:
 
   assets:
     - assets/icon/Zest_logo.png
+
+  shaders:
+    - assets/shaders/topo.frag
 
   fonts:
     - family: Geist

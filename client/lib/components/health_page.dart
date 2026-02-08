@@ -724,7 +724,7 @@ class _HealthPageState extends State<HealthPage>
                                           1.0,
                                         ),
                                         center: Text(
-                                          "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros?['proteinGoal']?.toStringAsFixed(0)} g ${(macros?['proteinGoal'] ?? 0) <= nutrients!['protein']! && nutrients!['protein']! <= macros!['proteinGoal']! + 50
+                                          "${nutrients!['protein']!.toStringAsFixed(0)} g / ${macros?['proteinGoal']?.toStringAsFixed(0)} g ${(macros?['proteinGoal'] ?? 0) <= nutrients!['protein']! && nutrients!['protein']! <= (macros?['proteinGoal'] ?? 0) + 50
                                               ? "✅"
                                               : nutrients!['protein']! > macros!['proteinGoal']! + 50
                                               ? "😡"
