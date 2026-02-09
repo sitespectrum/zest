@@ -139,35 +139,27 @@ Widget mainPage(BuildContext context) {
                       spacing: 12,
                       children: [
                         FilledButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (context) {
-                                final mediaQuery = MediaQuery.of(context);
+                          onPressed: () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (context) {
+                              final mediaQuery = MediaQuery.of(context);
 
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: mediaQuery.viewInsets.bottom,
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: mediaQuery.viewInsets.bottom,
+                                ),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight: mediaQuery.size.height * 0.9,
                                   ),
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxHeight: mediaQuery.size.height * 0.9,
-                                    ),
-                                    child: SingleChildScrollView(
-                                      child: RegisterPage(),
-                                    ),
+                                  child: SingleChildScrollView(
+                                    child: RegisterPage(),
                                   ),
-                                );
-                              },
-                            );
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (_) => const RegisterPage(),
-                            //   ),
-                            // );
-                          },
+                                ),
+                              );
+                            },
+                          ),
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color.fromARGB(
                               50,
@@ -208,14 +200,27 @@ Widget mainPage(BuildContext context) {
                         ),
 
                         FilledButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const LoginPage(),
-                              ),
-                            );
-                          },
+                          onPressed: () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (context) {
+                              final mediaQuery = MediaQuery.of(context);
+
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: mediaQuery.viewInsets.bottom,
+                                ),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight: mediaQuery.size.height * 0.9,
+                                  ),
+                                  child: SingleChildScrollView(
+                                    child: LoginPage(),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color.fromARGB(
                               25,
