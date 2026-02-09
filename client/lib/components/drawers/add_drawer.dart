@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
 import 'package:provider/provider.dart';
-import 'package:zest_client/providers/language_provider.dart';
 import 'package:zest_client/components/custom_meal_page.dart';
 import 'package:zest_client/components/custom_workout_page.dart';
+import 'package:zest_client/components/ui/custom_drawer.dart';
+import 'package:zest_client/providers/language_provider.dart';
 
 part "add_drawer.g.dart";
 
@@ -12,28 +13,11 @@ part "add_drawer.g.dart";
 Widget addDrawer(BuildContext context) {
   final lang = Provider.of<LanguageProvider>(context);
 
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(24).copyWith(top: 16),
-    decoration: BoxDecoration(
-      color: const Color.fromARGB(255, 40, 40, 40),
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(24),
-        topRight: Radius.circular(24),
-      ),
-    ),
+  return CustomDrawer(
     child: Column(
       mainAxisSize: MainAxisSize.min,
       spacing: 24,
       children: [
-        Container(
-          height: 4,
-          width: 96,
-          decoration: BoxDecoration(
-            color: Colors.white24,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
         Flex(
           direction: Axis.horizontal,
           spacing: 24,
@@ -141,20 +125,27 @@ Widget addDrawer(BuildContext context) {
         FilledButton(
           onPressed: () => Navigator.pop(context),
           style: FilledButton.styleFrom(
-            backgroundColor: const Color.fromARGB(50, 0, 0, 0),
+            backgroundColor: const Color.fromARGB(25, 255, 255, 255),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
+
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
-          child: Center(
-            widthFactor: double.infinity,
-            heightFactor: 3,
-            child: SizedBox(
-              child: Text(
-                lang.getText("close"),
-                style: TextStyle(color: Colors.white),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 12,
+            children: [
+              Icon(Icons.close_rounded, color: Colors.white, size: 20),
+              Text(
+                "Close",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ],

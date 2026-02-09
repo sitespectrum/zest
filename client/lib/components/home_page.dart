@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/topo_background.dart';
+import 'package:zest_client/components/ui/custom_card.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/models/meal.dart';
 import 'package:zest_client/models/workout.dart';
@@ -365,147 +366,38 @@ Widget homePage(BuildContext context) {
                 const SizedBox(height: 20),
 
                 //Legutóbbi edzés
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.all(0),
-                  decoration: BoxDecoration(
-                    // color: const Color.fromARGB(20, 255, 255, 255),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    spacing: 4,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.only(
-                          top: 12,
-                          bottom: 12,
-                          left: 18,
-                          right: 18,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF272727),
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                            bottomLeft: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              lang.getText("recent_workout"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                CustomCard(
+                  title: lang.getText("recent_workout"),
+                  iconData: Icons.fitness_center_rounded,
+                  child: FutureBuilder<List<UserWorkoutDto>>(
+                    future: futureWorkouts.value,
+                    builder: (context, snapshot) =>
+                        snapshot.connectionState == ConnectionState.waiting
+                        ? Container(
+                            margin: const EdgeInsets.only(bottom: 20, top: 20),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Color.fromARGB(50, 64, 255, 50),
                               ),
                             ),
-                            Icon(
-                              Icons.fitness_center_rounded,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF272727),
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            topRight: Radius.circular(8),
-                            bottomLeft: Radius.circular(16),
-                            bottomRight: Radius.circular(16),
+                          )
+                        : LastWorkoutCardContent(
+                            lastWorkout:
+                                ((snapshot.data ?? [])..sort(
+                                      (a, b) => b.date.compareTo(a.date),
+                                    ))
+                                    .firstOrNull,
                           ),
-                        ),
-                        child: FutureBuilder<List<UserWorkoutDto>>(
-                          future: futureWorkouts.value,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Container(
-                                margin: const EdgeInsets.only(
-                                  bottom: 40,
-                                  top: 20,
-                                ),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    color: Color.fromARGB(100, 64, 255, 50),
-                                  ),
-                                ),
-                              );
-                            }
-
-                            final workouts = snapshot.data ?? [];
-                            final lastWorkout = workouts.isNotEmpty
-                                ? (workouts..sort(
-                                        (a, b) => b.date.compareTo(a.date),
-                                      ))
-                                      .first
-                                : null;
-
-                            return LastWorkoutCardContent(
-                              lastWorkout: lastWorkout,
-                            );
-                          },
-                        ),
-                      ),
-                    ],
                   ),
                 ),
 
                 const SizedBox(height: 20),
 
                 //Legutóbbi étkezés
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(20, 255, 255, 255),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.only(
-                          top: 12,
-                          bottom: 12,
-                          left: 18,
-                          right: 18,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(0, 255, 255, 255),
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              lang.getText("recent_meal"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Icon(Icons.fastfood_rounded, color: Colors.white),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(12).copyWith(top: 0),
-                        child: LastMealCardContent(lastMeal: lastMeal),
-                      ),
-                    ],
-                  ),
+                CustomCard(
+                  title: lang.getText("recent_meal"),
+                  iconData: Icons.fastfood_rounded,
+                  child: LastMealCardContent(lastMeal: lastMeal),
                 ),
               ],
             );
