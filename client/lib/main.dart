@@ -10,9 +10,9 @@ import "package:zest_client/providers/language_provider.dart";
 import 'package:zest_client/providers/workout_provider.dart';
 import "package:zest_client/servers.dart";
 
-import "login_page.dart";
+import "components/drawers/login_drawer.dart";
 import "pages.dart";
-import "register_page.dart";
+import "components/drawers/register_drawer.dart";
 
 part "main.g.dart";
 
@@ -142,23 +142,7 @@ Widget mainPage(BuildContext context) {
                           onPressed: () => showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
-                            builder: (context) {
-                              final mediaQuery = MediaQuery.of(context);
-
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: mediaQuery.viewInsets.bottom,
-                                ),
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight: mediaQuery.size.height * 0.9,
-                                  ),
-                                  child: SingleChildScrollView(
-                                    child: RegisterPage(),
-                                  ),
-                                ),
-                              );
-                            },
+                            builder: (context) => RegisterDrawer(),
                           ),
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color.fromARGB(
@@ -203,23 +187,7 @@ Widget mainPage(BuildContext context) {
                           onPressed: () => showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
-                            builder: (context) {
-                              final mediaQuery = MediaQuery.of(context);
-
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: mediaQuery.viewInsets.bottom,
-                                ),
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight: mediaQuery.size.height * 0.9,
-                                  ),
-                                  child: SingleChildScrollView(
-                                    child: LoginPage(),
-                                  ),
-                                ),
-                              );
-                            },
+                            builder: (context) => LoginDrawer(),
                           ),
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color.fromARGB(
