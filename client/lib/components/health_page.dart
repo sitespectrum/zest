@@ -229,9 +229,9 @@ class _HealthPageState extends State<HealthPage>
                   child: Container(
                     margin: const EdgeInsets.all(6),
                     child: AppBar(
-                      title: RepaintBoundary(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
+                      title: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: ClipRect(
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                             child: Container(

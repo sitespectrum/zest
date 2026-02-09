@@ -134,11 +134,11 @@ class _WorkoutPageState extends State<WorkoutPage>
                 child: Container(
                   margin: const EdgeInsets.all(6),
                   child: AppBar(
-                    title: RepaintBoundary(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                    title: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: ClipRect(
                         child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                          filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
                           child: Container(
                             height: MediaQuery.of(context).size.height * 0.07,
                             padding: const EdgeInsets.all(12),

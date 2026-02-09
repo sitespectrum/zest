@@ -8,8 +8,6 @@ import 'package:client/components/custom_meal_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:video_player/video_player.dart';
-
 import 'Providers/language_provider.dart';
 
 class Pages extends StatefulWidget {
@@ -19,7 +17,7 @@ class Pages extends StatefulWidget {
   State<Pages> createState() => _PagesState();
 }
 
-class _PagesState extends State<Pages> {
+class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
   String? username;
   int _selectedIndex = 0;
 
@@ -30,54 +28,54 @@ class _PagesState extends State<Pages> {
     const Color.fromARGB(255, 255, 255, 255),
   ];
 
-  final PageController _pageController = PageController();
-  late VideoPlayerController _videoController;
+  // ignore: prefer_final_fields
+  late PageController _pageController = PageController();
+  FragmentShader? _shader;
+  late AnimationController _animationController;
+  final DateTime _startTime = DateTime.now();
   Color _currentColor = const Color(0xFF7af970);
 
   @override
   void initState() {
     super.initState();
     _loadUser();
-    _videoController =
-        VideoPlayerController.asset("assets/background/Zest_bg_v2_full.mp4")
-          ..initialize().then((_) {
-            _videoController.setLooping(true);
-            _videoController.setVolume(0.0);
-            _videoController.play();
-            setState(() {});
-          });
-
     _pageController.addListener(_onScroll);
+    _loadShader();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 60),
+    )..repeat();
+  }
+
+  Future<void> _loadShader() async {
+    final program = await FragmentProgram.fromAsset(
+      'assets/shaders/perlin_noise.frag',
+    );
+    setState(() {
+      _shader = program.fragmentShader();
+    });
   }
 
   @override
   void dispose() {
     _pageController.removeListener(_onScroll);
     _pageController.dispose();
-    _videoController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    if (!_pageController.hasClients) return;
-
     final page = _pageController.page ?? 0;
-    final int currentIndex = page.floor();
-    final int nextIndex = (currentIndex + 1).clamp(0, _pageColors.length - 1);
-    final double percent = page - currentIndex;
+    int index = page.floor();
+    int nextIndex = (index + 1).clamp(0, _pageColors.length - 1);
+    double percent = page - index;
 
-    final Color? newColor = Color.lerp(
-      _pageColors[currentIndex],
-      _pageColors[nextIndex],
-      percent,
-    );
-
-    if (newColor != null) {
-      setState(() {
-        _currentColor = newColor;
-        _selectedIndex = page.round();
-      });
-    }
+    setState(() {
+      _currentColor = Color.lerp(
+        _pageColors[index],
+        _pageColors[nextIndex],
+        percent,
+      )!;
+    });
   }
 
   Future<void> _loadUser() async {
@@ -145,25 +143,29 @@ class _PagesState extends State<Pages> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (_videoController.value.isInitialized)
+          if (_shader != null)
             Positioned.fill(
-              child: ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                  _currentColor,
-                  BlendMode.modulate,
-                ),
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _videoController.value.size.width,
-                    height: _videoController.value.size.height,
-                    child: VideoPlayer(_videoController),
-                  ),
-                ),
+              child: AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  double elapsed =
+                      DateTime.now().difference(_startTime).inMilliseconds /
+                      1000.0;
+
+                  _shader!.setFloat(0, elapsed);
+
+                  _shader!.setFloat(1, MediaQuery.of(context).size.width);
+                  _shader!.setFloat(2, MediaQuery.of(context).size.height);
+
+                  _shader!.setFloat(3, _currentColor.red / 255.0);
+                  _shader!.setFloat(4, _currentColor.green / 255.0);
+                  _shader!.setFloat(5, _currentColor.blue / 255.0);
+                  _shader!.setFloat(6, _currentColor.opacity);
+
+                  return CustomPaint(painter: ShaderPainter(_shader!));
+                },
               ),
-            )
-          else
-            Container(color: Colors.black),
+            ),
 
           PageView(
             controller: _pageController,
@@ -493,4 +495,20 @@ class _PagesState extends State<Pages> {
       ),
     );
   }
+}
+
+class ShaderPainter extends CustomPainter {
+  final FragmentShader shader;
+  ShaderPainter(this.shader);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..shader = shader,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
