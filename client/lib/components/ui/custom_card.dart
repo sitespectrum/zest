@@ -13,12 +13,8 @@ Widget customCard({
 }) {
   return Container(
     width: double.infinity,
-    margin: const EdgeInsets.symmetric(horizontal: 20),
     padding: const EdgeInsets.all(0),
-    decoration: BoxDecoration(
-      // color: const Color.fromARGB(20, 255, 255, 255),
-      borderRadius: BorderRadius.circular(16),
-    ),
+    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
     child: Column(
       spacing: 4,
       children: [

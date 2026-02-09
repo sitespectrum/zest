@@ -4,6 +4,7 @@ import 'package:functional_widget_annotation/functional_widget_annotation.dart';
 import 'package:provider/provider.dart';
 import 'package:zest_client/components/custom_meal_page.dart';
 import 'package:zest_client/components/custom_workout_page.dart';
+import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_drawer.dart';
 import 'package:zest_client/providers/language_provider.dart';
 
@@ -122,31 +123,11 @@ Widget addDrawer(BuildContext context) {
           ],
         ),
 
-        FilledButton(
+        CustomButton(
           onPressed: () => Navigator.pop(context),
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color.fromARGB(25, 255, 255, 255),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 12,
-            children: [
-              Icon(Icons.close_rounded, color: Colors.white, size: 20),
-              Text(
-                "Close",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
+          title: "Close",
+          iconData: Icons.close_rounded,
+          variant: CustomButtonVariant.secondary,
         ),
       ],
     ),

@@ -127,8 +127,6 @@ Widget homePage(BuildContext context) {
           width: double.infinity,
           height: MediaQuery.of(context).size.height * 0.5,
           decoration: BoxDecoration(
-            // border: Border.all(color: Color.fromARGB(80, 64, 255, 50)),
-            // borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
               colors: [Colors.transparent, Color.fromARGB(50, 64, 255, 50)],
               transform: GradientRotation(-0.5 * pi),
@@ -157,11 +155,10 @@ Widget homePage(BuildContext context) {
               );
             }
 
-            final meals = snapshot.data ?? [];
-
-            final lastMeal = meals.isNotEmpty
-                ? (meals..sort((a, b) => b.eatenAt.compareTo(a.eatenAt))).first
-                : null;
+            final lastMeal =
+                ((snapshot.data ?? [])
+                      ..sort((a, b) => b.eatenAt.compareTo(a.eatenAt)))
+                    .firstOrNull;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,7 +213,7 @@ Widget homePage(BuildContext context) {
                   future: Future.wait([todayCalories.value, calorieGoal.value]),
                   builder: (context, asyncSnapshot) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       margin: const EdgeInsets.fromLTRB(0, 64, 0, 8),
                       child: Column(
                         children: [
@@ -254,7 +251,7 @@ Widget homePage(BuildContext context) {
 
                 Container(
                   height: 32,
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: Color.fromARGB(25, 255, 255, 255),
@@ -291,7 +288,7 @@ Widget homePage(BuildContext context) {
                 const SizedBox(height: 12),
 
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20),
+                  margin: EdgeInsets.symmetric(horizontal: 24),
                   child: Flex(
                     spacing: 18,
                     direction: Axis.horizontal,
@@ -363,42 +360,54 @@ Widget homePage(BuildContext context) {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                //Legutóbbi edzés
-                CustomCard(
-                  title: lang.getText("recent_workout"),
-                  iconData: Icons.fitness_center_rounded,
-                  child: FutureBuilder<List<UserWorkoutDto>>(
-                    future: futureWorkouts.value,
-                    builder: (context, snapshot) =>
-                        snapshot.connectionState == ConnectionState.waiting
-                        ? Container(
-                            margin: const EdgeInsets.only(bottom: 20, top: 20),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: Color.fromARGB(50, 64, 255, 50),
-                              ),
-                            ),
-                          )
-                        : LastWorkoutCardContent(
-                            lastWorkout:
-                                ((snapshot.data ?? [])..sort(
-                                      (a, b) => b.date.compareTo(a.date),
-                                    ))
-                                    .firstOrNull,
-                          ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    spacing: 24,
+                    children: [
+                      //Legutóbbi edzés
+                      CustomCard(
+                        title: lang.getText("recent_workout"),
+                        iconData: Icons.fitness_center_rounded,
+                        child: FutureBuilder<List<UserWorkoutDto>>(
+                          future: futureWorkouts.value,
+                          builder: (context, snapshot) =>
+                              snapshot.connectionState ==
+                                  ConnectionState.waiting
+                              ? Container(
+                                  margin: const EdgeInsets.only(
+                                    bottom: 20,
+                                    top: 20,
+                                  ),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: Color.fromARGB(50, 64, 255, 50),
+                                    ),
+                                  ),
+                                )
+                              : LastWorkoutCardContent(
+                                  lastWorkout:
+                                      ((snapshot.data ?? [])..sort(
+                                            (a, b) => b.date.compareTo(a.date),
+                                          ))
+                                          .firstOrNull,
+                                ),
+                        ),
+                      ),
+
+                      //Legutóbbi étkezés
+                      CustomCard(
+                        title: lang.getText("recent_meal"),
+                        iconData: Icons.fastfood_rounded,
+                        child: LastMealCardContent(lastMeal: lastMeal),
+                      ),
+                    ],
                   ),
                 ),
 
-                const SizedBox(height: 20),
-
-                //Legutóbbi étkezés
-                CustomCard(
-                  title: lang.getText("recent_meal"),
-                  iconData: Icons.fastfood_rounded,
-                  child: LastMealCardContent(lastMeal: lastMeal),
-                ),
+                //Legutóbbi edzés
               ],
             );
           },

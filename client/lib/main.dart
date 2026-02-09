@@ -5,14 +5,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import "package:functional_widget_annotation/functional_widget_annotation.dart";
 import "package:provider/provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
+import 'package:zest_client/components/drawers/login_drawer.dart';
+import 'package:zest_client/components/drawers/register_drawer.dart';
 import "package:zest_client/components/topo_background.dart";
+import "package:zest_client/components/ui/custom_button.dart";
+import 'package:zest_client/pages.dart';
 import "package:zest_client/providers/language_provider.dart";
 import 'package:zest_client/providers/workout_provider.dart';
 import "package:zest_client/servers.dart";
-
-import "components/drawers/login_drawer.dart";
-import "pages.dart";
-import "components/drawers/register_drawer.dart";
 
 part "main.g.dart";
 
@@ -73,8 +73,6 @@ Widget myApp(BuildContext context, {String? initialUsername}) {
 
 @hwidget
 Widget mainPage(BuildContext context) {
-  final lang = Provider.of<LanguageProvider>(context);
-
   return Scaffold(
     body: Stack(
       children: [
@@ -138,92 +136,25 @@ Widget mainPage(BuildContext context) {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       spacing: 12,
                       children: [
-                        FilledButton(
+                        CustomButton(
                           onPressed: () => showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
                             builder: (context) => RegisterDrawer(),
                           ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                              50,
-                              64,
-                              255,
-                              50,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            side: BorderSide(
-                              color: const Color.fromARGB(100, 64, 255, 50),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            spacing: 12,
-                            children: [
-                              Icon(
-                                Icons.fitness_center_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              Text(
-                                "Get started!",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
+                          title: "Get started!",
+                          iconData: Icons.fitness_center_rounded,
                         ),
 
-                        FilledButton(
+                        CustomButton(
                           onPressed: () => showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
                             builder: (context) => LoginDrawer(),
                           ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                              25,
-                              255,
-                              255,
-                              255,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            spacing: 12,
-                            children: [
-                              Icon(
-                                Icons.person_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              Text(
-                                "Already have an account",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
+                          title: "Already have an account",
+                          iconData: Icons.person_rounded,
+                          variant: CustomButtonVariant.secondary,
                         ),
                       ],
                     ),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/settings/server_settings.dart';
+import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_card.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/main.dart';
@@ -298,9 +299,8 @@ class _ProfilePageState extends State<ProfilePage>
 
                 Padding(
                   padding: const EdgeInsets.all(20),
-                  child: _buildZestButton(
-                    lang.getText("save_changes"),
-                    () async {
+                  child: CustomButton(
+                    onPressed: () async {
                       setState(() {
                         currentLanguage = selectedLanguage;
                       });
@@ -322,6 +322,8 @@ class _ProfilePageState extends State<ProfilePage>
                         Navigator.pop(context);
                       }
                     },
+                    title: lang.getText("save_changes"),
+                    iconData: Icons.arrow_forward_rounded,
                   ),
                 ),
               ],
@@ -805,29 +807,6 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildZestButton(
-    String text,
-    VoidCallback onPressed, {
-    Color color = const Color.fromARGB(255, 85, 173, 78),
-  }) {
-    return FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: color,
-        minimumSize: const Size(double.infinity, 55),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -842,59 +821,55 @@ class _ProfilePageState extends State<ProfilePage>
           : SingleChildScrollView(
               child: SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 20),
+                  padding: EdgeInsets.only(bottom: 24, left: 24, right: 24),
                   child: Column(
                     spacing: 20,
                     children: [
-                      PreferredSize(
-                        preferredSize: const Size.fromHeight(60),
-                        child: Container(
-                          margin: const EdgeInsets.all(6).copyWith(bottom: 0),
-                          child: AppBar(
-                            title: Text(
-                              lang.getText("profile_page"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      Container(
+                        margin: const EdgeInsets.only(top: 12),
+                        child: AppBar(
+                          title: Text(
+                            lang.getText("profile_page"),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
                             ),
-                            automaticallyImplyLeading: false,
-                            backgroundColor: Colors.transparent,
-                            actions: [
-                              Padding(
-                                padding: const EdgeInsets.only(right: 10),
-                                child: IconButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const FriendsPage(),
-                                      ),
-                                    );
-                                  },
-                                  icon: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: const BoxDecoration(
-                                      color: Color.fromARGB(255, 85, 173, 78),
-                                      shape: BoxShape.circle,
+                          ),
+                          automaticallyImplyLeading: false,
+                          backgroundColor: Colors.transparent,
+                          actions: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 0),
+                              child: IconButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const FriendsPage(),
                                     ),
-                                    child: const Icon(
-                                      Icons.group,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
+                                  );
+                                },
+                                icon: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Color.fromARGB(255, 85, 173, 78),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.group,
+                                    color: Colors.white,
+                                    size: 24,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                       if (userData != null)
                         Column(
-                          spacing: 20,
+                          spacing: 24,
                           children: [
                             CustomCard(
                               title: lang.getText("personal_details"),
@@ -924,6 +899,7 @@ class _ProfilePageState extends State<ProfilePage>
 
                             CustomCard(
                               title: lang.getText("daily_goals"),
+                              iconData: Icons.event_rounded,
                               child: Column(
                                 children: [
                                   _buildInfoRow(
@@ -959,23 +935,19 @@ class _ProfilePageState extends State<ProfilePage>
                       Column(
                         spacing: 12,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: _buildZestButton(
-                              lang.getText("modify_details"),
-                              _showEditPopup,
-                            ),
+                          CustomButton(
+                            onPressed: _showEditPopup,
+                            title: lang.getText("modify_details"),
+                            iconData: Icons.edit_note_rounded,
                           ),
 
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: _buildZestButton(
-                              lang.getText("logout"),
-                              () async {
-                                await _logout();
-                              },
-                              color: const Color.fromARGB(255, 45, 45, 45),
-                            ),
+                          CustomButton(
+                            onPressed: () async {
+                              await _logout();
+                            },
+                            title: lang.getText("logout"),
+                            iconData: Icons.logout_rounded,
+                            variant: CustomButtonVariant.secondary,
                           ),
                         ],
                       ),

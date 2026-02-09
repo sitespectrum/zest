@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_drawer.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/pages.dart';
@@ -100,7 +101,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
             ],
           ),
 
-          FilledButton(
+          CustomButton(
             onPressed: () async {
               final username = _userNameController.text;
               final email = _emailController.text;
@@ -149,29 +150,8 @@ class _LoginDrawerState extends State<LoginDrawer> {
                 );
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color.fromARGB(50, 64, 255, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              side: BorderSide(color: const Color.fromARGB(100, 64, 255, 50)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 12,
-              children: [
-                Icon(Icons.login_rounded, color: Colors.white, size: 20),
-                Text(
-                  "Log in",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+            title: "Log in",
+            iconData: Icons.login_rounded,
           ),
         ],
       ),

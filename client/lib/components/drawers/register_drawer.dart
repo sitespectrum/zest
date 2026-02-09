@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/details_page.dart';
+import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_drawer.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/providers/language_provider.dart';
@@ -134,7 +135,7 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
             ],
           ),
 
-          FilledButton(
+          CustomButton(
             onPressed: () async {
               final response = await http.post(
                 Uri.parse("$apiUrl/api/auth/register"),
@@ -174,33 +175,8 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
                 }
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color.fromARGB(50, 64, 255, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              side: BorderSide(color: const Color.fromARGB(100, 64, 255, 50)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 12,
-              children: [
-                Icon(
-                  Icons.person_add_alt_1_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                Text(
-                  "Register",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+            title: "Register",
+            iconData: Icons.person_add_alt_1_rounded,
           ),
         ],
       ),
