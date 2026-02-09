@@ -204,7 +204,6 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
     final workoutProvider = Provider.of<WorkoutProvider>(context);
     final currentExercises = workoutProvider.userWorkouts;
     final lang = Provider.of<LanguageProvider>(context);
-    final langCode = Provider.of<LanguageProvider>(context).languageCode;
     final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
     final defWorkoutName =
         "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}";
