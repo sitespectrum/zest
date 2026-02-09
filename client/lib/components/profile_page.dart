@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/settings/server_settings.dart';
+import 'package:zest_client/components/ui/custom_card.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/main.dart';
 import 'package:zest_client/providers/language_provider.dart';
@@ -771,46 +772,6 @@ class _ProfilePageState extends State<ProfilePage>
     ),
   );
 
-  Widget _buildDisplayCard({
-    required String title,
-    required List<Widget> rows,
-  }) {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.fromLTRB(16, 35, 16, 16),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 45, 45, 45),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(children: rows),
-        ),
-        Positioned(
-          top: 10,
-          left: 35,
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
@@ -879,138 +840,147 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             )
           : SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).padding.bottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PreferredSize(
-                      preferredSize: const Size.fromHeight(60),
-                      child: Container(
-                        margin: const EdgeInsets.all(6),
-                        child: AppBar(
-                          title: Text(
-                            lang.getText("profile_page"),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 20),
+                  child: Column(
+                    spacing: 20,
+                    children: [
+                      PreferredSize(
+                        preferredSize: const Size.fromHeight(60),
+                        child: Container(
+                          margin: const EdgeInsets.all(6).copyWith(bottom: 0),
+                          child: AppBar(
+                            title: Text(
+                              lang.getText("profile_page"),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          automaticallyImplyLeading: false,
-                          backgroundColor: Colors.transparent,
-                          actions: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 10),
-                              child: IconButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const FriendsPage(),
+                            automaticallyImplyLeading: false,
+                            backgroundColor: Colors.transparent,
+                            actions: [
+                              Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: IconButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const FriendsPage(),
+                                      ),
+                                    );
+                                  },
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: const BoxDecoration(
+                                      color: Color.fromARGB(255, 85, 173, 78),
+                                      shape: BoxShape.circle,
                                     ),
-                                  );
-                                },
-                                icon: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: const BoxDecoration(
-                                    color: Color.fromARGB(255, 85, 173, 78),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.group,
-                                    color: Colors.white,
-                                    size: 24,
+                                    child: const Icon(
+                                      Icons.group,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                   ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (userData != null)
+                        Column(
+                          spacing: 20,
+                          children: [
+                            CustomCard(
+                              title: lang.getText("personal_details"),
+                              iconData: Icons.article_rounded,
+                              child: Column(
+                                children: [
+                                  _buildInfoRow(
+                                    Icons.person_rounded,
+                                    lang.getText("user"),
+                                    username ?? "",
+                                  ),
+                                  const Divider(color: Colors.white12),
+                                  _buildInfoRow(
+                                    Icons.height_rounded,
+                                    lang.getText("height"),
+                                    "${userData!['height']} cm",
+                                  ),
+                                  const Divider(color: Colors.white12),
+                                  _buildInfoRow(
+                                    Icons.fitness_center_rounded,
+                                    lang.getText("weight"),
+                                    "${userData!['weight']} kg",
+                                  ),
+                                ],
+                              ),
                             ),
+
+                            CustomCard(
+                              title: lang.getText("daily_goals"),
+                              child: Column(
+                                children: [
+                                  _buildInfoRow(
+                                    Icons.local_fire_department_rounded,
+                                    lang.getText("calories"),
+                                    "${userData!['calorieGoal'].toInt()} kcal",
+                                  ),
+                                  const Divider(color: Colors.white12),
+                                  _buildInfoRow(
+                                    Icons.egg_alt_rounded,
+                                    lang.getText("protein"),
+                                    "${userData!['proteinGoal'].toInt()} g",
+                                  ),
+                                  const Divider(color: Colors.white12),
+                                  _buildInfoRow(
+                                    Icons.bakery_dining_rounded,
+                                    lang.getText("carbs"),
+                                    "${userData!['carbsGoal'].toInt()} g",
+                                  ),
+                                  const Divider(color: Colors.white12),
+                                  _buildInfoRow(
+                                    Icons.opacity_rounded,
+                                    lang.getText("fat"),
+                                    "${userData!['fatGoal'].toInt()} g",
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ServerSettings(),
                           ],
                         ),
-                      ),
-                    ),
-                    if (userData != null) ...[
-                      _buildDisplayCard(
-                        title: lang.getText("personal_details"),
-                        rows: [
-                          _buildInfoRow(
-                            Icons.person_outline,
-                            lang.getText("user"),
-                            username ?? "",
+
+                      Column(
+                        spacing: 12,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: _buildZestButton(
+                              lang.getText("modify_details"),
+                              _showEditPopup,
+                            ),
                           ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.height,
-                            lang.getText("height"),
-                            "${userData!['height']} cm",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.fitness_center,
-                            lang.getText("weight"),
-                            "${userData!['weight']} kg",
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: _buildZestButton(
+                              lang.getText("logout"),
+                              () async {
+                                await _logout();
+                              },
+                              color: const Color.fromARGB(255, 45, 45, 45),
+                            ),
                           ),
                         ],
-                      ),
-                      _buildDisplayCard(
-                        title: lang.getText("daily_goals"),
-                        rows: [
-                          _buildInfoRow(
-                            Icons.local_fire_department,
-                            lang.getText("calories"),
-                            "${userData!['calorieGoal'].toInt()} kcal",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.egg_alt,
-                            lang.getText("protein"),
-                            "${userData!['proteinGoal'].toInt()} g",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.bakery_dining,
-                            lang.getText("carbs"),
-                            "${userData!['carbsGoal'].toInt()} g",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.opacity,
-                            lang.getText("fat"),
-                            "${userData!['fatGoal'].toInt()} g",
-                          ),
-                        ],
-                      ),
-                      ServerSettings(),
-
-                      const SizedBox(height: 10),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        child: _buildZestButton(
-                          lang.getText("modify_details"),
-                          _showEditPopup,
-                        ),
                       ),
                     ],
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      child: _buildZestButton(
-                        lang.getText("logout"),
-                        () async {
-                          await _logout();
-                        },
-                        color: const Color.fromARGB(255, 45, 45, 45),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
