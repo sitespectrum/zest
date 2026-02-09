@@ -11,6 +11,17 @@ import 'package:intl/intl.dart';
 import 'friends_page.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
+class NoGlowScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+}
+
 class ProfilePage extends StatefulWidget {
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
 
@@ -779,7 +790,7 @@ class _ProfilePageState extends State<ProfilePage>
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -843,21 +854,40 @@ class _ProfilePageState extends State<ProfilePage>
   Widget _buildZestButton(
     String text,
     VoidCallback onPressed, {
-    Color color = const Color.fromARGB(255, 85, 173, 78),
+    Color color = const Color.fromRGBO(85, 173, 78, 0.5),
   }) {
-    return FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: color,
-        minimumSize: const Size(double.infinity, 55),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color.fromRGBO(78, 156, 71, 255)),
+            ),
+            child: FilledButton(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                minimumSize: const Size(double.infinity, 55),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -875,149 +905,160 @@ class _ProfilePageState extends State<ProfilePage>
                 color: Color.fromARGB(255, 85, 173, 78),
               ),
             )
-          : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  PreferredSize(
-                    preferredSize: const Size.fromHeight(60),
-                    child: Container(
-                      margin: const EdgeInsets.all(6),
-                      child: AppBar(
-                        title: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: ClipRect(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(
-                                sigmaX: 5.0,
-                                sigmaY: 5.0,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color.fromRGBO(45, 45, 45, 0.5),
+          : ScrollConfiguration(
+              behavior: NoGlowScrollBehavior(),
+              child: SingleChildScrollView(
+                physics: BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PreferredSize(
+                      preferredSize: const Size.fromHeight(60),
+                      child: Container(
+                        margin: const EdgeInsets.all(6),
+                        child: AppBar(
+                          title: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: ClipRect(
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 10.0,
+                                  sigmaY: 10.0,
                                 ),
-                                child: Text(
-                                  lang.getText("profile_page"),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromRGBO(
+                                      45,
+                                      45,
+                                      45,
+                                      0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    lang.getText("profile_page"),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        automaticallyImplyLeading: false,
-                        backgroundColor: Colors.transparent,
-                        actions: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: IconButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const FriendsPage(),
+                          automaticallyImplyLeading: false,
+                          backgroundColor: Colors.transparent,
+                          actions: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 10),
+                              child: IconButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const FriendsPage(),
+                                    ),
+                                  );
+                                },
+                                icon: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Color.fromARGB(255, 85, 173, 78),
+                                    shape: BoxShape.circle,
                                   ),
-                                );
-                              },
-                              icon: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: const BoxDecoration(
-                                  color: Color.fromARGB(255, 85, 173, 78),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.group,
-                                  color: Colors.white,
-                                  size: 24,
+                                  child: const Icon(
+                                    Icons.group,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                 ),
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (userData != null) ...[
+                      _buildDisplayCard(
+                        title: lang.getText("personal_details"),
+                        rows: [
+                          _buildInfoRow(
+                            Icons.person_outline,
+                            lang.getText("user"),
+                            username ?? "",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.height,
+                            lang.getText("height"),
+                            "${userData!['height']} cm",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.fitness_center,
+                            lang.getText("weight"),
+                            "${userData!['weight']} kg",
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  if (userData != null) ...[
-                    _buildDisplayCard(
-                      title: lang.getText("personal_details"),
-                      rows: [
-                        _buildInfoRow(
-                          Icons.person_outline,
-                          lang.getText("user"),
-                          username ?? "",
+                      _buildDisplayCard(
+                        title: lang.getText("daily_goals"),
+                        rows: [
+                          _buildInfoRow(
+                            Icons.local_fire_department,
+                            lang.getText("calories"),
+                            "${userData!['calorieGoal'].toInt()} kcal",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.egg_alt,
+                            lang.getText("protein"),
+                            "${userData!['proteinGoal'].toInt()} g",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.bakery_dining,
+                            lang.getText("carbs"),
+                            "${userData!['carbsGoal'].toInt()} g",
+                          ),
+                          const Divider(color: Colors.white12),
+                          _buildInfoRow(
+                            Icons.opacity,
+                            lang.getText("fat"),
+                            "${userData!['fatGoal'].toInt()} g",
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
                         ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.height,
-                          lang.getText("height"),
-                          "${userData!['height']} cm",
+                        child: _buildZestButton(
+                          lang.getText("modify_details"),
+                          _showEditPopup,
                         ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.fitness_center,
-                          lang.getText("weight"),
-                          "${userData!['weight']} kg",
-                        ),
-                      ],
-                    ),
-                    _buildDisplayCard(
-                      title: lang.getText("daily_goals"),
-                      rows: [
-                        _buildInfoRow(
-                          Icons.local_fire_department,
-                          lang.getText("calories"),
-                          "${userData!['calorieGoal'].toInt()} kcal",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.egg_alt,
-                          lang.getText("protein"),
-                          "${userData!['proteinGoal'].toInt()} g",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.bakery_dining,
-                          lang.getText("carbs"),
-                          "${userData!['carbsGoal'].toInt()} g",
-                        ),
-                        const Divider(color: Colors.white12),
-                        _buildInfoRow(
-                          Icons.opacity,
-                          lang.getText("fat"),
-                          "${userData!['fatGoal'].toInt()} g",
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
                       ),
                       child: _buildZestButton(
-                        lang.getText("modify_details"),
-                        _showEditPopup,
+                        lang.getText("logout"),
+                        () async {
+                          await _logout();
+                        },
+                        color: const Color.fromARGB(255, 45, 45, 45),
                       ),
                     ),
+                    const SizedBox(height: 93),
                   ],
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    child: _buildZestButton(
-                      lang.getText("logout"),
-                      () async {
-                        await _logout();
-                      },
-                      color: const Color.fromARGB(255, 45, 45, 45),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
+                ),
               ),
             ),
     );

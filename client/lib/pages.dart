@@ -60,6 +60,7 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
   void dispose() {
     _pageController.removeListener(_onScroll);
     _pageController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -168,6 +169,7 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
             ),
 
           PageView(
+            physics: BouncingScrollPhysics(),
             controller: _pageController,
             onPageChanged: (index) {
               setState(() {
@@ -185,14 +187,19 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
       ),
 
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(20),
+        margin: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(
+                left: 12,
+                right: 12,
+                top: 6,
+                bottom: 6,
+              ),
               decoration: BoxDecoration(
                 color: const Color.fromRGBO(85, 173, 78, 0.5),
                 borderRadius: BorderRadius.circular(20),

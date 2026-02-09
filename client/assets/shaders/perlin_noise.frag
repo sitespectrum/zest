@@ -50,7 +50,7 @@ void main() {
     float line = sin(n * 35.0 + t); 
     line = smoothstep(0.2, 0.5, line) * smoothstep(0.8, 0.5, line);
 
-    float mask = smoothstep(0.65, 0.1, uv.y);
+    float mask = smoothstep(0.3, 0.1, uv.y);
 
     vec3 finalColor = uColor.rgb * line * mask;
     

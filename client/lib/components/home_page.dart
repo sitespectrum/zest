@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:client/Providers/language_provider.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/providers/workout_provider.dart';
@@ -181,7 +180,7 @@ class _HomePageState extends State<HomePage>
                       borderRadius: BorderRadius.circular(20),
                       child: ClipRect(
                         child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -205,103 +204,157 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
 
-              //Kalóriadeficit
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.3,
-                    margin: const EdgeInsets.all(20),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(45, 45, 45, 0.5),
-                          ),
-                          child: FutureBuilder<List<double>>(
-                            future: Future.wait([_todaycalories, _calorieGoal]),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              } else if (snapshot.hasError) {
-                                return Center(
-                                  child: Text("Hiba: ${snapshot.error}"),
-                                );
-                              }
+              Container(
+                margin: EdgeInsets.only(left: 8, right: 8, top: 40),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                child: FutureBuilder<List<dynamic>>(
+                  future: Future.wait([
+                    _todaycalories,
+                    _calorieGoal,
+                    _futureMeals,
+                  ]),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text("Hiba: ${snapshot.error}"));
+                    }
 
-                              final calories = snapshot.data?[0] ?? 0.0;
-                              final targetCalories =
-                                  snapshot.data?[1] ?? 3000.0;
-                              final percentage =
-                                  (calories / targetCalories) * 100;
+                    final double currentCalories =
+                        (snapshot.data?[0] as double?) ?? 0.0;
+                    final double targetCalories =
+                        (snapshot.data?[1] as double?) ?? 3000.0;
+                    final List<UserMealDto> meals =
+                        (snapshot.data?[2] as List<UserMealDto>?) ?? [];
 
-                              return Stack(
-                                alignment: Alignment.center,
+                    double totalProtein = 0;
+                    double totalCarbs = 0;
+                    double totalFat = 0;
+
+                    final now = DateTime.now();
+                    for (var meal in meals) {
+                      if (meal.eatenAt.year == now.year &&
+                          meal.eatenAt.month == now.month &&
+                          meal.eatenAt.day == now.day) {
+                        totalProtein += meal.totalProtein;
+                        totalCarbs += meal.totalCarbs;
+                        totalFat += meal.totalFat;
+                      }
+                    }
+
+                    double proteinKcal = totalProtein * 4;
+                    double carbsKcal = totalCarbs * 4;
+                    double fatKcal = totalFat * 9;
+
+                    double totalEatenKcal = proteinKcal + carbsKcal + fatKcal;
+                    double remainingKcal = (targetCalories - totalEatenKcal)
+                        .clamp(0.0, targetCalories);
+
+                    final double percentage = (targetCalories > 0)
+                        ? (currentCalories / targetCalories) * 100
+                        : 0.0;
+
+                    const Color colorProtein = Colors.red;
+                    const Color colorCarbs = Colors.green;
+                    const Color colorFat = Colors.blue;
+                    final Color colorEmpty = Colors.grey.shade800;
+
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 15),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            RichText(
+                              text: TextSpan(
+                                text: currentCalories.toStringAsFixed(0),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                ),
                                 children: [
-                                  PieChart(
-                                    PieChartData(
-                                      startDegreeOffset: 270,
-                                      sectionsSpace: 2,
-                                      centerSpaceRadius: 75,
-                                      sections: [
-                                        PieChartSectionData(
-                                          color: Color.fromRGBO(78, 156, 71, 1),
-                                          value: calories,
-                                          title:
-                                              "${percentage.toStringAsFixed(1)}%",
-                                          radius: 30,
-                                          titleStyle: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        PieChartSectionData(
-                                          color: Colors.grey.shade800,
-                                          value: (targetCalories - calories)
-                                              .clamp(0, targetCalories),
-                                          title: '',
-                                          radius: 25,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    "${calories.toStringAsFixed(0)} / ${targetCalories.toStringAsFixed(0)} kcal",
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                  TextSpan(
+                                    text:
+                                        " / ${targetCalories.toStringAsFixed(0)} kcal",
+                                    style: TextStyle(
+                                      color: Colors.white54,
+                                      fontSize: 25,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
-                              );
-                            },
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: SizedBox(
+                            height: 40,
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  flex: (proteinKcal * 100).toInt(),
+                                  fit: FlexFit.tight,
+                                  child: Container(color: colorProtein),
+                                ),
+                                Flexible(
+                                  flex: (carbsKcal * 100).toInt(),
+                                  fit: FlexFit.tight,
+                                  child: Container(color: colorCarbs),
+                                ),
+                                Flexible(
+                                  flex: (fatKcal * 100).toInt(),
+                                  fit: FlexFit.tight,
+                                  child: Container(color: colorFat),
+                                ),
+                                Flexible(
+                                  flex: (remainingKcal * 100).toInt(),
+                                  fit: FlexFit.tight,
+                                  child: Container(color: colorEmpty),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.005,
-                    left: MediaQuery.of(context).size.width * 0.09,
-                    child: Text(
-                      lang.getText("calorie_deficit"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            _buildLegendItem(
+                              colorProtein,
+                              lang.getText("protein"),
+                              "${totalProtein.toStringAsFixed(0)}g",
+                            ),
+                            SizedBox(width: 25),
+                            _buildLegendItem(
+                              colorCarbs,
+                              lang.getText("carbs"),
+                              "${totalCarbs.toStringAsFixed(0)}g",
+                            ),
+                            SizedBox(width: 25),
+                            _buildLegendItem(
+                              colorFat,
+                              lang.getText("fat"),
+                              "${totalFat.toStringAsFixed(0)}g",
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
 
               Stack(
@@ -340,8 +393,8 @@ class _HomePageState extends State<HomePage>
                                     borderRadius: BorderRadius.circular(20),
                                     child: BackdropFilter(
                                       filter: ImageFilter.blur(
-                                        sigmaX: 5.0,
-                                        sigmaY: 5.0,
+                                        sigmaX: 20.0,
+                                        sigmaY: 20.0,
                                       ),
                                       child: Container(
                                         width: double.infinity,
@@ -965,8 +1018,8 @@ class _HomePageState extends State<HomePage>
                                 borderRadius: BorderRadius.circular(20),
                                 child: BackdropFilter(
                                   filter: ImageFilter.blur(
-                                    sigmaX: 5.0,
-                                    sigmaY: 5.0,
+                                    sigmaX: 20.0,
+                                    sigmaY: 20.0,
                                   ),
                                   child: Container(
                                     width: double.infinity,
@@ -1334,5 +1387,39 @@ Widget _buildStatCell(
         ),
       ),
     ),
+  );
+}
+
+Widget _buildLegendItem(Color color, String label, String value) {
+  return Row(
+    children: [
+      Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ),
+      const SizedBox(width: 5),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+        ],
+      ),
+    ],
   );
 }
