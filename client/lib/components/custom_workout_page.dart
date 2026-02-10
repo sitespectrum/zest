@@ -15,6 +15,8 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/running_workout_page.dart';
+import 'package:zest_client/components/ui/custom_button.dart';
+import 'package:zest_client/components/ui/custom_drawer.dart';
 import 'package:zest_client/constants.dart';
 import 'package:zest_client/models/workout.dart';
 
@@ -422,7 +424,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     }
   }
 
-  Future<void> _generateQrCodeOnly() async {
+  Future<String?> _generateQrCodeOnly() async {
     String? id = await _uploadWorkoutToBackend();
 
     if (id != null) {
@@ -433,6 +435,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         ),
       );
     }
+
+    return id;
   }
 
   void startScanning(BuildContext context) async {
@@ -565,353 +569,397 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                           ),
                         ),
 
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(50, 64, 255, 50),
-                            border: Border.all(
+                        IconButton(
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(
+                              50,
+                              64,
+                              255,
+                              50,
+                            ),
+                            side: BorderSide(
                               color: const Color.fromARGB(100, 64, 255, 50),
                             ),
-                            borderRadius: BorderRadius.circular(24),
+                            padding: EdgeInsets.all(12),
                           ),
-                          child: IconButton(
-                            onPressed: () async {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                elevation: 0,
-                                builder: (context) => StatefulBuilder(
-                                  builder: (context, setPopupState) => Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: MediaQuery.of(
-                                        context,
-                                      ).viewInsets.bottom,
-                                    ),
-                                    child: Container(
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                          0.7,
-                                      clipBehavior: Clip.hardEdge,
-                                      decoration: const BoxDecoration(
-                                        color: Color.fromARGB(255, 35, 35, 35),
-                                        borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(25),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(20),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                  lang.getText("share"),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 24,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  icon: const Icon(
-                                                    Icons.close,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                          onPressed: () async {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              elevation: 0,
+                              builder: (context) => StatefulBuilder(
+                                builder: (context, setPopupState) => CustomDrawer(
+                                  padding: const EdgeInsets.all(
+                                    24,
+                                  ).copyWith(top: 16, left: 0, right: 0),
+                                  child: SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height *
+                                        0.5,
+                                    child: Column(
+                                      spacing: 12,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
                                           ),
-                                          Expanded(
-                                            child: DefaultTabController(
-                                              initialIndex: 0,
-                                              length: 2,
-                                              child: Column(
-                                                children: [
-                                                  const TabBar(
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                lang.getText("share"),
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              // IconButton(
+                                              //   onPressed: () =>
+                                              //       Navigator.pop(context),
+                                              //   icon: const Icon(
+                                              //     Icons.close,
+                                              //     color: Colors.white,
+                                              //   ),
+                                              // ),
+                                            ],
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: DefaultTabController(
+                                            initialIndex: 0,
+                                            length: 2,
+                                            child: Column(
+                                              children: [
+                                                Container(
+                                                  margin:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 24,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color.fromARGB(
+                                                      50,
+                                                      64,
+                                                      255,
+                                                      50,
+                                                    ),
+                                                    border: Border.all(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                            100,
+                                                            64,
+                                                            255,
+                                                            50,
+                                                          ),
+                                                      width: 1,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                  ),
+                                                  child: TabBar(
+                                                    labelStyle: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    splashFactory:
+                                                        NoSplash.splashFactory,
+                                                    indicator: BoxDecoration(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                            100,
+                                                            64,
+                                                            255,
+                                                            50,
+                                                          ),
+                                                      shape: BoxShape.rectangle,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                    ),
+                                                    indicatorSize:
+                                                        TabBarIndicatorSize.tab,
+                                                    indicatorPadding:
+                                                        EdgeInsetsGeometry.all(
+                                                          4,
+                                                        ),
+                                                    dividerHeight: 0,
                                                     labelColor: Colors.white,
                                                     unselectedLabelColor:
                                                         Colors.grey,
                                                     indicatorColor:
                                                         Colors.green,
-                                                    tabs: <Widget>[
+                                                    tabs: [
                                                       Tab(text: "NFC"),
                                                       Tab(text: "QR"),
                                                     ],
                                                   ),
-                                                  Expanded(
+                                                ),
+                                                Expanded(
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 24,
+                                                        ),
                                                     child: TabBarView(
-                                                      children: <Widget>[
-                                                        Center(
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 24,
+                                                              ),
                                                           child: Column(
+                                                            spacing: 12,
                                                             mainAxisAlignment:
                                                                 MainAxisAlignment
-                                                                    .center,
+                                                                    .spaceBetween,
                                                             children: [
-                                                              Container(
-                                                                decoration: BoxDecoration(
-                                                                  color:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        11,
-                                                                      ),
-                                                                ),
-                                                                child: IconButton(
-                                                                  onPressed: () {
-                                                                    startCloudNfcSharing(
-                                                                      context,
-                                                                    );
-                                                                  },
-                                                                  icon:
-                                                                      const Icon(
-                                                                        Icons
-                                                                            .nfc,
-                                                                      ),
-                                                                  color: Colors
-                                                                      .white70,
-                                                                  iconSize:
-                                                                      MediaQuery.of(
-                                                                        context,
-                                                                      ).size.width *
-                                                                      0.35,
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.03,
-                                                              ),
-                                                              Text(
-                                                                lang.getText(
-                                                                  "or",
-                                                                ),
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white24,
-                                                                  fontSize: 20,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.03,
-                                                              ),
-                                                              FilledButton(
-                                                                style: FilledButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  fixedSize: Size(
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.width *
-                                                                        0.55,
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.height *
-                                                                        0.07,
-                                                                  ),
-                                                                  shape: RoundedRectangleBorder(
+                                                              Expanded(
+                                                                child: Container(
+                                                                  width: double
+                                                                      .infinity,
+                                                                  decoration: BoxDecoration(
                                                                     borderRadius:
                                                                         BorderRadius.circular(
-                                                                          11,
+                                                                          16,
                                                                         ),
                                                                   ),
+                                                                  child: IconButton(
+                                                                    style: IconButton.styleFrom(
+                                                                      shape: RoundedRectangleBorder(
+                                                                        borderRadius:
+                                                                            BorderRadiusGeometry.circular(
+                                                                              16,
+                                                                            ),
+                                                                      ),
+                                                                      backgroundColor:
+                                                                          const Color.fromARGB(
+                                                                            65,
+                                                                            50,
+                                                                            142,
+                                                                            255,
+                                                                          ),
+                                                                      side: BorderSide(
+                                                                        color: const Color.fromARGB(
+                                                                          100,
+                                                                          50,
+                                                                          142,
+                                                                          255,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    onPressed: () {
+                                                                      startCloudNfcSharing(
+                                                                        context,
+                                                                      );
+                                                                    },
+                                                                    icon: const Icon(
+                                                                      Icons
+                                                                          .contactless_rounded,
+                                                                    ),
+                                                                    color: Colors
+                                                                        .white70,
+                                                                    iconSize:
+                                                                        MediaQuery.of(
+                                                                          context,
+                                                                        ).size.width *
+                                                                        0.35,
+                                                                  ),
                                                                 ),
+                                                              ),
+
+                                                              Flex(
+                                                                direction: Axis
+                                                                    .horizontal,
+                                                                spacing: 12,
+                                                                children: [
+                                                                  Expanded(
+                                                                    child: Container(
+                                                                      height: 2,
+                                                                      color: Colors
+                                                                          .white38,
+                                                                    ),
+                                                                  ),
+
+                                                                  Text(
+                                                                    lang.getText(
+                                                                      "or",
+                                                                    ),
+                                                                    style: TextStyle(
+                                                                      color: Colors
+                                                                          .white38,
+                                                                      fontSize:
+                                                                          16,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
+                                                                  ),
+
+                                                                  Expanded(
+                                                                    child: Container(
+                                                                      height: 2,
+                                                                      color: Colors
+                                                                          .white38,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+
+                                                              CustomButton(
                                                                 onPressed: () {
                                                                   startNfcReceivingCloud();
                                                                 },
-                                                                child: Text(
-                                                                  lang.getText(
-                                                                    "recive_workout",
-                                                                  ),
-                                                                  style: TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        20,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
+                                                                title: lang.getText(
+                                                                  "recive_workout",
                                                                 ),
+                                                                iconData: Icons
+                                                                    .call_received_rounded,
                                                               ),
                                                             ],
                                                           ),
                                                         ),
 
-                                                        Center(
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 24,
+                                                              ),
                                                           child: Column(
+                                                            spacing: 24,
                                                             mainAxisAlignment:
                                                                 MainAxisAlignment
-                                                                    .center,
+                                                                    .spaceBetween,
                                                             children: [
-                                                              Container(
-                                                                width:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.width *
-                                                                    0.6,
-                                                                padding:
-                                                                    const EdgeInsets.all(
-                                                                      20,
+                                                              Expanded(
+                                                                child: Container(
+                                                                  width: double
+                                                                      .infinity,
+                                                                  alignment:
+                                                                      AlignmentGeometry
+                                                                          .center,
+                                                                  padding:
+                                                                      const EdgeInsets.all(
+                                                                        12,
+                                                                      ),
+                                                                  decoration: BoxDecoration(
+                                                                    color: Colors
+                                                                        .white
+                                                                        .withAlpha(
+                                                                          25,
+                                                                        ),
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          16,
+                                                                        ),
+                                                                    border: Border.all(
+                                                                      color: Colors
+                                                                          .white
+                                                                          .withAlpha(
+                                                                            50,
+                                                                          ),
                                                                     ),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        20,
-                                                                      ),
-                                                                ),
-                                                                child:
-                                                                    shareId
-                                                                        .isNotEmpty
-                                                                    ? QrImageView(
-                                                                        data:
-                                                                            shareId,
-                                                                        version:
-                                                                            QrVersions.auto,
-                                                                        size:
-                                                                            200.0,
-                                                                      )
-                                                                    : Column(
-                                                                        mainAxisSize:
-                                                                            MainAxisSize.min,
-                                                                        children: [
-                                                                          Icon(
-                                                                            Icons.qr_code,
-                                                                            size:
-                                                                                60,
+                                                                  ),
+                                                                  child:
+                                                                      shareId
+                                                                          .isNotEmpty
+                                                                      ? QrImageView(
+                                                                          data:
+                                                                              shareId,
+                                                                          version:
+                                                                              QrVersions.auto,
+                                                                          // size:
+                                                                          //     200.0,
+                                                                          dataModuleStyle: QrDataModuleStyle(
                                                                             color:
-                                                                                Colors.black54,
+                                                                                Colors.white,
+                                                                            dataModuleShape:
+                                                                                QrDataModuleShape.square,
                                                                           ),
-                                                                          SizedBox(
-                                                                            height:
-                                                                                10,
+                                                                          eyeStyle: QrEyeStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                            eyeShape:
+                                                                                QrEyeShape.square,
                                                                           ),
-                                                                          Text(
-                                                                            "Még nincs QR kód",
-                                                                            style: TextStyle(
-                                                                              color: Colors.black87,
+                                                                        )
+                                                                      : Column(
+                                                                          spacing:
+                                                                              12,
+                                                                          mainAxisSize:
+                                                                              MainAxisSize.min,
+                                                                          children: [
+                                                                            Icon(
+                                                                              Icons.qr_code,
+                                                                              size: 96,
+                                                                              color: Colors.white38,
                                                                             ),
-                                                                            textAlign:
-                                                                                TextAlign.center,
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                              ),
-                                                              SizedBox(
-                                                                height: 20,
-                                                              ),
 
-                                                              FilledButton(
-                                                                style: FilledButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  padding:
-                                                                      EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            30,
-                                                                        vertical:
-                                                                            15,
-                                                                      ),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          11,
+                                                                            Text(
+                                                                              "Még nincs QR kód",
+                                                                              style: TextStyle(
+                                                                                color: Colors.white38,
+                                                                                fontSize: 20,
+                                                                              ),
+                                                                              textAlign: TextAlign.center,
+                                                                            ),
+                                                                          ],
                                                                         ),
-                                                                  ),
-                                                                ),
-                                                                onPressed: () {
-                                                                  _generateQrCodeOnly();
-                                                                },
-                                                                child: Text(
-                                                                  shareId.isEmpty
-                                                                      ? "QR Kód Generálása"
-                                                                      : "QR Kód Frissítése",
-                                                                  style: TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        18,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
                                                                 ),
                                                               ),
 
-                                                              SizedBox(
-                                                                height: 20,
-                                                              ),
+                                                              Flex(
+                                                                direction: Axis
+                                                                    .horizontal,
+                                                                spacing: 12,
 
-                                                              FilledButton(
-                                                                style: FilledButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  padding:
-                                                                      EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            30,
+                                                                children: [
+                                                                  CustomButton(
+                                                                    onPressed: () async {
+                                                                      final id =
+                                                                          await _generateQrCodeOnly() ??
+                                                                          "";
+                                                                      setPopupState(
+                                                                        () {
+                                                                          shareId =
+                                                                              id;
+                                                                        },
+                                                                      );
+                                                                    },
+                                                                    variant:
+                                                                        CustomButtonVariant
+                                                                            .secondary,
+                                                                    child: Padding(
+                                                                      padding: const EdgeInsets.symmetric(
                                                                         vertical:
-                                                                            15,
+                                                                            2.5,
                                                                       ),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          11,
-                                                                        ),
+                                                                      child: Icon(
+                                                                        Icons
+                                                                            .refresh_rounded,
+                                                                        color: Colors
+                                                                            .white,
+                                                                      ),
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                                onPressed: () {
-                                                                  startScanning(
-                                                                    context,
-                                                                  );
-                                                                },
-                                                                child: Text(
-                                                                  "Olvasás",
-                                                                  style: TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        18,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
+                                                                  Expanded(
+                                                                    child: CustomButton(
+                                                                      onPressed: () {
+                                                                        startScanning(
+                                                                          context,
+                                                                        );
+                                                                      },
+                                                                      title:
+                                                                          "Scan QR code",
+                                                                      iconData:
+                                                                          Icons
+                                                                              .qr_code_scanner_rounded,
+                                                                    ),
                                                                   ),
-                                                                ),
+                                                                ],
                                                               ),
                                                             ],
                                                           ),
@@ -919,22 +967,22 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                       ],
                                                     ),
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                            icon: const Icon(
-                              CupertinoIcons.share,
-                              size: 25,
-                              color: Colors.white,
-                            ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.share,
+                            size: 25,
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -1878,7 +1926,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     ),
                   ],
                 )
-              : FilledButton(
+              : CustomButton(
                   onPressed: () async {
                     final result = await Navigator.push<List<ExerciseDto>>(
                       context,
@@ -1893,33 +1941,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                       });
                     }
                   },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(50, 64, 255, 50),
-                    side: BorderSide(
-                      color: const Color.fromARGB(100, 64, 255, 50),
-                    ),
-
-                    fixedSize: Size(double.infinity, 64),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    spacing: 8,
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_rounded, size: 24),
-                      Text(
-                        lang.getText("add"),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+                  title: lang.getText("add"),
+                  iconData: Icons.add_rounded,
                 ),
         ),
       ),

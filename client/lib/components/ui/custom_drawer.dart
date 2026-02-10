@@ -6,7 +6,7 @@ import 'package:zest_client/components/utils/keyboard_aware_drawer.dart';
 part "custom_drawer.g.dart";
 
 @hwidget
-Widget customDrawer({required Widget child}) {
+Widget customDrawer({required Widget child, EdgeInsetsGeometry? padding}) {
   return Container(
     decoration: BoxDecoration(
       gradient: LinearGradient(
@@ -21,7 +21,7 @@ Widget customDrawer({required Widget child}) {
     ),
     child: KeyboardAwareDrawer(
       child: Padding(
-        padding: const EdgeInsets.all(24).copyWith(top: 16),
+        padding: padding ?? const EdgeInsets.all(24).copyWith(top: 16),
         child: Column(
           spacing: 24,
           children: [
