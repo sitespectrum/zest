@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'dart:ui';
+import 'package:client/components/topo_background.dart';
 import 'package:client/components/workout_page.dart';
 import 'package:client/components/home_page.dart';
 import 'package:client/components/health_page.dart';
@@ -144,29 +146,24 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (_shader != null)
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  double elapsed =
-                      DateTime.now().difference(_startTime).inMilliseconds /
-                      1000.0;
-
-                  _shader!.setFloat(0, elapsed);
-
-                  _shader!.setFloat(1, MediaQuery.of(context).size.width);
-                  _shader!.setFloat(2, MediaQuery.of(context).size.height);
-
-                  _shader!.setFloat(3, _currentColor.red / 255.0);
-                  _shader!.setFloat(4, _currentColor.green / 255.0);
-                  _shader!.setFloat(5, _currentColor.blue / 255.0);
-                  _shader!.setFloat(6, _currentColor.opacity);
-
-                  return CustomPaint(painter: ShaderPainter(_shader!));
-                },
+          Container(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.6,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.transparent, Color.fromARGB(50, 64, 255, 50)],
+                transform: GradientRotation(-0.5 * pi),
               ),
             ),
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white24, Colors.transparent],
+              ).createShader(bounds),
+              child: TopoBackground(),
+            ),
+          ),
 
           PageView(
             physics: BouncingScrollPhysics(),
@@ -186,315 +183,331 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
         ],
       ),
 
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(
-                left: 12,
-                right: 12,
-                top: 6,
-                bottom: 6,
-              ),
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(85, 173, 78, 0.5),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Color.fromRGBO(78, 156, 71, 255)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(0, Icons.home, lang.getText("home_page")),
-                  _buildNavItem(
-                    1,
-                    Icons.fitness_center,
-                    lang.getText("workout_page"),
-                  ),
-                  Container(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.15,
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(85, 173, 78, 0.5),
-                            border: Border.all(
-                              color: Color.fromRGBO(78, 156, 71, 255),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(
+                  left: 12,
+                  right: 12,
+                  top: 6,
+                  bottom: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(85, 173, 78, 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Color.fromRGBO(78, 156, 71, 255)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildNavItem(0, Icons.home, lang.getText("home_page")),
+                    _buildNavItem(
+                      1,
+                      Icons.fitness_center,
+                      lang.getText("workout_page"),
+                    ),
+                    Container(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.15,
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(85, 173, 78, 0.5),
+                              border: Border.all(
+                                color: Color.fromRGBO(78, 156, 71, 255),
+                              ),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return Dialog(
-                                    insetPadding: const EdgeInsets.all(20),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          40,
-                                          40,
-                                          40,
-                                        ),
+                            child: GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return Dialog(
+                                      insetPadding: const EdgeInsets.all(20),
+                                      shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.white24,
-                                        ),
                                       ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            lang.getText("create_new"),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromARGB(
+                                            255,
+                                            40,
+                                            40,
+                                            40,
                                           ),
-                                          const SizedBox(height: 12),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white24,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              lang.getText("create_new"),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
 
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  Navigator.pop(context);
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          CWorkoutPage(
-                                                            selectedDay:
-                                                                DateTime.now(),
-                                                          ),
-                                                    ),
-                                                  );
-                                                },
-                                                child: Container(
-                                                  width: double.infinity,
-                                                  padding: const EdgeInsets.all(
-                                                    12,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color.fromARGB(
-                                                      255,
-                                                      30,
-                                                      30,
-                                                      30,
-                                                    ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.pop(context);
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            CWorkoutPage(
+                                                              selectedDay:
+                                                                  DateTime.now(),
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    width: double.infinity,
+                                                    padding:
+                                                        const EdgeInsets.all(
                                                           12,
                                                         ),
-                                                    border: Border.all(
-                                                      color: Colors.white24,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Text(
-                                                        lang.getText(
-                                                          "new_workout",
-                                                        ),
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize:
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).size.height *
-                                                              0.042,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      Container(
-                                                        width: 45,
-                                                        height: 45,
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              const Color.fromARGB(
-                                                                255,
-                                                                40,
-                                                                40,
-                                                                40,
-                                                              ),
-                                                          shape:
-                                                              BoxShape.circle,
-                                                          border: Border.all(
-                                                            color:
-                                                                Colors.white24,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            30,
+                                                            30,
+                                                            30,
                                                           ),
-                                                        ),
-                                                        child: const Icon(
-                                                          Icons.arrow_forward,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-
-                                              const SizedBox(height: 12),
-
-                                              GestureDetector(
-                                                onTap: () {
-                                                  Navigator.pop(context);
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          CMealPage(
-                                                            selectedDay:
-                                                                DateTime.now(),
-                                                          ),
-                                                    ),
-                                                  );
-                                                },
-                                                child: Container(
-                                                  width: double.infinity,
-                                                  margin:
-                                                      const EdgeInsets.symmetric(
-                                                        vertical: 4,
-                                                      ),
-                                                  padding: const EdgeInsets.all(
-                                                    10,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color.fromARGB(
-                                                      255,
-                                                      30,
-                                                      30,
-                                                      30,
-                                                    ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                    border: Border.all(
-                                                      color: Colors.white24,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Text(
-                                                        lang.getText(
-                                                          "new_meal",
-                                                        ),
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize:
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).size.height *
-                                                              0.042,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      Container(
-                                                        width: 45,
-                                                        height: 45,
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              const Color.fromARGB(
-                                                                255,
-                                                                40,
-                                                                40,
-                                                                40,
-                                                              ),
-                                                          shape:
-                                                              BoxShape.circle,
-                                                          border: Border.all(
-                                                            color:
-                                                                Colors.white24,
-                                                          ),
-                                                        ),
-                                                        child: const Icon(
-                                                          Icons.arrow_forward,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-
-                                              const SizedBox(height: 20),
-
-                                              Center(
-                                                child: FilledButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  style: FilledButton.styleFrom(
-                                                    backgroundColor:
-                                                        const Color.fromARGB(
-                                                          255,
-                                                          30,
-                                                          30,
-                                                          30,
-                                                        ),
-                                                    side: const BorderSide(
-                                                      color: Colors.white24,
-                                                      width: 1,
-                                                    ),
-                                                    shape: RoundedRectangleBorder(
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                             12,
                                                           ),
+                                                      border: Border.all(
+                                                        color: Colors.white24,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  child: Text(
-                                                    lang.getText("close"),
-                                                    style: const TextStyle(
-                                                      color: Colors.red,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          lang.getText(
+                                                            "new_workout",
+                                                          ),
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                MediaQuery.of(
+                                                                  context,
+                                                                ).size.height *
+                                                                0.042,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        Container(
+                                                          width: 45,
+                                                          height: 45,
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                const Color.fromARGB(
+                                                                  255,
+                                                                  40,
+                                                                  40,
+                                                                  40,
+                                                                ),
+                                                            shape:
+                                                                BoxShape.circle,
+                                                            border: Border.all(
+                                                              color: Colors
+                                                                  .white24,
+                                                            ),
+                                                          ),
+                                                          child: const Icon(
+                                                            Icons.arrow_forward,
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+
+                                                const SizedBox(height: 12),
+
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.pop(context);
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            CMealPage(
+                                                              selectedDay:
+                                                                  DateTime.now(),
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    width: double.infinity,
+                                                    margin:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 4,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          10,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            30,
+                                                            30,
+                                                            30,
+                                                          ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.white24,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          lang.getText(
+                                                            "new_meal",
+                                                          ),
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                MediaQuery.of(
+                                                                  context,
+                                                                ).size.height *
+                                                                0.042,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        Container(
+                                                          width: 45,
+                                                          height: 45,
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                const Color.fromARGB(
+                                                                  255,
+                                                                  40,
+                                                                  40,
+                                                                  40,
+                                                                ),
+                                                            shape:
+                                                                BoxShape.circle,
+                                                            border: Border.all(
+                                                              color: Colors
+                                                                  .white24,
+                                                            ),
+                                                          ),
+                                                          child: const Icon(
+                                                            Icons.arrow_forward,
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+
+                                                const SizedBox(height: 20),
+
+                                                Center(
+                                                  child: FilledButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(context),
+                                                    style: FilledButton.styleFrom(
+                                                      backgroundColor:
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            30,
+                                                            30,
+                                                            30,
+                                                          ),
+                                                      side: const BorderSide(
+                                                        color: Colors.white24,
+                                                        width: 1,
+                                                      ),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      lang.getText("close"),
+                                                      style: const TextStyle(
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            child: const Icon(
-                              Icons.add,
-                              size: 38,
-                              color: Colors.white,
+                                    );
+                                  },
+                                );
+                              },
+                              child: const Icon(
+                                Icons.add,
+                                size: 38,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  _buildNavItem(2, Icons.favorite, lang.getText("health_page")),
-                  _buildNavItem(3, Icons.person, lang.getText("profile_page")),
-                ],
+                    _buildNavItem(
+                      2,
+                      Icons.favorite,
+                      lang.getText("health_page"),
+                    ),
+                    _buildNavItem(
+                      3,
+                      Icons.person,
+                      lang.getText("profile_page"),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
