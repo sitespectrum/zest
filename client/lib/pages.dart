@@ -32,9 +32,7 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
 
   // ignore: prefer_final_fields
   late PageController _pageController = PageController();
-  FragmentShader? _shader;
   late AnimationController _animationController;
-  final DateTime _startTime = DateTime.now();
   Color _currentColor = const Color(0xFF7af970);
 
   @override
@@ -42,20 +40,6 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
     super.initState();
     _loadUser();
     _pageController.addListener(_onScroll);
-    _loadShader();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 60),
-    )..repeat();
-  }
-
-  Future<void> _loadShader() async {
-    final program = await FragmentProgram.fromAsset(
-      'assets/shaders/perlin_noise.frag',
-    );
-    setState(() {
-      _shader = program.fragmentShader();
-    });
   }
 
   @override
@@ -151,7 +135,7 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
             height: MediaQuery.of(context).size.height * 0.6,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.transparent, Color.fromARGB(50, 64, 255, 50)],
+                colors: [Colors.transparent, _currentColor.withOpacity(0.4)],
                 transform: GradientRotation(-0.5 * pi),
               ),
             ),
@@ -161,7 +145,7 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
                 end: Alignment.bottomCenter,
                 colors: [Colors.white24, Colors.transparent],
               ).createShader(bounds),
-              child: TopoBackground(),
+              child: TopoBackground(foreground: _currentColor),
             ),
           ),
 
