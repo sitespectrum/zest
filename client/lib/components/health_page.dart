@@ -15,17 +15,7 @@ import 'add_meal_page.dart';
 import '../constants.dart';
 import 'custom_meal_page.dart';
 import 'profile_page.dart';
-
-class NoGlowScrollBehavior extends MaterialScrollBehavior {
-  @override
-  Widget buildOverscrollIndicator(
-    BuildContext context,
-    Widget child,
-    ScrollableDetails details,
-  ) {
-    return child;
-  }
-}
+import '../utils/scroll_behavior.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -919,7 +909,7 @@ class _HealthPageState extends State<HealthPage>
                       ),
 
                       SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.40,
+                        height: MediaQuery.of(context).size.height * 0.53,
                       ),
                     ],
                   ),

@@ -1,60 +1,56 @@
-#include <flutter/runtime_effect.glsl>
+precision highp float;
 
-uniform float uTime;
-uniform vec2 uSize;
-uniform vec4 uColor;
+uniform float u_time;
+uniform vec2 u_resolution;
+
+uniform vec3 u_foreground;
+
+uniform float u_scale;
+uniform float u_speed;
 
 out vec4 fragColor;
 
+// Simple hash-based noise
 float hash(vec2 p) {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    return fract(p.x * p.y);
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
 }
 
 float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-}
+  vec2 i = floor(p);
+  vec2 f = fract(p);
 
-mat2 rot(float a) {
-    float s = sin(a);
-    float c = cos(a);
-    return mat2(c, -s, s, c);
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+
+  vec2 u = f * f * (3 - 2.0 * f);
+
+  return mix(a, b, u.x) +
+         (c - a) * u.y * (1.0 - u.x) +
+         (d - b) * u.x * u.y;
 }
 
 void main() {
-    vec2 uv = FlutterFragCoord().xy / uSize;
-    
-    float distortedY = uv.y;
-    vec2 p = vec2(uv.x * 4.5, distortedY * 8.0);
-    
-    float t = uTime * 0.06;
-    float n = 0.0;
-    
-    vec2 p1 = p * rot(t * 0.2);
-    n += noise(p1 + vec2(t, t * 0.5)) * 0.5;
-    
-    vec2 p2 = p * 2.0 * rot(-t * 0.3);
-    n += noise(p2 - vec2(t * 0.7, t * 1.2)) * 0.25;
-    
-    vec2 p3 = p * 4.0 * rot(t * 0.5);
-    n += noise(p3 + vec2(t * 1.5, -t)) * 0.125;
 
-    float line = sin(n * 35.0 + t); 
-    line = smoothstep(0.2, 0.5, line) * smoothstep(0.8, 0.5, line);
+  vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution.xy)
+         / min(u_resolution.x, u_resolution.y);
+  
+  p *= u_scale;
 
-    float mask = smoothstep(0.3, 0.1, uv.y);
+  float h =
+      noise(p + u_time * 0.08 * u_speed) +
+      0.5 * noise(p * 2.0 - u_time * 0.12 * u_speed);
 
-    vec3 finalColor = uColor.rgb * line * mask;
-    
-    finalColor *= 1.5; 
+  // Topographic isolines
+  float lines = abs(fract(h * 8.0) - 0.5);
+  float contour = smoothstep(0.12, 0.04, lines);
 
-    fragColor = vec4(finalColor, 1.0);
-}   
+  // Dark green background + light lines
+  vec3 bg = vec3(0);
+  // vec3 fg = vec3(1);
+
+  vec3 color = mix(bg, u_foreground, contour);
+
+  fragColor = vec4(color, 0);
+}

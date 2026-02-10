@@ -11,18 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import '../constants.dart';
-
-class NoGlowScrollBehavior extends MaterialScrollBehavior {
-  @override
-  Widget buildOverscrollIndicator(
-    BuildContext context,
-    Widget child,
-    ScrollableDetails details,
-  ) {
-    return child;
-  }
-}
+import '../utils/scroll_behavior.dart';
 
 class WorkoutPage extends StatefulWidget {
   const WorkoutPage({super.key});
@@ -153,7 +142,10 @@ class _WorkoutPageState extends State<WorkoutPage>
                         borderRadius: BorderRadius.circular(20),
                         child: ClipRect(
                           child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                            filter: ImageFilter.blur(
+                              sigmaX: 10.0,
+                              sigmaY: 10.0,
+                            ),
                             child: Container(
                               height: MediaQuery.of(context).size.height * 0.07,
                               padding: const EdgeInsets.all(12),

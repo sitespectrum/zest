@@ -3,26 +3,15 @@ import 'package:client/Providers/language_provider.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/providers/workout_provider.dart';
 import 'package:flutter/material.dart';
+import '../utils/scroll_behavior.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
-
-class NoGlowScrollBehavior extends MaterialScrollBehavior {
-  @override
-  Widget buildOverscrollIndicator(
-    BuildContext context,
-    Widget child,
-    ScrollableDetails details,
-  ) {
-    return child;
-  }
-}
 
 Future<double> fetchCalorieGoal() async {
   final prefs = await SharedPreferences.getInstance();
@@ -335,20 +324,11 @@ class _HomePageState extends State<HomePage>
                             _buildLegendItem(
                               colorProtein,
                               lang.getText("protein"),
-                              "${totalProtein.toStringAsFixed(0)}g",
                             ),
                             SizedBox(width: 25),
-                            _buildLegendItem(
-                              colorCarbs,
-                              lang.getText("carbs"),
-                              "${totalCarbs.toStringAsFixed(0)}g",
-                            ),
+                            _buildLegendItem(colorCarbs, lang.getText("carbs")),
                             SizedBox(width: 25),
-                            _buildLegendItem(
-                              colorFat,
-                              lang.getText("fat"),
-                              "${totalFat.toStringAsFixed(0)}g",
-                            ),
+                            _buildLegendItem(colorFat, lang.getText("fat")),
                           ],
                         ),
                       ],
@@ -1390,7 +1370,7 @@ Widget _buildStatCell(
   );
 }
 
-Widget _buildLegendItem(Color color, String label, String value) {
+Widget _buildLegendItem(Color color, String label) {
   return Row(
     children: [
       Container(
@@ -1413,10 +1393,6 @@ Widget _buildLegendItem(Color color, String label, String value) {
               fontWeight: FontWeight.bold,
               fontSize: 15,
             ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         ],
       ),
