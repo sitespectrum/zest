@@ -10,8 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zest_client/providers/language_provider.dart';
+import 'package:zest_client/servers.dart';
 
-import '../constants.dart';
 import '../models/meal.dart';
 import 'add_meal_page.dart';
 import 'custom_meal_page.dart';
@@ -770,8 +770,8 @@ class _HealthPageState extends State<HealthPage>
                                         animationDuration: 1000,
                                         lineHeight: 20.0,
                                         percent: min(
-                                          (nutrients!['carbs']! /
-                                                  macros!['carbsGoal']!)
+                                          ((nutrients?['carbs'] ?? 0) /
+                                                  (macros?['carbsGoal'] ?? 1))
                                               .toDouble(),
                                           1.0,
                                         ),

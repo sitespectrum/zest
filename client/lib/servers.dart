@@ -5,6 +5,11 @@ typedef ServerInstance = ({int id, String name, String baseUrl});
 const List<ServerInstance> defaultInstances = [
   (id: 0, name: "Production", baseUrl: "https://zest-dev.sitespectrum.dev"),
   (id: 1, name: "Local", baseUrl: "http://localhost:5031"),
+  (
+    id: 2,
+    name: "Coolify dave (dev)",
+    baseUrl: "http://wcgsw0cc40okos4skskkk40s.152.53.60.152.sslip.io",
+  ),
 ];
 
 void saveInstances(List<ServerInstance> customInstances) async {

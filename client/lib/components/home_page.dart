@@ -8,92 +8,18 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zest_client/components/add_meal_page.dart';
 import 'package:zest_client/components/topo_background.dart';
 import 'package:zest_client/components/ui/custom_card.dart';
-import 'package:zest_client/constants.dart';
 import 'package:zest_client/models/meal.dart';
 import 'package:zest_client/models/workout.dart';
 import 'package:zest_client/providers/language_provider.dart';
 import 'package:zest_client/providers/workout_provider.dart';
-
-import 'add_meal_page.dart';
+import 'package:zest_client/queries/queries.dart';
+import 'package:zest_client/queries/wrappers.dart';
+import 'package:zest_client/servers.dart';
 
 part "home_page.g.dart";
-
-Future<double> fetchCalorieGoal() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  if (token == null) throw Exception("Nincs token");
-
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/auth/getUser"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    final goal = data['calorieGoal'] ?? data['CalorieGoal'];
-    return (goal as num).toDouble();
-  } else {
-    throw Exception(response.body);
-  }
-}
-
-Future<List<UserMealDto>> fetchUserMeals() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null) throw Exception("Nincs token");
-
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getUserMeals"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.map((e) => UserMealDto.fromJson(e)).toList();
-  } else {
-    throw Exception(response.body);
-  }
-}
-
-Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  if (token == null) throw Exception("Nincs token");
-
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
-  } else {
-    throw Exception(response.body);
-  }
-}
-
-Future<double> fetchTodayCalories() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  if (token == null) throw Exception("Nincs token");
-
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getTodayCalories"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return (data as num).toDouble();
-  } else {
-    throw Exception(response.body);
-  }
-}
 
 String getTranslatedName(String mealName, LanguageProvider lang) {
   switch (mealName) {
@@ -112,17 +38,16 @@ String getTranslatedName(String mealName, LanguageProvider lang) {
 
 @hwidget
 Widget homePage(BuildContext context) {
-  final futureMeals = useState(fetchUserMeals());
-  final futureWorkouts = useState(fetchUserWorkouts());
-  final todayCalories = useState(fetchTodayCalories());
-  final calorieGoal = useState(fetchCalorieGoal());
-
   final lang = Provider.of<LanguageProvider>(context);
+
+  final meals = useQuery(userMealsQuery);
+  final workouts = useQuery(userWorkoutsQuery);
 
   return SingleChildScrollView(
     padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
     child: Stack(
       children: [
+        // bg effect
         Container(
           width: double.infinity,
           height: MediaQuery.of(context).size.height * 0.5,
@@ -141,276 +66,243 @@ Widget homePage(BuildContext context) {
             child: TopoBackground(),
           ),
         ),
-        FutureBuilder<List<UserMealDto>>(
-          future: futureMeals.value,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  "Hiba történt: ${snapshot.error}",
-                  style: TextStyle(color: Colors.red),
-                ),
-              );
-            }
 
-            final lastMeal =
-                ((snapshot.data ?? [])
-                      ..sort((a, b) => b.eatenAt.compareTo(a.eatenAt)))
-                    .firstOrNull;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                PreferredSize(
-                  preferredSize: const Size.fromHeight(60),
-                  child: Container(
-                    margin: const EdgeInsets.all(6),
-                    child: AppBar(
-                      title: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.only(
-                              left: 16,
-                              right: 20,
-                              top: 8,
-                              bottom: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Color.fromARGB(75, 0, 0, 0),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Row(
-                              spacing: 8,
-                              children: [
-                                Icon(
-                                  Icons.home_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                Text(
-                                  lang.getText("home_page"),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      automaticallyImplyLeading: false,
-                      backgroundColor: Colors.transparent,
-                    ),
-                  ),
-                ),
-
-                FutureBuilder(
-                  future: Future.wait([todayCalories.value, calorieGoal.value]),
-                  builder: (context, asyncSnapshot) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      margin: const EdgeInsets.fromLTRB(0, 64, 0, 8),
-                      child: Column(
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  // text: (asyncSnapshot.data?[0] ?? 0)
-                                  //     .toStringAsFixed(0),
-                                  text: "1643",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 44,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  // text: (asyncSnapshot.data?[0] ?? 0)
-                                  //     .toStringAsFixed(0),
-                                  text: " / 2154 kcal",
-                                  style: TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-
-                Container(
-                  height: 32,
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(25, 255, 255, 255),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Flex(
-                    direction: Axis.horizontal,
+        // main content
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // app bar + spacing
+            PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Container(
+                margin: const EdgeInsets.all(6),
+                child: AppBar(
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        flex: 1643,
-                        child: Flex(
-                          direction: Axis.horizontal,
+                      Container(
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 20,
+                          top: 8,
+                          bottom: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color.fromARGB(75, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Row(
+                          spacing: 8,
                           children: [
-                            Expanded(
-                              flex: 13,
-                              child: Container(color: const Color(0xFF1f84d8)),
+                            Icon(
+                              Icons.home_rounded,
+                              color: Colors.white,
+                              size: 24,
                             ),
-                            Expanded(
-                              flex: 15,
-                              child: Container(color: const Color(0xFFe3d135)),
-                            ),
-                            Expanded(
-                              flex: 7,
-                              child: Container(color: const Color(0xFFd93c30)),
+                            Text(
+                              lang.getText("home_page"),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      Expanded(flex: 2154 - 1643, child: Container()),
                     ],
                   ),
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
                 ),
+              ),
+            ),
 
-                const SizedBox(height: 12),
-
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 24),
-                  child: Flex(
-                    spacing: 18,
-                    direction: Axis.horizontal,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Row(
-                        spacing: 6,
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1f84d8),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+            // calorie count text
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              margin: const EdgeInsets.fromLTRB(0, 64, 0, 8),
+              child: Column(
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          // text: (asyncSnapshot.data?[0] ?? 0)
+                          //     .toStringAsFixed(0),
+                          text: "1643",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 44,
+                            fontWeight: FontWeight.bold,
                           ),
-                          Text(
-                            "Fehérje",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        ),
+                        TextSpan(
+                          // text: (asyncSnapshot.data?[0] ?? 0)
+                          //     .toStringAsFixed(0),
+                          text: " / 2154 kcal",
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
-
-                      Row(
-                        spacing: 6,
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFe3d135),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          Text(
-                            "Szénhidrát",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Row(
-                        spacing: 6,
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFd93c30),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          Text(
-                            "Zsír",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
+              ),
+            ),
 
-                const SizedBox(height: 24),
+            // bar
+            Container(
+              height: 32,
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Color.fromARGB(25, 255, 255, 255),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Flex(
+                direction: Axis.horizontal,
+                children: [
+                  Expanded(
+                    flex: 1643,
+                    child: Flex(
+                      direction: Axis.horizontal,
+                      children: [
+                        Expanded(
+                          flex: 13,
+                          child: Container(color: const Color(0xFF1f84d8)),
+                        ),
+                        Expanded(
+                          flex: 15,
+                          child: Container(color: const Color(0xFFe3d135)),
+                        ),
+                        Expanded(
+                          flex: 7,
+                          child: Container(color: const Color(0xFFd93c30)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(flex: 2154 - 1643, child: Container()),
+                ],
+              ),
+            ),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    spacing: 24,
+            const SizedBox(height: 12),
+
+            // legend
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 24),
+              child: Flex(
+                spacing: 18,
+                direction: Axis.horizontal,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Row(
+                    spacing: 6,
                     children: [
-                      //Legutóbbi edzés
-                      CustomCard(
-                        title: lang.getText("recent_workout"),
-                        iconData: Icons.fitness_center_rounded,
-                        child: FutureBuilder<List<UserWorkoutDto>>(
-                          future: futureWorkouts.value,
-                          builder: (context, snapshot) =>
-                              snapshot.connectionState ==
-                                  ConnectionState.waiting
-                              ? Container(
-                                  margin: const EdgeInsets.only(
-                                    bottom: 20,
-                                    top: 20,
-                                  ),
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      color: Color.fromARGB(50, 64, 255, 50),
-                                    ),
-                                  ),
-                                )
-                              : LastWorkoutCardContent(
-                                  lastWorkout:
-                                      ((snapshot.data ?? [])..sort(
-                                            (a, b) => b.date.compareTo(a.date),
-                                          ))
-                                          .firstOrNull,
-                                ),
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1f84d8),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-
-                      //Legutóbbi étkezés
-                      CustomCard(
-                        title: lang.getText("recent_meal"),
-                        iconData: Icons.fastfood_rounded,
-                        child: LastMealCardContent(lastMeal: lastMeal),
+                      Text(
+                        "Fehérje",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
-                ),
 
-                //Legutóbbi edzés
-              ],
-            );
-          },
+                  Row(
+                    spacing: 6,
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFe3d135),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      Text(
+                        "Szénhidrát",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Row(
+                    spacing: 6,
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFd93c30),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      Text(
+                        "Zsír",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // cards
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                spacing: 24,
+                children: [
+                  // last workout
+                  CustomCard(
+                    title: lang.getText("recent_workout"),
+                    iconData: Icons.fitness_center_rounded,
+                    child: LastWorkoutCardContent(
+                      lastWorkout:
+                          ((workouts.data ?? [])
+                                ..sort((a, b) => b.date.compareTo(a.date)))
+                              .firstOrNull,
+                    ),
+                  ),
+
+                  // last meal
+                  CustomCard(
+                    title: lang.getText("recent_meal"),
+                    iconData: Icons.fastfood_rounded,
+                    child: LastMealCardContent(
+                      lastMeal:
+                          ((meals.data ?? [])..sort(
+                                (a, b) => b.eatenAt.compareTo(a.eatenAt),
+                              ))
+                              .firstOrNull,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     ),

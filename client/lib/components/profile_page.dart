@@ -8,9 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/settings/server_settings.dart';
 import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_card.dart';
-import 'package:zest_client/constants.dart';
 import 'package:zest_client/main.dart';
 import 'package:zest_client/providers/language_provider.dart';
+import 'package:zest_client/servers.dart';
 
 import 'friends_page.dart';
 

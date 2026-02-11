@@ -10,9 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zest_client/components/custom_workout_page.dart';
-import 'package:zest_client/constants.dart';
 import 'package:zest_client/models/workout.dart';
 import 'package:zest_client/providers/language_provider.dart';
+import 'package:zest_client/servers.dart';
 
 part "workout_page.g.dart";
 

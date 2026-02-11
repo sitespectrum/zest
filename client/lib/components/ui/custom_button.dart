@@ -14,18 +14,28 @@ Widget customButton({
   IconData? iconData,
   Widget? icon,
   Widget? child,
+  bool disabled = false,
 }) {
   return FilledButton(
-    onPressed: onPressed,
+    onPressed: disabled ? null : onPressed,
     style: switch (variant) {
       CustomButtonVariant.primary => FilledButton.styleFrom(
         backgroundColor: const Color.fromARGB(50, 64, 255, 50),
+        disabledBackgroundColor: const Color.fromARGB(25, 64, 255, 50),
+        foregroundColor: Colors.white,
+        disabledForegroundColor: Colors.white38,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        side: BorderSide(color: const Color.fromARGB(100, 64, 255, 50)),
+        side: BorderSide(
+          color: disabled
+              ? const Color.fromARGB(50, 64, 255, 50)
+              : const Color.fromARGB(100, 64, 255, 50),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       ),
       CustomButtonVariant.secondary => FilledButton.styleFrom(
         backgroundColor: const Color.fromARGB(25, 255, 255, 255),
+        foregroundColor: Colors.white,
+        disabledForegroundColor: Colors.white38,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       ),
@@ -37,16 +47,11 @@ Widget customButton({
           spacing: 12,
           children: [
             if (icon != null) icon,
-            if (icon == null && iconData != null)
-              Icon(iconData, color: Colors.white, size: 20),
+            if (icon == null && iconData != null) Icon(iconData, size: 20),
 
             Text(
               title,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
         ),

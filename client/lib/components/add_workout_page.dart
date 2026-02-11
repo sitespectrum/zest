@@ -8,8 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/models/workout.dart';
+import 'package:zest_client/servers.dart';
 
-import '../constants.dart';
 import '../providers/language_provider.dart';
 
 class AddWorkoutPage extends StatefulWidget {

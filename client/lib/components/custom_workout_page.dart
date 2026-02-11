@@ -17,8 +17,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/running_workout_page.dart';
 import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_drawer.dart';
-import 'package:zest_client/constants.dart';
 import 'package:zest_client/models/workout.dart';
+import 'package:zest_client/servers.dart';
 
 import '../providers/language_provider.dart';
 import '../providers/workout_provider.dart';

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import "package:flutter/services.dart";
 import "package:flutter_hooks/flutter_hooks.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
+import "package:flutter_query/flutter_query.dart";
 import "package:functional_widget_annotation/functional_widget_annotation.dart";
 import "package:provider/provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
+import "package:terminate_restart/terminate_restart.dart";
 import 'package:zest_client/components/drawers/login_drawer.dart';
 import 'package:zest_client/components/drawers/register_drawer.dart';
 import "package:zest_client/components/topo_background.dart";
@@ -19,17 +21,21 @@ part "main.g.dart";
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  TerminateRestart.instance.initialize();
   final prefs = await SharedPreferences.getInstance();
   apiUrl = (await getSelectedInstance()).baseUrl;
   final savedUsername = prefs.getString('username');
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => LanguageProvider()),
-        ChangeNotifierProvider(create: (_) => WorkoutProvider()),
-      ],
-      child: MyApp(initialUsername: savedUsername),
+    QueryClientProvider(
+      create: (context) => QueryClient(),
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => LanguageProvider()),
+          ChangeNotifierProvider(create: (_) => WorkoutProvider()),
+        ],
+        child: MyApp(initialUsername: savedUsername),
+      ),
     ),
   );
 }
