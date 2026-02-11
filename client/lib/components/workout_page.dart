@@ -235,7 +235,6 @@ class _WorkoutPageState extends State<WorkoutPage>
 
                       DateTime tempSelectedDay = _selectedDay ?? DateTime.now();
 
-                      // A Dialog logika változatlan maradt, csak átmásolva:
                       showDialog(
                         context: context,
                         builder: (context) {
