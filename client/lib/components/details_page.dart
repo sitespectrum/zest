@@ -5,8 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zest_client/providers/language_provider.dart';
-
-import '../constants.dart';
+import 'package:zest_client/servers.dart';
 
 class DetailsPage extends StatefulWidget {
   const DetailsPage({super.key, required this.userId});

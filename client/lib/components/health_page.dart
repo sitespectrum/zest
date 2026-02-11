@@ -719,7 +719,7 @@ class _HealthPageState extends State<HealthPage>
                                         lineHeight: 20.0,
                                         percent: min(
                                           (nutrients!['protein']! /
-                                                  (macros?['proteinGoal'] ?? 0))
+                                                  (macros?['proteinGoal'] ?? 1))
                                               .toDouble(),
                                           1.0,
                                         ),
@@ -776,7 +776,7 @@ class _HealthPageState extends State<HealthPage>
                                           1.0,
                                         ),
                                         center: Text(
-                                          "${nutrients!['carbs']!.toStringAsFixed(0)} g / ${macros!['carbsGoal']!.toStringAsFixed(0)} g ${macros!['carbsGoal']! <= nutrients!['carbs']! && nutrients!['carbs']! <= macros!['carbsGoal']! + 30
+                                          "${nutrients?['carbs']?.toStringAsFixed(0)} g / ${macros?['carbsGoal']?.toStringAsFixed(0)} g ${(macros?['carbsGoal'] ?? 0) <= (nutrients?['carbs'] ?? 0) && (nutrients?['carbs'] ?? 0) <= (macros?['carbsGoal'] ?? 0) + 30
                                               ? "✅"
                                               : nutrients!['carbs']! > macros!['carbsGoal']! + 30
                                               ? "😡"
@@ -822,13 +822,13 @@ class _HealthPageState extends State<HealthPage>
                                         animationDuration: 1000,
                                         lineHeight: 20.0,
                                         percent: min(
-                                          (nutrients!['fat']! /
-                                                  macros!['fatGoal']!)
+                                          ((nutrients?['fat'] ?? 0) /
+                                                  (macros?['fatGoal'] ?? 1))
                                               .toDouble(),
                                           1.0,
                                         ),
                                         center: Text(
-                                          "${nutrients!['fat']!.toStringAsFixed(0)} g / ${macros!['fatGoal']!.toStringAsFixed(0)} g ${macros!['fatGoal']! <= nutrients!['fat']! && nutrients!['fat']! <= macros!['fatGoal']! + 20
+                                          "${nutrients?['fat']?.toStringAsFixed(0)} g / ${macros?['fatGoal']?.toStringAsFixed(0)} g ${(macros?['fatGoal'] ?? 0) <= (nutrients?['fat'] ?? 0) && (nutrients?['fat'] ?? 0) <= (macros?['fatGoal'] ?? 0) + 20
                                               ? "✅"
                                               : nutrients!['fat']! > macros!['fatGoal']! + 20
                                               ? "😡"

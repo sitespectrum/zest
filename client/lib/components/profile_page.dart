@@ -928,9 +928,10 @@ class _ProfilePageState extends State<ProfilePage>
                                 ],
                               ),
                             ),
-                            ServerSettings(),
                           ],
                         ),
+
+                      ServerSettings(),
 
                       Column(
                         spacing: 12,

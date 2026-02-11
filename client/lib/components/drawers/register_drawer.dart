@@ -7,8 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/details_page.dart';
 import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_drawer.dart';
-import 'package:zest_client/constants.dart';
 import 'package:zest_client/providers/language_provider.dart';
+import 'package:zest_client/servers.dart';
 
 class RegisterDrawer extends StatefulWidget {
   const RegisterDrawer({super.key});

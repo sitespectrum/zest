@@ -4,7 +4,7 @@ typedef ServerInstance = ({int id, String name, String baseUrl});
 
 const List<ServerInstance> defaultInstances = [
   (id: 0, name: "Production", baseUrl: "https://zest-dev.sitespectrum.dev"),
-  (id: 1, name: "Local", baseUrl: "http://localhost:5031"),
+  (id: 1, name: "Local (AVD)", baseUrl: "http://10.0.2.2:5031"),
   (
     id: 2,
     name: "Coolify dave (dev)",

@@ -49,10 +49,11 @@ Widget customButton({
             if (icon != null) icon,
             if (icon == null && iconData != null) Icon(iconData, size: 20),
 
-            Text(
-              title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            if (title != "")
+              Text(
+                title,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
           ],
         ),
   );
