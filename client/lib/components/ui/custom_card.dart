@@ -64,6 +64,7 @@ Widget customCard({
               bottomRight: Radius.circular(16),
             ),
           ),
+          child: child,
         ),
       ],
     ),
