@@ -5,16 +5,13 @@ import "package:client/components/drawers/login_drawer.dart";
 import "package:client/components/drawers/register_drawer.dart";
 import "package:client/components/topo_background.dart";
 import "package:client/components/ui/custom_button.dart";
-import "package:client/components/ui/custom_drawer.dart";
 import 'package:flutter/material.dart';
 import "package:flutter/services.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 import 'package:flutter_hooks/flutter_hooks.dart';
 import "package:provider/provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
-import "login_page.dart";
 import "pages.dart";
-import "register_page.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:client/providers/workout_provider.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
@@ -98,12 +95,12 @@ class MainPage extends HookWidget {
         children: [
           Container(
             width: double.infinity,
-            height: MediaQuery.of(context).size.height * 0.6,
+            height: MediaQuery.of(context).size.height,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  const Color(0xFF7af970).withOpacity(0.4),
+                  const Color(0xFF7af970).withOpacity(0.1),
                 ],
                 transform: GradientRotation(-0.5 * pi),
               ),
@@ -114,7 +111,7 @@ class MainPage extends HookWidget {
                 end: Alignment.bottomCenter,
                 colors: [Colors.white24, Colors.transparent],
               ).createShader(bounds),
-              child: TopoBackground(foreground: const Color(0xFF7af970)),
+              child: TopoBackground(foreground: const Color(0xFF7af970), scale: 2),
             ),
           ),
           SafeArea(
@@ -151,13 +148,13 @@ class MainPage extends HookWidget {
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
+                          isScrollControlled: true,
                           builder: (builder) => RegisterDrawer(),
                         );
                       },
-                      child: Text(
-                        lang.getText('register_button_main'),
-                        style: TextStyle(fontSize: 17, color: Colors.white),
-                      ),
+                      title: lang.getText('register_button_main'),
+                      iconData: Icons.app_registration,
+                      variant: CustomButtonVariant.primary,
                     ),
 
                     const SizedBox(height: 12),
@@ -166,13 +163,13 @@ class MainPage extends HookWidget {
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
+                          isScrollControlled: true,
                           builder: (builder) => LoginDrawer(),
                         );
                       },
-                      child: Text(
-                        lang.getText('login_button_main'),
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
+                      title: lang.getText('login_button_main'),
+                      iconData: Icons.login,
+                      variant: CustomButtonVariant.secondary,
                     ),
                   ],
                 ),

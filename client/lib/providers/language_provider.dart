@@ -42,8 +42,8 @@ class LanguageProvider with ChangeNotifier {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'hu': {
-      'register_button_main': 'Még nincs fiókod? Regisztráció',
-      'login_button_main': 'Már van fiókod? Bejelentkezés',
+      'register_button_main': 'Regisztráció',
+      'login_button_main': 'Már van fiókod',
       'username_hint': 'Felhasználónév',
       'email_hint': 'Email',
       'password_hint': 'Jelszó',
@@ -221,8 +221,8 @@ class LanguageProvider with ChangeNotifier {
       'recent_exercises': 'Korábbi gyakorlatok',
     },
     'en': {
-      'register_button_main': "Don't have an account yet? Register",
-      'login_button_main': 'Do you have an account? Login',
+      'register_button_main': "Register",
+      'login_button_main': 'Already have an account',
       'username_hint': 'Username',
       'email_hint': 'Email',
       'password_hint': 'Password',
