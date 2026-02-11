@@ -355,121 +355,113 @@ class _HomePageState extends State<HomePage>
                             .first
                       : null;
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    child: CustomCard(
-                      title: lang.getText("recent_workout"),
-                      iconData: Icons.fitness_center,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: lastWorkout == null
-                            ? Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Text(
-                                  lang.getText("no_added_workout_yet"),
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 16,
-                                  ),
-                                  textAlign: TextAlign.center,
+                  return CustomCard(
+                    title: lang.getText("recent_workout"),
+                    iconData: Icons.fitness_center,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: lastWorkout == null
+                          ? Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                lang.getText("no_added_workout_yet"),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
                                 ),
-                              )
-                            : GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () async {
-                                  int currentWorkoutNum = 1;
-                                  try {
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
-                                    final token = prefs.getString('jwt_token');
-                                    final response = await http.get(
-                                      Uri.parse(
-                                        "$apiUrl/api/workouts/getUserWorkouts",
-                                      ),
-                                      headers: {
-                                        "Authorization": "Bearer $token",
-                                      },
-                                    );
-                                    if (response.statusCode == 200) {
-                                      List data = jsonDecode(response.body);
-                                      currentWorkoutNum = data.length + 1;
-                                    }
-                                  } catch (e) {
-                                    debugPrint(
-                                      "Nem sikerült lekérni az edzések számát: $e",
-                                    );
-                                  }
-
-                                  showDialog(
-                                    context: context,
-                                    builder: (builderContext) {
-                                      return _buildWorkoutDialog(
-                                        context,
-                                        lastWorkout,
-                                        currentWorkoutNum,
-                                        lang,
-                                        workoutProvider,
-                                      );
-                                    },
-                                  );
-                                },
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          lastWorkout.workoutName.isEmpty
-                                              ? lastWorkout.customName
-                                              : getTranslatedName(
-                                                  lastWorkout.workoutName,
-                                                  lang,
-                                                ),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "${lang.getText("duration")}: ${lastWorkout.durationMinutes} ${lang.getText("min")}",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        Text(
-                                          "${lang.getText("burnt_calories")}: ${lastWorkout.totalBurntCalories} kcal",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      padding: const EdgeInsets.all(8),
-                                      child: const Icon(
-                                        Icons.arrow_forward,
-                                        color: Colors.black,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                textAlign: TextAlign.center,
                               ),
-                      ),
+                            )
+                          : GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () async {
+                                int currentWorkoutNum = 1;
+                                try {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final token = prefs.getString('jwt_token');
+                                  final response = await http.get(
+                                    Uri.parse(
+                                      "$apiUrl/api/workouts/getUserWorkouts",
+                                    ),
+                                    headers: {"Authorization": "Bearer $token"},
+                                  );
+                                  if (response.statusCode == 200) {
+                                    List data = jsonDecode(response.body);
+                                    currentWorkoutNum = data.length + 1;
+                                  }
+                                } catch (e) {
+                                  debugPrint(
+                                    "Nem sikerült lekérni az edzések számát: $e",
+                                  );
+                                }
+
+                                showDialog(
+                                  context: context,
+                                  builder: (builderContext) {
+                                    return _buildWorkoutDialog(
+                                      context,
+                                      lastWorkout,
+                                      currentWorkoutNum,
+                                      lang,
+                                      workoutProvider,
+                                    );
+                                  },
+                                );
+                              },
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        lastWorkout.workoutName.isEmpty
+                                            ? lastWorkout.customName
+                                            : getTranslatedName(
+                                                lastWorkout.workoutName,
+                                                lang,
+                                              ),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "${lang.getText("duration")}: ${lastWorkout.durationMinutes} ${lang.getText("min")}",
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${lang.getText("burnt_calories")}: ${lastWorkout.totalBurntCalories} kcal",
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    padding: const EdgeInsets.all(8),
+                                    child: const Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.black,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ),
                   );
                 },
@@ -499,95 +491,90 @@ class _HomePageState extends State<HomePage>
                     formattedDate = DateFormat.Hm().format(lastMeal.eatenAt);
                   }
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    child: CustomCard(
-                      title: lang.getText("recent_meal"),
-                      iconData: Icons.restaurant,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: lastMeal == null
-                            ? Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Text(
-                                  lang.getText("no_added_meal_yet"),
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 16,
-                                  ),
-                                  textAlign: TextAlign.center,
+                  return CustomCard(
+                    title: lang.getText("recent_meal"),
+                    iconData: Icons.restaurant,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: lastMeal == null
+                          ? Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                lang.getText("no_added_meal_yet"),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
                                 ),
-                              )
-                            : GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return _buildMealDialog(
-                                        context,
-                                        lastMeal,
-                                        lang,
-                                      );
-                                    },
-                                  );
-                                },
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "${getTranslatedName(lastMeal.mealName, lang)} ($formattedDate)",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        Text(
-                                          "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      padding: const EdgeInsets.all(8),
-                                      child: const Icon(
-                                        Icons.arrow_forward,
-                                        color: Colors.black,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                textAlign: TextAlign.center,
                               ),
-                      ),
+                            )
+                          : GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return _buildMealDialog(
+                                      context,
+                                      lastMeal,
+                                      lang,
+                                    );
+                                  },
+                                );
+                              },
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "${getTranslatedName(lastMeal.mealName, lang)} ($formattedDate)",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    padding: const EdgeInsets.all(8),
+                                    child: const Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.black,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ),
                   );
                 },
               ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.13),
             ],
           ),
         ),
