@@ -6,13 +6,13 @@ import 'package:client/components/custom_meal_page.dart';
 import 'package:client/components/custom_workout_page.dart';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
-import 'package:client/providers/language_provider.dart';
+import 'package:client/Providers/language_provider.dart';
 
 part "add_drawer.g.dart";
 
 @hwidget
 Widget addDrawer(BuildContext context) {
-  final lang = Provider.of<LanguageProvider>(context);
+  final lang = Provider.of<LanguageProvider>(context, listen: false);
 
   return CustomDrawer(
     child: Column(
@@ -40,10 +40,10 @@ Widget addDrawer(BuildContext context) {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(50, 64, 255, 50),
+                      color: const Color.fromARGB(50, 50, 146, 255),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color.fromARGB(150, 64, 255, 50),
+                        color: const Color.fromARGB(150, 50, 146, 255),
                       ),
                     ),
                     child: Column(
@@ -87,10 +87,10 @@ Widget addDrawer(BuildContext context) {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(50, 50, 146, 255),
+                      color: const Color.fromARGB(50, 255, 156, 122),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color.fromARGB(150, 50, 146, 255),
+                        color: const Color.fromARGB(255, 255, 115, 69),
                       ),
                     ),
                     child: Column(
