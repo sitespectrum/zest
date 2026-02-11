@@ -1,4 +1,11 @@
+import "dart:math";
+
 import "package:client/Providers/language_provider.dart";
+import "package:client/components/drawers/login_drawer.dart";
+import "package:client/components/drawers/register_drawer.dart";
+import "package:client/components/topo_background.dart";
+import "package:client/components/ui/custom_button.dart";
+import "package:client/components/ui/custom_drawer.dart";
 import 'package:flutter/material.dart';
 import "package:flutter/services.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
@@ -64,8 +71,8 @@ class Myapp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: ThemeData(
+        colorScheme: ColorScheme.dark(),
         useMaterial3: true,
-        scaffoldBackgroundColor: Color.fromARGB(255, 58, 58, 58),
         fontFamily: 'Geist',
         appBarTheme: const AppBarTheme(
           backgroundColor: Color.fromARGB(255, 58, 58, 58),
@@ -86,76 +93,93 @@ class MainPage extends HookWidget {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: screenHeight * 0.1),
-
-                Center(
-                  child: Image.asset(
-                    'assets/icon/Zest_logo.png',
-                    width: 200,
-                    height: 200,
-                  ),
-                ),
-
-                SizedBox(height: screenHeight * 0.1),
-
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RegisterPage()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: Text(
-                    lang.getText('register_button_main'),
-                    style: TextStyle(fontSize: 17, color: Colors.white),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                FilledButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                    );
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: Text(
-                    lang.getText('login_button_main'),
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-              ],
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.6,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  const Color(0xFF7af970).withOpacity(0.4),
+                ],
+                transform: GradientRotation(-0.5 * pi),
+              ),
+            ),
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white24, Colors.transparent],
+              ).createShader(bounds),
+              child: TopoBackground(foreground: const Color(0xFF7af970)),
             ),
           ),
-        ),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(height: screenHeight * 0.1),
+
+                    Center(
+                      child: Image.asset(
+                        'assets/icon/Zest_logo.png',
+                        width: 200,
+                        height: 200,
+                      ),
+                    ),
+
+                    SizedBox(height: screenHeight * 0.005),
+
+                    Text(
+                      "Zest",
+                      style: TextStyle(
+                        fontSize: 50,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    SizedBox(height: screenHeight * 0.3),
+
+                    CustomButton(
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (builder) => RegisterDrawer(),
+                        );
+                      },
+                      child: Text(
+                        lang.getText('register_button_main'),
+                        style: TextStyle(fontSize: 17, color: Colors.white),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    CustomButton(
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (builder) => LoginDrawer(),
+                        );
+                      },
+                      child: Text(
+                        lang.getText('login_button_main'),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
