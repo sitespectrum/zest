@@ -200,7 +200,7 @@ class _WorkoutPageState extends State<WorkoutPage>
                     ),
                     calendarStyle: CalendarStyle(
                       todayDecoration: BoxDecoration(
-                        color: const Color(0xFF34CAFF),
+                        color: const Color.fromARGB(150, 50, 146, 255),
                         shape: BoxShape.circle,
                       ),
                       selectedDecoration: BoxDecoration(
