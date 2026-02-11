@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:client/Providers/language_provider.dart';
+import 'package:client/components/ui/custom_button.dart';
+import 'package:client/components/ui/custom_card.dart';
+import 'package:client/components/ui/custom_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
@@ -97,257 +100,214 @@ class _ProfilePageState extends State<ProfilePage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       elevation: 0,
       builder: (context) => StatefulBuilder(
-        builder: (context, setPopupState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.9,
-                  decoration: const BoxDecoration(
-                    color: Color.fromRGBO(45, 45, 45, 0.5),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
+        builder: (context, setPopupState) => CustomDrawer(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.9,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      lang.getText("modify_details"),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ],
+                ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Center(
+                          child: _buildProfessionalLanguageInput(
+                            context,
+                            lang.getText("language"),
+                            selectedLanguage,
+                            (val) =>
+                                setPopupState(() => selectedLanguage = val!),
+                          ),
+                        ),
+                        Center(
+                          child: _buildSectionHeader(
+                            lang.getText("personal_details"),
+                          ),
+                        ),
+                        _buildProfessionalInput(
+                          context,
+                          lang.getText("username_hint"),
+                          nameController,
+                          isNumber: false,
+                        ),
+                        _buildProfessionalInput(
+                          context,
+                          lang.getText("password_hint"),
+                          passwordController,
+                          isNumber: false,
+                          isPassword: true,
+                        ),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Text(
-                              lang.getText("modify_details"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            _buildProfessionalInput(
+                              context,
+                              lang.getText("height"),
+                              heightController,
+                              widthFactor: 0.4,
+                              suffix: " cm",
                             ),
-                            IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                              ),
+                            _buildProfessionalInput(
+                              context,
+                              lang.getText("weight"),
+                              weightController,
+                              widthFactor: 0.4,
+                              suffix: " kg",
                             ),
                           ],
                         ),
-                      ),
 
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Column(
-                            children: [
-                              Center(
-                                child: _buildProfessionalLanguageInput(
-                                  context,
-                                  lang.getText("language"),
-                                  selectedLanguage,
-                                  (val) => setPopupState(
-                                    () => selectedLanguage = val!,
-                                  ),
-                                ),
-                              ),
-                              Center(
-                                child: _buildSectionHeader(
-                                  lang.getText("personal_details"),
-                                ),
-                              ),
-                              _buildProfessionalInput(
-                                context,
-                                lang.getText("username_hint"),
-                                nameController,
-                                isNumber: false,
-                              ),
-                              _buildProfessionalInput(
-                                context,
-                                lang.getText("password_hint"),
-                                passwordController,
-                                isNumber: false,
-                                isPassword: true,
-                              ),
-
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildProfessionalInput(
-                                    context,
-                                    lang.getText("height"),
-                                    heightController,
-                                    widthFactor: 0.43,
-                                    suffix: " cm",
-                                  ),
-                                  _buildProfessionalInput(
-                                    context,
-                                    lang.getText("weight"),
-                                    weightController,
-                                    widthFactor: 0.43,
-                                    suffix: " kg",
-                                  ),
-                                ],
-                              ),
-
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildProfessionalDateInput(
-                                    context,
-                                    lang.getText("born_in"),
-                                    birthController,
-                                    () async {
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        initialDate: selectedBirth,
-                                        firstDate: DateTime(1950),
-                                        lastDate: DateTime.now(),
-                                        builder: (context, child) => Theme(
-                                          data: ThemeData.dark().copyWith(
-                                            colorScheme: const ColorScheme.dark(
-                                              primary: Colors.green,
-                                              onPrimary: Colors.white,
-                                              surface: Color.fromARGB(
-                                                255,
-                                                72,
-                                                72,
-                                                72,
-                                              ),
-                                              onSurface: Colors.white,
-                                            ),
-                                            dialogBackgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  72,
-                                                  72,
-                                                  72,
-                                                ),
-                                          ),
-                                          child: child!,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildProfessionalDateInput(
+                              context,
+                              lang.getText("born_in"),
+                              birthController,
+                              () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: selectedBirth,
+                                  firstDate: DateTime(1950),
+                                  lastDate: DateTime.now(),
+                                  builder: (context, child) => Theme(
+                                    data: ThemeData.dark().copyWith(
+                                      colorScheme: const ColorScheme.dark(
+                                        primary: Colors.green,
+                                        onPrimary: Colors.white,
+                                        surface: Color.fromARGB(
+                                          255,
+                                          72,
+                                          72,
+                                          72,
                                         ),
-                                      );
-                                      if (picked != null) {
-                                        setPopupState(() {
-                                          selectedBirth = picked;
-                                          birthController.text = DateFormat(
-                                            'yyyy-MM-dd',
-                                          ).format(picked);
-                                        });
-                                      }
-                                    },
-                                  ),
-                                  _buildProfessionalGenderInput(
-                                    context,
-                                    lang.getText("gender"),
-                                    selectedGender,
-                                    (val) => setPopupState(
-                                      () => selectedGender = val!,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              Center(
-                                child: _buildSectionHeader(
-                                  lang.getText("goals"),
-                                ),
-                              ),
-                              Column(
-                                children: List.generate(
-                                  3,
-                                  (index) => _buildSelectionCard(
-                                    goals[index],
-                                    gSelectedIndex == index,
-                                    () => setPopupState(
-                                      () => gSelectedIndex = index,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              Center(
-                                child: _buildSectionHeader(
-                                  lang.getText("activity"),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: Column(
-                                  children: List.generate(4, (index) {
-                                    final titles = [
-                                      lang.getText("slightly_active"),
-                                      lang.getText("moderately_active"),
-                                      lang.getText("very_active"),
-                                      lang.getText("extremely_active"),
-                                    ];
-
-                                    final descriptions = [
-                                      lang.getText("slightly_active_desc"),
-                                      lang.getText("moderately_active_desc"),
-                                      lang.getText("very_active_desc"),
-                                      lang.getText("extremely_active_desc"),
-                                    ];
-
-                                    return _buildSelectionCard(
-                                      titles[index],
-                                      aSelectedIndex == index,
-                                      () => setPopupState(
-                                        () => aSelectedIndex = index,
+                                        onSurface: Colors.white,
                                       ),
-                                      subText: descriptions[index],
-                                    );
-                                  }),
-                                ),
-                              ),
-                            ],
+                                      dialogBackgroundColor:
+                                          const Color.fromARGB(255, 72, 72, 72),
+                                    ),
+                                    child: child!,
+                                  ),
+                                );
+                                if (picked != null) {
+                                  setPopupState(() {
+                                    selectedBirth = picked;
+                                    birthController.text = DateFormat(
+                                      'yyyy-MM-dd',
+                                    ).format(picked);
+                                  });
+                                }
+                              },
+                            ),
+                            _buildProfessionalGenderInput(
+                              context,
+                              lang.getText("gender"),
+                              selectedGender,
+                              (val) =>
+                                  setPopupState(() => selectedGender = val!),
+                            ),
+                          ],
+                        ),
+
+                        Center(
+                          child: _buildSectionHeader(lang.getText("goals")),
+                        ),
+                        Column(
+                          children: List.generate(
+                            3,
+                            (index) => _buildSelectionCard(
+                              goals[index],
+                              gSelectedIndex == index,
+                              () => setPopupState(() => gSelectedIndex = index),
+                            ),
                           ),
                         ),
-                      ),
 
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: _buildZestButton(
-                          lang.getText("save_changes"),
-                          () async {
-                            setState(() {
-                              currentLanguage = selectedLanguage;
-                            });
-
-                            bool shouldClose = await _saveAndCalculate(
-                              nameController.text,
-                              passwordController.text,
-                              heightController.text,
-                              weightController.text,
-                              selectedBirth,
-                              selectedGender,
-                              goals[gSelectedIndex],
-                              activities[aSelectedIndex],
-                              gSelectedIndex,
-                              aSelectedIndex,
-                            );
-
-                            if (shouldClose && context.mounted) {
-                              Navigator.pop(context);
-                            }
-                          },
+                        Center(
+                          child: _buildSectionHeader(lang.getText("activity")),
                         ),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Column(
+                            children: List.generate(4, (index) {
+                              final titles = [
+                                lang.getText("slightly_active"),
+                                lang.getText("moderately_active"),
+                                lang.getText("very_active"),
+                                lang.getText("extremely_active"),
+                              ];
+
+                              final descriptions = [
+                                lang.getText("slightly_active_desc"),
+                                lang.getText("moderately_active_desc"),
+                                lang.getText("very_active_desc"),
+                                lang.getText("extremely_active_desc"),
+                              ];
+
+                              return _buildSelectionCard(
+                                titles[index],
+                                aSelectedIndex == index,
+                                () =>
+                                    setPopupState(() => aSelectedIndex = index),
+                                subText: descriptions[index],
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: _buildZestButton(
+                    lang.getText("save_changes"),
+                    () async {
+                      setState(() {
+                        currentLanguage = selectedLanguage;
+                      });
+
+                      bool shouldClose = await _saveAndCalculate(
+                        nameController.text,
+                        passwordController.text,
+                        heightController.text,
+                        weightController.text,
+                        selectedBirth,
+                        selectedGender,
+                        goals[gSelectedIndex],
+                        activities[aSelectedIndex],
+                        gSelectedIndex,
+                        aSelectedIndex,
+                      );
+
+                      if (shouldClose && context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -683,7 +643,7 @@ class _ProfilePageState extends State<ProfilePage>
     return Stack(
       children: [
         Container(
-          width: MediaQuery.of(context).size.width * 0.43,
+          width: MediaQuery.of(context).size.width * 0.4,
           height: MediaQuery.of(context).size.height * 0.092,
           margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
           padding: const EdgeInsets.fromLTRB(1, 9, 8, 5),
@@ -749,7 +709,7 @@ class _ProfilePageState extends State<ProfilePage>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: double.infinity,
+        width: MediaQuery.of(context).size.width * 0.4,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
@@ -797,46 +757,6 @@ class _ProfilePageState extends State<ProfilePage>
       ),
     ),
   );
-
-  Widget _buildDisplayCard({
-    required String title,
-    required List<Widget> rows,
-  }) {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(20),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(45, 45, 45, 0.5),
-                ),
-                child: Column(children: rows),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).size.height * 0.005,
-          left: MediaQuery.of(context).size.width * 0.09,
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
@@ -1002,64 +922,73 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                     ),
                     if (userData != null) ...[
-                      _buildDisplayCard(
+                      CustomCard(
                         title: lang.getText("personal_details"),
-                        rows: [
-                          _buildInfoRow(
-                            Icons.person_outline,
-                            lang.getText("user"),
-                            username ?? "",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.height,
-                            lang.getText("height"),
-                            "${userData!['height']} cm",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.fitness_center,
-                            lang.getText("weight"),
-                            "${userData!['weight']} kg",
-                          ),
-                        ],
+                        iconData: Icons.person,
+                        child: Column(
+                          children: [
+                            _buildInfoRow(
+                              Icons.person_outline,
+                              lang.getText("user"),
+                              username ?? "",
+                            ),
+                            const Divider(color: Colors.white12),
+                            _buildInfoRow(
+                              Icons.height,
+                              lang.getText("height"),
+                              "${userData!['height']} cm",
+                            ),
+                            const Divider(color: Colors.white12),
+                            _buildInfoRow(
+                              Icons.fitness_center,
+                              lang.getText("weight"),
+                              "${userData!['weight']} kg",
+                            ),
+                          ],
+                        ),
                       ),
-                      _buildDisplayCard(
+                      CustomCard(
                         title: lang.getText("daily_goals"),
-                        rows: [
-                          _buildInfoRow(
-                            Icons.local_fire_department,
-                            lang.getText("calories"),
-                            "${userData!['calorieGoal'].toInt()} kcal",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.egg_alt,
-                            lang.getText("protein"),
-                            "${userData!['proteinGoal'].toInt()} g",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.bakery_dining,
-                            lang.getText("carbs"),
-                            "${userData!['carbsGoal'].toInt()} g",
-                          ),
-                          const Divider(color: Colors.white12),
-                          _buildInfoRow(
-                            Icons.opacity,
-                            lang.getText("fat"),
-                            "${userData!['fatGoal'].toInt()} g",
-                          ),
-                        ],
+                        iconData: Icons.calendar_month,
+                        child: Column(
+                          children: [
+                            _buildInfoRow(
+                              Icons.local_fire_department,
+                              lang.getText("calories"),
+                              "${userData!['calorieGoal'].toInt()} kcal",
+                            ),
+                            const Divider(color: Colors.white12),
+                            _buildInfoRow(
+                              Icons.egg_alt,
+                              lang.getText("protein"),
+                              "${userData!['proteinGoal'].toInt()} g",
+                            ),
+                            const Divider(color: Colors.white12),
+                            _buildInfoRow(
+                              Icons.bakery_dining,
+                              lang.getText("carbs"),
+                              "${userData!['carbsGoal'].toInt()} g",
+                            ),
+                            const Divider(color: Colors.white12),
+                            _buildInfoRow(
+                              Icons.opacity,
+                              lang.getText("fat"),
+                              "${userData!['fatGoal'].toInt()} g",
+                            ),
+                          ],
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 10,
                         ),
-                        child: _buildZestButton(
-                          lang.getText("modify_details"),
-                          _showEditPopup,
+                        child: CustomButton(
+                          onPressed: () {
+                            _showEditPopup();
+                          },
+                          title: lang.getText("modify_details"),
+                          variant: CustomButtonVariant.primary,
                         ),
                       ),
                     ],
@@ -1068,15 +997,15 @@ class _ProfilePageState extends State<ProfilePage>
                         horizontal: 20,
                         vertical: 10,
                       ),
-                      child: _buildZestButton(
-                        lang.getText("logout"),
-                        () async {
+                      child: CustomButton(
+                        onPressed: () async {
                           await _logout();
                         },
-                        color: const Color.fromARGB(255, 45, 45, 45),
+                        title: lang.getText("logout"),
+                        variant: CustomButtonVariant.secondary,
                       ),
                     ),
-                    const SizedBox(height: 93),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.14),
                   ],
                 ),
               ),

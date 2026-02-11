@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -8,7 +7,7 @@ import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/constants.dart';
 import 'package:client/pages.dart';
-import 'package:client/providers/language_provider.dart';
+import 'package:client/Providers/language_provider.dart';
 
 class LoginDrawer extends StatefulWidget {
   const LoginDrawer({super.key});
@@ -108,7 +107,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
               final password = _passwordController.text;
 
               final response = await http.post(
-                Uri.parse('$apiUrl/api/auth/login'), // s || l
+                Uri.parse('$apiUrl/api/auth/login'),
                 headers: <String, String>{
                   'Content-Type': 'application/json; charset=UTF-8',
                 },

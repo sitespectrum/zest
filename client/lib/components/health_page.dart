@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 import 'package:client/Providers/language_provider.dart';
+import 'package:client/components/ui/custom_card.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -267,652 +268,550 @@ class _HealthPageState extends State<HealthPage>
                   ),
 
                   //Naptár
-                  Stack(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.all(20),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: 20.0,
-                              sigmaY: 20.0,
-                            ),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color.fromRGBO(45, 45, 45, 0.5),
-                              ),
-                              child: TableCalendar(
-                                locale: calendarLocale,
-                                startingDayOfWeek: startDay,
-                                firstDay: DateTime.utc(2020, 1, 1),
-                                lastDay: DateTime.utc(2030, 12, 31),
-                                focusedDay: _focusedDay,
-                                selectedDayPredicate: (day) =>
-                                    isSameDay(_selectedDay, day),
-                                headerStyle: HeaderStyle(
-                                  formatButtonVisible: false,
-                                  titleCentered: true,
-                                  titleTextStyle: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                  leftChevronIcon: const Icon(
-                                    Icons.chevron_left,
-                                    color: Colors.white,
-                                  ),
-                                  rightChevronIcon: const Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                calendarStyle: CalendarStyle(
-                                  todayDecoration: BoxDecoration(
-                                    color: const Color(0xFFff9c7a),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  selectedDecoration: BoxDecoration(
-                                    color: Color.fromARGB(255, 58, 58, 58),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  defaultTextStyle: const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                  weekendTextStyle: const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                onDaySelected: (selectedDay, focusedDay) async {
-                                  setState(() {
-                                    _selectedDay = selectedDay;
-                                    _focusedDay = focusedDay;
-                                  });
+                  CustomCard(
+                    title: lang.getText("previous_meals"),
+                    iconData: Icons.calendar_month,
+                    child: TableCalendar(
+                      locale: calendarLocale,
+                      startingDayOfWeek: startDay,
+                      firstDay: DateTime.utc(2020, 1, 1),
+                      lastDay: DateTime.utc(2030, 12, 31),
+                      focusedDay: _focusedDay,
+                      selectedDayPredicate: (day) =>
+                          isSameDay(_selectedDay, day),
+                      headerStyle: HeaderStyle(
+                        formatButtonVisible: false,
+                        titleCentered: true,
+                        titleTextStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                        leftChevronIcon: const Icon(
+                          Icons.chevron_left,
+                          color: Colors.white,
+                        ),
+                        rightChevronIcon: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.white,
+                        ),
+                      ),
+                      calendarStyle: CalendarStyle(
+                        todayDecoration: BoxDecoration(
+                          color: const Color(0xFFff9c7a),
+                          shape: BoxShape.circle,
+                        ),
+                        selectedDecoration: BoxDecoration(
+                          color: Color.fromARGB(255, 58, 58, 58),
+                          shape: BoxShape.circle,
+                        ),
+                        defaultTextStyle: const TextStyle(color: Colors.white),
+                        weekendTextStyle: const TextStyle(color: Colors.white),
+                      ),
+                      onDaySelected: (selectedDay, focusedDay) async {
+                        setState(() {
+                          _selectedDay = selectedDay;
+                          _focusedDay = focusedDay;
+                        });
 
-                                  final allMeals = await fetchUserMeals();
-                                  final grouped = groupMealsByDay(allMeals);
+                        final allMeals = await fetchUserMeals();
+                        final grouped = groupMealsByDay(allMeals);
 
-                                  final int window = 30;
-                                  final DateTime startDate = DateTime(
-                                    selectedDay.year,
-                                    selectedDay.month,
-                                    selectedDay.day,
-                                  ).subtract(Duration(days: window));
-                                  final List<DateTime> days = List.generate(
-                                    window * 2 + 1,
-                                    (i) => startDate.add(Duration(days: i)),
-                                  );
-                                  final int initialPage = window;
+                        final int window = 30;
+                        final DateTime startDate = DateTime(
+                          selectedDay.year,
+                          selectedDay.month,
+                          selectedDay.day,
+                        ).subtract(Duration(days: window));
+                        final List<DateTime> days = List.generate(
+                          window * 2 + 1,
+                          (i) => startDate.add(Duration(days: i)),
+                        );
+                        final int initialPage = window;
 
-                                  if (!context.mounted) return;
+                        if (!context.mounted) return;
 
-                                  DateTime tempSelectedDay =
-                                      _selectedDay ?? DateTime.now();
+                        DateTime tempSelectedDay =
+                            _selectedDay ?? DateTime.now();
 
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      final PageController controller =
-                                          PageController(
-                                            initialPage: initialPage,
-                                          );
-                                      return StatefulBuilder(
-                                        builder: (context, setStateDialog) {
-                                          return Dialog(
-                                            insetPadding: const EdgeInsets.all(
-                                              15,
-                                            ),
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  40,
-                                                  40,
-                                                  40,
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            final PageController controller = PageController(
+                              initialPage: initialPage,
+                            );
+                            return StatefulBuilder(
+                              builder: (context, setStateDialog) {
+                                return Dialog(
+                                  insetPadding: const EdgeInsets.all(15),
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    40,
+                                    40,
+                                    40,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: const BorderSide(
+                                      color: Colors.white24,
+                                    ),
+                                  ),
+                                  child: SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height *
+                                        0.65,
+                                    width: double.infinity,
+                                    child: Column(
+                                      children: [
+                                        Expanded(
+                                          child: PageView.builder(
+                                            controller: controller,
+                                            itemCount: days.length,
+                                            onPageChanged: (page) {
+                                              final DateTime newDay =
+                                                  days[page];
+                                              setState(() {
+                                                _selectedDay = newDay;
+                                                _focusedDay = newDay;
+                                                selectedDay = newDay;
+                                              });
+                                            },
+                                            itemBuilder: (context, index) {
+                                              final DateTime day = days[index];
+                                              final List<UserMealDto>
+                                              mealsForDay = grouped[day] ?? [];
+
+                                              return Padding(
+                                                padding: const EdgeInsets.all(
+                                                  16,
                                                 ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
+                                                child: Column(
+                                                  children: [
+                                                    Text(
+                                                      DateFormat.yMd(
+                                                        calendarLocale,
+                                                      ).format(day),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Expanded(
+                                                      child: mealsForDay.isEmpty
+                                                          ? Center(
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  Icon(
+                                                                    Icons
+                                                                        .calendar_month,
+                                                                    size: 56,
+                                                                    color: Colors
+                                                                        .white24,
+                                                                  ),
+                                                                  SizedBox(
+                                                                    height: 8,
+                                                                  ),
+                                                                  Text(
+                                                                    lang.getText(
+                                                                      "no_data_on_this_day",
+                                                                    ),
+                                                                    style: TextStyle(
+                                                                      color: Colors
+                                                                          .white70,
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            )
+                                                          : ListView.builder(
+                                                              itemCount:
+                                                                  mealsForDay
+                                                                      .length,
+                                                              itemBuilder: (context, i) {
+                                                                final meal =
+                                                                    mealsForDay[i];
+                                                                final cleanName =
+                                                                    stripHtmlTags(
+                                                                      meal.mealName,
+                                                                    );
+
+                                                                return Container(
+                                                                  margin:
+                                                                      const EdgeInsets.symmetric(
+                                                                        vertical:
+                                                                            6,
+                                                                      ),
+                                                                  padding:
+                                                                      const EdgeInsets.all(
+                                                                        12,
+                                                                      ),
+                                                                  decoration: BoxDecoration(
+                                                                    color:
+                                                                        const Color.fromARGB(
+                                                                          255,
+                                                                          30,
+                                                                          30,
+                                                                          30,
+                                                                        ),
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          10,
+                                                                        ),
+                                                                    border: Border.all(
+                                                                      color: Colors
+                                                                          .white24,
+                                                                    ),
+                                                                  ),
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceBetween,
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child: Text(
+                                                                              cleanName,
+                                                                              style: const TextStyle(
+                                                                                color: Colors.white,
+                                                                                fontSize: 16,
+                                                                                fontWeight: FontWeight.bold,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          IconButton(
+                                                                            icon: const Icon(
+                                                                              Icons.delete,
+                                                                              color: Colors.red,
+                                                                            ),
+                                                                            onPressed: () async {
+                                                                              final success = await deleteMeal(
+                                                                                meal.id,
+                                                                              );
+
+                                                                              if (success) {
+                                                                                setStateDialog(
+                                                                                  () {
+                                                                                    grouped[day]!.removeAt(
+                                                                                      i,
+                                                                                    );
+                                                                                  },
+                                                                                );
+
+                                                                                setState(
+                                                                                  () {
+                                                                                    _futureMeals = fetchUserMeals();
+                                                                                    loadNutrients();
+                                                                                  },
+                                                                                );
+                                                                              }
+                                                                            },
+                                                                          ),
+                                                                        ],
+                                                                      ),
+
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            6,
+                                                                      ),
+
+                                                                      Text(
+                                                                        "${meal.totalCalories.toStringAsFixed(2)} kcal | "
+                                                                        "${meal.totalProtein.toStringAsFixed(2)}g ${lang.getText("protein").toLowerCase()} | "
+                                                                        "${meal.totalCarbs.toStringAsFixed(2)}g ${lang.getText("carbs").toLowerCase()} | "
+                                                                        "${meal.totalFat.toStringAsFixed(2)}g ${lang.getText("fat").toLowerCase()}",
+                                                                        style: const TextStyle(
+                                                                          color:
+                                                                              Colors.white70,
+                                                                          fontSize:
+                                                                              13,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              },
+                                                            ),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    ElevatedButton.icon(
+                                                      onPressed: () async {
+                                                        await Navigator.of(
+                                                          context,
+                                                        ).push(
+                                                          MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                CMealPage(
+                                                                  selectedDay:
+                                                                      tempSelectedDay,
+                                                                ),
+                                                          ),
+                                                        );
+
+                                                        setState(() {
+                                                          selectedDay =
+                                                              DateTime.now();
+                                                          _selectedDay =
+                                                              DateTime.now();
+                                                          _focusedDay =
+                                                              DateTime.now();
+                                                        });
+                                                      },
+                                                      icon: const Icon(
+                                                        Icons.add,
+                                                        color: Colors.white,
+                                                      ),
+                                                      label: Text(
+                                                        lang.getText(
+                                                          "add_new_meal",
+                                                        ),
+                                                      ),
+                                                      style:
+                                                          ElevatedButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors.green,
+                                                            foregroundColor:
+                                                                Colors.white,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: FilledButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    30,
+                                                    30,
+                                                    30,
+                                                  ),
                                               side: const BorderSide(
                                                 color: Colors.white24,
                                               ),
-                                            ),
-                                            child: SizedBox(
-                                              height:
-                                                  MediaQuery.of(
-                                                    context,
-                                                  ).size.height *
-                                                  0.65,
-                                              width: double.infinity,
-                                              child: Column(
-                                                children: [
-                                                  Expanded(
-                                                    child: PageView.builder(
-                                                      controller: controller,
-                                                      itemCount: days.length,
-                                                      onPageChanged: (page) {
-                                                        final DateTime newDay =
-                                                            days[page];
-                                                        setState(() {
-                                                          _selectedDay = newDay;
-                                                          _focusedDay = newDay;
-                                                          selectedDay = newDay;
-                                                        });
-                                                      },
-                                                      itemBuilder: (context, index) {
-                                                        final DateTime day =
-                                                            days[index];
-                                                        final List<UserMealDto>
-                                                        mealsForDay =
-                                                            grouped[day] ?? [];
-
-                                                        return Padding(
-                                                          padding:
-                                                              const EdgeInsets.all(
-                                                                16,
-                                                              ),
-                                                          child: Column(
-                                                            children: [
-                                                              Text(
-                                                                DateFormat.yMd(
-                                                                  calendarLocale,
-                                                                ).format(day),
-                                                                style: const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 18,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                height: 12,
-                                                              ),
-                                                              Expanded(
-                                                                child:
-                                                                    mealsForDay
-                                                                        .isEmpty
-                                                                    ? Center(
-                                                                        child: Column(
-                                                                          mainAxisSize:
-                                                                              MainAxisSize.min,
-                                                                          children: [
-                                                                            Icon(
-                                                                              Icons.calendar_month,
-                                                                              size: 56,
-                                                                              color: Colors.white24,
-                                                                            ),
-                                                                            SizedBox(
-                                                                              height: 8,
-                                                                            ),
-                                                                            Text(
-                                                                              lang.getText(
-                                                                                "no_data_on_this_day",
-                                                                              ),
-                                                                              style: TextStyle(
-                                                                                color: Colors.white70,
-                                                                                fontSize: 16,
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      )
-                                                                    : ListView.builder(
-                                                                        itemCount:
-                                                                            mealsForDay.length,
-                                                                        itemBuilder:
-                                                                            (
-                                                                              context,
-                                                                              i,
-                                                                            ) {
-                                                                              final meal = mealsForDay[i];
-                                                                              final cleanName = stripHtmlTags(
-                                                                                meal.mealName,
-                                                                              );
-
-                                                                              return Container(
-                                                                                margin: const EdgeInsets.symmetric(
-                                                                                  vertical: 6,
-                                                                                ),
-                                                                                padding: const EdgeInsets.all(
-                                                                                  12,
-                                                                                ),
-                                                                                decoration: BoxDecoration(
-                                                                                  color: const Color.fromARGB(
-                                                                                    255,
-                                                                                    30,
-                                                                                    30,
-                                                                                    30,
-                                                                                  ),
-                                                                                  borderRadius: BorderRadius.circular(
-                                                                                    10,
-                                                                                  ),
-                                                                                  border: Border.all(
-                                                                                    color: Colors.white24,
-                                                                                  ),
-                                                                                ),
-                                                                                child: Column(
-                                                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                  children: [
-                                                                                    Row(
-                                                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                      children: [
-                                                                                        Expanded(
-                                                                                          child: Text(
-                                                                                            cleanName,
-                                                                                            style: const TextStyle(
-                                                                                              color: Colors.white,
-                                                                                              fontSize: 16,
-                                                                                              fontWeight: FontWeight.bold,
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                        IconButton(
-                                                                                          icon: const Icon(
-                                                                                            Icons.delete,
-                                                                                            color: Colors.red,
-                                                                                          ),
-                                                                                          onPressed: () async {
-                                                                                            final success = await deleteMeal(
-                                                                                              meal.id,
-                                                                                            );
-
-                                                                                            if (success) {
-                                                                                              setStateDialog(
-                                                                                                () {
-                                                                                                  grouped[day]!.removeAt(
-                                                                                                    i,
-                                                                                                  );
-                                                                                                },
-                                                                                              );
-
-                                                                                              setState(
-                                                                                                () {
-                                                                                                  _futureMeals = fetchUserMeals();
-                                                                                                  loadNutrients();
-                                                                                                },
-                                                                                              );
-                                                                                            }
-                                                                                          },
-                                                                                        ),
-                                                                                      ],
-                                                                                    ),
-
-                                                                                    const SizedBox(
-                                                                                      height: 6,
-                                                                                    ),
-
-                                                                                    Text(
-                                                                                      "${meal.totalCalories.toStringAsFixed(2)} kcal | "
-                                                                                      "${meal.totalProtein.toStringAsFixed(2)}g ${lang.getText("protein").toLowerCase()} | "
-                                                                                      "${meal.totalCarbs.toStringAsFixed(2)}g ${lang.getText("carbs").toLowerCase()} | "
-                                                                                      "${meal.totalFat.toStringAsFixed(2)}g ${lang.getText("fat").toLowerCase()}",
-                                                                                      style: const TextStyle(
-                                                                                        color: Colors.white70,
-                                                                                        fontSize: 13,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              );
-                                                                            },
-                                                                      ),
-                                                              ),
-                                                              const SizedBox(
-                                                                height: 12,
-                                                              ),
-                                                              ElevatedButton.icon(
-                                                                onPressed: () async {
-                                                                  await Navigator.of(
-                                                                    context,
-                                                                  ).push(
-                                                                    MaterialPageRoute(
-                                                                      builder: (_) => CMealPage(
-                                                                        selectedDay:
-                                                                            tempSelectedDay,
-                                                                      ),
-                                                                    ),
-                                                                  );
-
-                                                                  setState(() {
-                                                                    selectedDay =
-                                                                        DateTime.now();
-                                                                    _selectedDay =
-                                                                        DateTime.now();
-                                                                    _focusedDay =
-                                                                        DateTime.now();
-                                                                  });
-                                                                },
-                                                                icon: const Icon(
-                                                                  Icons.add,
-                                                                  color: Colors
-                                                                      .white,
-                                                                ),
-                                                                label: Text(
-                                                                  lang.getText(
-                                                                    "add_new_meal",
-                                                                  ),
-                                                                ),
-                                                                style: ElevatedButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .green,
-                                                                  foregroundColor:
-                                                                      Colors
-                                                                          .white,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          bottom: 12,
-                                                        ),
-                                                    child: FilledButton(
-                                                      onPressed: () =>
-                                                          Navigator.pop(
-                                                            context,
-                                                          ),
-                                                      style: FilledButton.styleFrom(
-                                                        backgroundColor:
-                                                            const Color.fromARGB(
-                                                              255,
-                                                              30,
-                                                              30,
-                                                              30,
-                                                            ),
-                                                        side: const BorderSide(
-                                                          color: Colors.white24,
-                                                        ),
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        lang.getText("close"),
-                                                        style: TextStyle(
-                                                          color: Colors.red,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                               ),
                                             ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.005,
-                        left: MediaQuery.of(context).size.width * 0.09,
-                        child: Text(
-                          lang.getText("previous_meals"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  //Bevitt tápanyagok
-                  Stack(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.all(20),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: 20.0,
-                              sigmaY: 20.0,
-                            ),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color.fromRGBO(45, 45, 45, 0.5),
-                              ),
-                              child: nutrients == null
-                                  ? Center(child: CircularProgressIndicator())
-                                  : Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 10,
-                                            left: 10,
-                                          ),
-                                          child: Text(
-                                            '${lang.getText("calories")}: ${nutrients!['calories']!.toStringAsFixed(0)} kcal',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
+                                            child: Text(
+                                              lang.getText("close"),
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
                                             ),
-                                          ),
-                                        ),
-
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 8.0,
-                                            horizontal: 10,
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "${lang.getText("protein")}: ",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              SizedBox(height: 5),
-                                              LinearPercentIndicator(
-                                                width:
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).size.width *
-                                                    0.75,
-                                                animation: true,
-                                                animationDuration: 1000,
-                                                lineHeight: 20.0,
-                                                percent: min(
-                                                  ((nutrients?['protein'] ??
-                                                              0) /
-                                                          (macros?['proteinGoal'] ??
-                                                              1))
-                                                      .toDouble(),
-                                                  1.0,
-                                                ),
-                                                center: Text(
-                                                  "${(nutrients?['protein'] ?? 0).toStringAsFixed(0)} g / ${(macros?['proteinGoal'] ?? 1).toStringAsFixed(0)} g ${(macros?['proteinGoal'] ?? 1) <= (nutrients?['protein'] ?? 0) && (nutrients?['protein'] ?? 0) <= (macros?['proteinGoal'] ?? 1) + 50
-                                                      ? "✅"
-                                                      : (nutrients?['protein'] ?? 0) > (macros?['proteinGoal'] ?? 1) + 50
-                                                      ? "😡"
-                                                      : ""}",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                progressColor: Colors.blue,
-                                                backgroundColor: Color.fromRGBO(
-                                                  58,
-                                                  58,
-                                                  58,
-                                                  1,
-                                                ),
-                                                barRadius:
-                                                    const Radius.circular(12),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 8.0,
-                                            horizontal: 10,
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "${lang.getText("carbs")}: ",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              SizedBox(height: 5),
-                                              LinearPercentIndicator(
-                                                width:
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).size.width *
-                                                    0.75,
-                                                animation: true,
-                                                animationDuration: 1000,
-                                                lineHeight: 20.0,
-                                                percent: min(
-                                                  ((nutrients?['carbs'] ?? 0) /
-                                                          (macros?['carbsGoal'] ??
-                                                              0))
-                                                      .toDouble(),
-                                                  1.0,
-                                                ),
-                                                center: Text(
-                                                  "${(nutrients?['carbs'] ?? 0).toStringAsFixed(0)} g / ${(macros?['carbsGoal'] ?? 0).toStringAsFixed(0)} g ${(macros?['carbsGoal'] ?? 0) <= (nutrients?['carbs'] ?? 0) && (nutrients?['carbs'] ?? 0) <= (macros?['carbsGoal'] ?? 0) + 30
-                                                      ? "✅"
-                                                      : (nutrients?['carbs'] ?? 0) > (macros?['carbsGoal'] ?? 0) + 30
-                                                      ? "😡"
-                                                      : ""}",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                progressColor: Colors.orange,
-                                                backgroundColor: Color.fromRGBO(
-                                                  58,
-                                                  58,
-                                                  58,
-                                                  1,
-                                                ),
-                                                barRadius:
-                                                    const Radius.circular(12),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 8.0,
-                                            horizontal: 10,
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "${lang.getText("fat")}: ",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              SizedBox(height: 5),
-                                              LinearPercentIndicator(
-                                                width:
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).size.width *
-                                                    0.75,
-                                                animation: true,
-                                                animationDuration: 1000,
-                                                lineHeight: 20.0,
-                                                percent: min(
-                                                  ((nutrients?['fat'] ?? 0) /
-                                                          (macros?['fatGoal'] ??
-                                                              0))
-                                                      .toDouble(),
-                                                  1.0,
-                                                ),
-                                                center: Text(
-                                                  "${(nutrients?['fat'] ?? 0).toStringAsFixed(0)} g / ${(macros?['fatGoal'] ?? 0).toStringAsFixed(0)} g ${(macros?['fatGoal'] ?? 0) <= (nutrients?['fat'] ?? 0) && (nutrients?['fat'] ?? 0) <= (macros?['fatGoal'] ?? 0) + 20
-                                                      ? "✅"
-                                                      : (nutrients?['fat'] ?? 0) > (macros?['fatGoal'] ?? 0) + 20
-                                                      ? "😡"
-                                                      : ""}",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                progressColor: Colors.pink,
-                                                backgroundColor: Color.fromRGBO(
-                                                  58,
-                                                  58,
-                                                  58,
-                                                  1,
-                                                ),
-                                                barRadius:
-                                                    const Radius.circular(12),
-                                              ),
-                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.005,
-                        left: MediaQuery.of(context).size.width * 0.09,
-                        child: Text(
-                          lang.getText("nutrients_consumed"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.53,
-                      ),
-                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
+
+                  //Bevitt tápanyagok
+                  CustomCard(
+                    title: lang.getText("nutrients_consumed"),
+                    iconData: Icons.restaurant,
+                    child: nutrients == null
+                        ? Center(child: CircularProgressIndicator())
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: 10,
+                                  left: 10,
+                                ),
+                                child: Text(
+                                  '${lang.getText("calories")}: ${nutrients!['calories']!.toStringAsFixed(0)} kcal',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                  horizontal: 10,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${lang.getText("protein")}: ",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    LinearPercentIndicator(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.73,
+                                      animation: true,
+                                      animationDuration: 1000,
+                                      lineHeight: 25.0,
+                                      percent: min(
+                                        ((nutrients?['protein'] ?? 0) /
+                                                (macros?['proteinGoal'] ?? 1))
+                                            .toDouble(),
+                                        1.0,
+                                      ),
+                                      center: Text(
+                                        "${(nutrients?['protein'] ?? 0).toStringAsFixed(0)} g / ${(macros?['proteinGoal'] ?? 1).toStringAsFixed(0)} g ${(macros?['proteinGoal'] ?? 1) <= (nutrients?['protein'] ?? 0) && (nutrients?['protein'] ?? 0) <= (macros?['proteinGoal'] ?? 1) + 50
+                                            ? "✅"
+                                            : (nutrients?['protein'] ?? 0) > (macros?['proteinGoal'] ?? 1) + 50
+                                            ? "😡"
+                                            : ""}",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      progressColor: Colors.blue,
+                                      backgroundColor: Color.fromRGBO(
+                                        58,
+                                        58,
+                                        58,
+                                        1,
+                                      ),
+                                      barRadius: const Radius.circular(12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                  horizontal: 10,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${lang.getText("carbs")}: ",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    LinearPercentIndicator(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.73,
+                                      animation: true,
+                                      animationDuration: 1000,
+                                      lineHeight: 25.0,
+                                      percent: min(
+                                        ((nutrients?['carbs'] ?? 0) /
+                                                (macros?['carbsGoal'] ?? 0))
+                                            .toDouble(),
+                                        1.0,
+                                      ),
+                                      center: Text(
+                                        "${(nutrients?['carbs'] ?? 0).toStringAsFixed(0)} g / ${(macros?['carbsGoal'] ?? 0).toStringAsFixed(0)} g ${(macros?['carbsGoal'] ?? 0) <= (nutrients?['carbs'] ?? 0) && (nutrients?['carbs'] ?? 0) <= (macros?['carbsGoal'] ?? 0) + 30
+                                            ? "✅"
+                                            : (nutrients?['carbs'] ?? 0) > (macros?['carbsGoal'] ?? 0) + 30
+                                            ? "😡"
+                                            : ""}",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      progressColor: Colors.orange,
+                                      backgroundColor: Color.fromRGBO(
+                                        58,
+                                        58,
+                                        58,
+                                        1,
+                                      ),
+                                      barRadius: const Radius.circular(12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                  horizontal: 10,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${lang.getText("fat")}: ",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    LinearPercentIndicator(
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.73,
+                                      animation: true,
+                                      animationDuration: 1000,
+                                      lineHeight: 25.0,
+                                      percent: min(
+                                        ((nutrients?['fat'] ?? 0) /
+                                                (macros?['fatGoal'] ?? 0))
+                                            .toDouble(),
+                                        1.0,
+                                      ),
+                                      center: Text(
+                                        "${(nutrients?['fat'] ?? 0).toStringAsFixed(0)} g / ${(macros?['fatGoal'] ?? 0).toStringAsFixed(0)} g ${(macros?['fatGoal'] ?? 0) <= (nutrients?['fat'] ?? 0) && (nutrients?['fat'] ?? 0) <= (macros?['fatGoal'] ?? 0) + 20
+                                            ? "✅"
+                                            : (nutrients?['fat'] ?? 0) > (macros?['fatGoal'] ?? 0) + 20
+                                            ? "😡"
+                                            : ""}",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      progressColor: Colors.pink,
+                                      backgroundColor: Color.fromRGBO(
+                                        58,
+                                        58,
+                                        58,
+                                        1,
+                                      ),
+                                      barRadius: const Radius.circular(12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.13),
                 ],
               );
             },
