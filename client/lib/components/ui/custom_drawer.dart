@@ -21,7 +21,7 @@ Widget customDrawer({required Widget child}) {
     ),
     child: KeyboardAwareDrawer(
       child: Padding(
-        padding: const EdgeInsets.all(24).copyWith(top: 16),
+        padding: const EdgeInsets.all(20).copyWith(top: 16),
         child: Column(
           spacing: 24,
           children: [

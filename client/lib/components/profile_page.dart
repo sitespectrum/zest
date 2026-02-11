@@ -104,7 +104,7 @@ class _ProfilePageState extends State<ProfilePage>
       builder: (context) => StatefulBuilder(
         builder: (context, setPopupState) => CustomDrawer(
           child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.9,
+            height: MediaQuery.of(context).size.height * 0.85,
             child: Column(
               children: [
                 Row(
@@ -164,14 +164,14 @@ class _ProfilePageState extends State<ProfilePage>
                               context,
                               lang.getText("height"),
                               heightController,
-                              widthFactor: 0.4,
+                              widthFactor: 0.42,
                               suffix: " cm",
                             ),
                             _buildProfessionalInput(
                               context,
                               lang.getText("weight"),
                               weightController,
-                              widthFactor: 0.4,
+                              widthFactor: 0.42,
                               suffix: " kg",
                             ),
                           ],
@@ -281,9 +281,9 @@ class _ProfilePageState extends State<ProfilePage>
 
                 Padding(
                   padding: const EdgeInsets.all(20),
-                  child: _buildZestButton(
-                    lang.getText("save_changes"),
-                    () async {
+                  child: customButton(
+                    title: lang.getText("save_changes"),
+                    onPressed: () async {
                       setState(() {
                         currentLanguage = selectedLanguage;
                       });
@@ -470,7 +470,7 @@ class _ProfilePageState extends State<ProfilePage>
         Container(
           width: MediaQuery.of(context).size.width * widthFactor,
           height: MediaQuery.of(context).size.height * 0.092,
-          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
           padding: const EdgeInsets.fromLTRB(12, 11, 12, 5),
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 72, 72, 72),
@@ -519,9 +519,9 @@ class _ProfilePageState extends State<ProfilePage>
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: MediaQuery.of(context).size.width * 0.43,
+          width: MediaQuery.of(context).size.width * 0.42,
           height: MediaQuery.of(context).size.height * 0.092,
-          margin: const EdgeInsets.only(right: 6),
+          margin: const EdgeInsets.only(right: 4),
           padding: const EdgeInsets.fromLTRB(5, 7, 0.5, 2),
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 72, 72, 72),
@@ -584,7 +584,7 @@ class _ProfilePageState extends State<ProfilePage>
     return Stack(
       children: [
         Container(
-          width: MediaQuery.of(context).size.width * 0.43,
+          width: MediaQuery.of(context).size.width * 0.42,
           height: MediaQuery.of(context).size.height * 0.092,
           margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
           padding: const EdgeInsets.fromLTRB(1, 9, 8, 5),
@@ -709,8 +709,8 @@ class _ProfilePageState extends State<ProfilePage>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.4,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           color: isSelected
@@ -787,48 +787,6 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildZestButton(
-    String text,
-    VoidCallback onPressed, {
-    Color color = const Color.fromRGBO(85, 173, 78, 0.5),
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color.fromRGBO(78, 156, 71, 255)),
-            ),
-            child: FilledButton(
-              onPressed: onPressed,
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                minimumSize: const Size(double.infinity, 55),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

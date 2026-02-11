@@ -32,7 +32,6 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
 
   // ignore: prefer_final_fields
   late PageController _pageController = PageController();
-  late AnimationController _animationController;
   Color _currentColor = const Color(0xFF7af970);
 
   @override
@@ -46,7 +45,6 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
   void dispose() {
     _pageController.removeListener(_onScroll);
     _pageController.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
