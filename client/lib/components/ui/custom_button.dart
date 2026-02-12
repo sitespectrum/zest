@@ -15,6 +15,7 @@ Widget customButton({
   Widget? icon,
   Widget? child,
   bool disabled = false,
+  bool loading = false,
 }) {
   return FilledButton(
     onPressed: disabled ? null : onPressed,
@@ -46,6 +47,7 @@ Widget customButton({
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 12,
           children: [
+            if (loading) CircularProgressIndicator(),
             if (icon != null) icon,
             if (icon == null && iconData != null) Icon(iconData, size: 20),
 

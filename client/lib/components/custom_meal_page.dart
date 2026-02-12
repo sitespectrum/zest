@@ -10,8 +10,10 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/add_meal_page.dart';
+import 'package:zest_client/components/drawers/share_drawer.dart';
 import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_card.dart';
+import 'package:zest_client/components/ui/custom_separator.dart';
 import 'package:zest_client/models/meal.dart';
 import 'package:zest_client/pages.dart';
 import 'package:zest_client/providers/language_provider.dart';
@@ -297,8 +299,7 @@ class _CMealPageState extends State<CMealPage> {
     BuildContext context,
     List<dynamic> workouts,
   ) async {
-    String jsonString = jsonEncode(workouts);
-    String shareId = await _uploadWorkoutAndGenerateQr(context, jsonString);
+    String shareId = await _uploadMeal(context);
     return userMeals.isNotEmpty
         ? Center(
             child: QrImageView(
@@ -310,25 +311,27 @@ class _CMealPageState extends State<CMealPage> {
         : Container();
   }
 
-  Future<String> _uploadWorkoutAndGenerateQr(
-    BuildContext context,
-    String jsonString,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse("$apiUrl/api/share/uploadWorkout"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(userMeals),
-      );
+  Future<String> generateShareId() async {
+    final response = await http.post(
+      Uri.parse("$apiUrl/api/share/uploadWorkout"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(userMeals),
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        return responseData['shareId'];
-      } else {
-        throw Exception(
-          "Szerver hiba: ${response.statusCode} - ${response.body}",
-        );
-      }
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return responseData['shareId'];
+    } else {
+      throw Exception(
+        "Szerver hiba: ${response.statusCode} - ${response.body}",
+      );
+    }
+  }
+
+  Future<String> _uploadMeal(BuildContext context) async {
+    try {
+      final shareId = await generateShareId();
+      return shareId;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -419,7 +422,7 @@ class _CMealPageState extends State<CMealPage> {
     final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
-      extendBody: true,
+      // extendBody: true,
       body: Stack(
         children: [
           Container(
@@ -432,14 +435,15 @@ class _CMealPageState extends State<CMealPage> {
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24).copyWith(top: 12),
-              child: SingleChildScrollView(
+          SingleChildScrollView(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   spacing: 24,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // title bar + actions
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -485,486 +489,14 @@ class _CMealPageState extends State<CMealPage> {
                             showModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              elevation: 0,
                               builder: (context) => StatefulBuilder(
-                                builder: (context, setPopupState) => Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: MediaQuery.of(
-                                      context,
-                                    ).viewInsets.bottom,
-                                  ),
-                                  child: Container(
-                                    height:
-                                        MediaQuery.of(context).size.height *
-                                        0.6,
-                                    clipBehavior: Clip.hardEdge,
-                                    decoration: const BoxDecoration(
-                                      color: Color.fromARGB(255, 35, 35, 35),
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(25),
-                                      ),
+                                builder: (context, setPopupState) =>
+                                    ShareDrawer(
+                                      generateShareId: generateShareId,
+                                      startScanning: startScanning,
+                                      startNfcSharing: (context) {},
+                                      startNfcReceiving: (context) {},
                                     ),
-                                    child: Column(
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.all(20),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                lang.getText("share"),
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 24,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context),
-                                                icon: const Icon(
-                                                  Icons.close,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: DefaultTabController(
-                                            initialIndex: 0,
-                                            length: 2,
-                                            child: Column(
-                                              children: [
-                                                const TabBar(
-                                                  labelColor: Colors.white,
-                                                  unselectedLabelColor:
-                                                      Colors.grey,
-                                                  indicatorColor: Colors.green,
-                                                  tabs: <Widget>[
-                                                    Tab(text: "NFC"),
-                                                    Tab(text: "QR"),
-                                                  ],
-                                                ),
-                                                Expanded(
-                                                  child: TabBarView(
-                                                    children: <Widget>[
-                                                      Center(
-                                                        child: Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Container(
-                                                              decoration: BoxDecoration(
-                                                                color:
-                                                                    const Color.fromARGB(
-                                                                      255,
-                                                                      85,
-                                                                      173,
-                                                                      78,
-                                                                    ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      11,
-                                                                    ),
-                                                              ),
-                                                              child: IconButton(
-                                                                onPressed: () {
-                                                                  Navigator.pop(
-                                                                    context,
-                                                                  );
-                                                                  showDialog(
-                                                                    context:
-                                                                        context,
-                                                                    builder: (context) {
-                                                                      return StatefulBuilder(
-                                                                        builder:
-                                                                            (
-                                                                              context,
-                                                                              setStateDialog,
-                                                                            ) {
-                                                                              return Dialog(
-                                                                                insetPadding: const EdgeInsets.all(
-                                                                                  20,
-                                                                                ),
-                                                                                backgroundColor: const Color.fromARGB(
-                                                                                  255,
-                                                                                  30,
-                                                                                  30,
-                                                                                  30,
-                                                                                ),
-                                                                                shape: RoundedRectangleBorder(
-                                                                                  borderRadius: BorderRadius.circular(
-                                                                                    16,
-                                                                                  ),
-                                                                                ),
-                                                                                child: Container(
-                                                                                  width: double.infinity,
-                                                                                  padding: const EdgeInsets.all(
-                                                                                    16,
-                                                                                  ),
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: const Color.fromARGB(
-                                                                                      255,
-                                                                                      40,
-                                                                                      40,
-                                                                                      40,
-                                                                                    ),
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      16,
-                                                                                    ),
-                                                                                    border: Border.all(
-                                                                                      color: Colors.white24,
-                                                                                    ),
-                                                                                  ),
-                                                                                  child: Column(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    children: [
-                                                                                      Expanded(
-                                                                                        child: SingleChildScrollView(
-                                                                                          child: Column(
-                                                                                            mainAxisSize: MainAxisSize.min,
-                                                                                            children: [
-                                                                                              Text(
-                                                                                                lang.getText(
-                                                                                                  "share_via_NFC",
-                                                                                                ),
-                                                                                                style: TextStyle(
-                                                                                                  color: Colors.white,
-                                                                                                  fontSize: 20,
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                  decoration: TextDecoration.underline,
-                                                                                                ),
-                                                                                              ),
-                                                                                            ],
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                              );
-                                                                            },
-                                                                      );
-                                                                    },
-                                                                  );
-                                                                  //startNfcSharing(userMeals,);
-                                                                },
-                                                                icon:
-                                                                    const Icon(
-                                                                      Icons.nfc,
-                                                                    ),
-                                                                color: Colors
-                                                                    .white70,
-                                                                iconSize:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.width *
-                                                                    0.35,
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              height:
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      )
-                                                                      .size
-                                                                      .height *
-                                                                  0.03,
-                                                            ),
-                                                            Text(
-                                                              lang.getText(
-                                                                "or",
-                                                              ),
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .white24,
-                                                                fontSize: 20,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              height:
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      )
-                                                                      .size
-                                                                      .height *
-                                                                  0.03,
-                                                            ),
-                                                            FilledButton(
-                                                              style: FilledButton.styleFrom(
-                                                                backgroundColor:
-                                                                    const Color.fromARGB(
-                                                                      255,
-                                                                      85,
-                                                                      173,
-                                                                      78,
-                                                                    ),
-                                                                fixedSize: Size(
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      ).size.width *
-                                                                      0.55,
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      ).size.height *
-                                                                      0.07,
-                                                                ),
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        11,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                              onPressed: () {
-                                                                Navigator.pop(
-                                                                  context,
-                                                                );
-                                                                showDialog(
-                                                                  context:
-                                                                      context,
-                                                                  builder: (context) {
-                                                                    return StatefulBuilder(
-                                                                      builder:
-                                                                          (
-                                                                            context,
-                                                                            setStateDialog,
-                                                                          ) {
-                                                                            return Dialog(
-                                                                              insetPadding: const EdgeInsets.all(
-                                                                                20,
-                                                                              ),
-                                                                              backgroundColor: const Color.fromARGB(
-                                                                                255,
-                                                                                30,
-                                                                                30,
-                                                                                30,
-                                                                              ),
-                                                                              shape: RoundedRectangleBorder(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  16,
-                                                                                ),
-                                                                              ),
-                                                                              child: Container(
-                                                                                width: double.infinity,
-                                                                                padding: const EdgeInsets.all(
-                                                                                  16,
-                                                                                ),
-                                                                                decoration: BoxDecoration(
-                                                                                  color: const Color.fromARGB(
-                                                                                    255,
-                                                                                    40,
-                                                                                    40,
-                                                                                    40,
-                                                                                  ),
-                                                                                  borderRadius: BorderRadius.circular(
-                                                                                    16,
-                                                                                  ),
-                                                                                  border: Border.all(
-                                                                                    color: Colors.white24,
-                                                                                  ),
-                                                                                ),
-                                                                                child: Column(
-                                                                                  mainAxisSize: MainAxisSize.min,
-                                                                                  children: [
-                                                                                    Expanded(
-                                                                                      child: SingleChildScrollView(
-                                                                                        child: Column(
-                                                                                          mainAxisSize: MainAxisSize.min,
-                                                                                          children: [
-                                                                                            Text(
-                                                                                              lang.getText(
-                                                                                                "recive_workout",
-                                                                                              ),
-                                                                                              style: TextStyle(
-                                                                                                color: Colors.white,
-                                                                                                fontSize: 20,
-                                                                                                fontWeight: FontWeight.bold,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ],
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ),
-                                                                            );
-                                                                          },
-                                                                    );
-                                                                  },
-                                                                );
-                                                                //startNfcReceiving();
-                                                              },
-                                                              child: Text(
-                                                                lang.getText(
-                                                                  "recive_workout",
-                                                                ),
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 20,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-
-                                                      Center(
-                                                        child: Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Container(
-                                                              width:
-                                                                  MediaQuery.of(
-                                                                    context,
-                                                                  ).size.width *
-                                                                  0.5,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          11,
-                                                                        ),
-                                                                  ),
-                                                              child: FutureBuilder<Widget>(
-                                                                future:
-                                                                    showQrCode(
-                                                                      context,
-                                                                      userMeals,
-                                                                    ),
-                                                                builder:
-                                                                    (
-                                                                      context,
-                                                                      snapshot,
-                                                                    ) {
-                                                                      if (snapshot
-                                                                              .connectionState ==
-                                                                          ConnectionState
-                                                                              .waiting) {
-                                                                        return Center(
-                                                                          child:
-                                                                              CircularProgressIndicator(),
-                                                                        );
-                                                                      } else if (snapshot
-                                                                          .hasError) {
-                                                                        return Center(
-                                                                          child: Text(
-                                                                            'Error: ${snapshot.error}',
-                                                                          ),
-                                                                        );
-                                                                      } else {
-                                                                        return snapshot.data ??
-                                                                            SizedBox.shrink();
-                                                                      }
-                                                                    },
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              height:
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      )
-                                                                      .size
-                                                                      .height *
-                                                                  0.01,
-                                                            ),
-                                                            Text(
-                                                              lang.getText(
-                                                                "or",
-                                                              ),
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .white24,
-                                                                fontSize: 20,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              height:
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      )
-                                                                      .size
-                                                                      .height *
-                                                                  0.01,
-                                                            ),
-                                                            FilledButton(
-                                                              style: FilledButton.styleFrom(
-                                                                backgroundColor:
-                                                                    const Color.fromARGB(
-                                                                      255,
-                                                                      85,
-                                                                      173,
-                                                                      78,
-                                                                    ),
-                                                                fixedSize: Size(
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      ).size.width *
-                                                                      0.55,
-                                                                  MediaQuery.of(
-                                                                        context,
-                                                                      ).size.height *
-                                                                      0.07,
-                                                                ),
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        11,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                              onPressed: () {
-                                                                startScanning(
-                                                                  context,
-                                                                );
-                                                              },
-                                                              child: Text(
-                                                                lang.getText(
-                                                                  "scan",
-                                                                ),
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 20,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
                               ),
                             );
                           },
@@ -977,6 +509,7 @@ class _CMealPageState extends State<CMealPage> {
                       ],
                     ),
 
+                    // type selector
                     Flex(
                       direction: Axis.horizontal,
                       spacing: 12,
@@ -1035,48 +568,9 @@ class _CMealPageState extends State<CMealPage> {
                       ],
                     ),
 
-                    Flex(
-                      direction: Axis.horizontal,
-                      spacing: 12,
-                      children: [
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14,
-                          color: Colors.white.withAlpha(25),
-                        ),
+                    CustomSeparator(),
 
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(25),
-                            ),
-                          ),
-                        ),
-
-                        Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: Colors.white.withAlpha(25),
-                        ),
-
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(25),
-                            ),
-                          ),
-                        ),
-
-                        Icon(
-                          Icons.arrow_back_ios_rounded,
-                          size: 14,
-                          color: Colors.white.withAlpha(25),
-                        ),
-                      ],
-                    ),
-
+                    // added meals
                     Container(
                       child: userMeals.isEmpty
                           ? Center(
@@ -1099,126 +593,66 @@ class _CMealPageState extends State<CMealPage> {
                               itemBuilder: (context, index) {
                                 final meal = userMeals[index];
                                 final cleanName = stripHtmlTags(meal.name);
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 6,
+                                return Container(
+                                  margin: EdgeInsets.only(
+                                    bottom: index != userMeals.length - 1
+                                        ? 12
+                                        : 0,
                                   ),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          45,
-                                          45,
-                                          45,
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha(25),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        cleanName,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Colors.white24,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            // ignore: deprecated_member_use
-                                            color: Colors.black.withOpacity(
-                                              0.5,
-                                            ),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                      Row(
                                         children: [
-                                          Text(
-                                            cleanName,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | ${meal.quantity.toStringAsFixed(0)} ${lang.getText("piece(s)")} | ${meal.baseWeight} ${meal.unit}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white70,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Center(
-                                            child: TextButton(
-                                              onPressed: () => {
-                                                setState(() {
-                                                  userMeals.remove(meal);
-                                                }),
-                                              },
-                                              child: Text(
-                                                lang.getText("delete"),
-                                                style: TextStyle(
-                                                  color: Colors.redAccent,
-                                                ),
+                                          Expanded(
+                                            child: Text(
+                                              '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | ${meal.quantity.toStringAsFixed(0)} ${lang.getText("piece(s)")} | ${meal.baseWeight} ${meal.unit}',
+                                              style: const TextStyle(
+                                                color: Colors.white70,
                                               ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
+                                      Center(
+                                        child: TextButton(
+                                          onPressed: () => {
+                                            setState(() {
+                                              userMeals.remove(meal);
+                                            }),
+                                          },
+                                          child: Text(
+                                            lang.getText("delete"),
+                                            style: TextStyle(
+                                              color: Colors.redAccent,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
                             ),
                     ),
 
-                    Flex(
-                      direction: Axis.horizontal,
-                      spacing: 12,
-                      children: [
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14,
-                          color: Colors.white.withAlpha(25),
-                        ),
+                    CustomSeparator(),
 
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(25),
-                            ),
-                          ),
-                        ),
-
-                        Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: Colors.white.withAlpha(25),
-                        ),
-
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(25),
-                            ),
-                          ),
-                        ),
-
-                        Icon(
-                          Icons.arrow_back_ios_rounded,
-                          size: 14,
-                          color: Colors.white.withAlpha(25),
-                        ),
-                      ],
-                    ),
-
+                    // summary card
                     CustomCard(
                       title: lang.getText("summary"),
                       child: Column(
@@ -2109,7 +1543,7 @@ class _CMealPageState extends State<CMealPage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24).copyWith(top: 12),
+          padding: const EdgeInsets.all(24).copyWith(top: 24),
           child: Row(
             spacing: 12,
             children: [
