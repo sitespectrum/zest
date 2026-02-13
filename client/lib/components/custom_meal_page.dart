@@ -12,7 +12,7 @@ import 'package:nfc_manager/nfc_manager_android.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Providers/language_provider.dart';
+import '../providers/language_provider.dart';
 import 'add_meal_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';

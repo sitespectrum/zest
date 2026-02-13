@@ -7,7 +7,7 @@ import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/constants.dart';
 import 'package:client/pages.dart';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 
 class LoginDrawer extends StatefulWidget {
   const LoginDrawer({super.key});

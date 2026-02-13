@@ -6,7 +6,7 @@ import 'package:client/components/custom_meal_page.dart';
 import 'package:client/components/custom_workout_page.dart';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 
 part "add_drawer.g.dart";
 
@@ -121,7 +121,7 @@ Widget addDrawer(BuildContext context) {
 
         CustomButton(
           onPressed: () => Navigator.pop(context),
-          title: "Close",
+          title: lang.getText("close"),
           iconData: Icons.close_rounded,
           variant: CustomButtonVariant.secondary,
         ),

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 
 class FriendProfilePage extends StatefulWidget {
   final int friendId;
