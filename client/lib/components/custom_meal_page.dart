@@ -12,14 +12,18 @@ import 'package:nfc_manager/nfc_manager_android.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 import 'add_meal_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:client/models/meal.dart';
 import 'dart:async';
 import 'package:client/pages.dart';
-import '../constants.dart';
+import 'package:client/constants.dart';
+import 'package:client/components/ui/custom_card.dart';
+import 'package:client/components/ui/custom_button.dart';
+import 'package:client/components/ui/custom_drawer.dart';
+import 'package:client/components/ui/custom_selector_button.dart';
 
 class CMealPage extends StatefulWidget {
   final DateTime selectedDay;
@@ -745,7 +749,7 @@ class _CMealPageState extends State<CMealPage> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Text(
-                              lang.getText("new_workout"),
+                              lang.getText("new_meal"),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 30,
@@ -765,354 +769,379 @@ class _CMealPageState extends State<CMealPage> {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
                                 elevation: 0,
+                                backgroundColor: Colors.transparent,
                                 builder: (context) => StatefulBuilder(
-                                  builder: (context, setPopupState) => Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: MediaQuery.of(
-                                        context,
-                                      ).viewInsets.bottom,
-                                    ),
-                                    child: Container(
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                          0.7,
-                                      clipBehavior: Clip.hardEdge,
-                                      decoration: const BoxDecoration(
-                                        color: Color.fromARGB(255, 35, 35, 35),
-                                        borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(25),
-                                        ),
+                                  builder: (context, setPopupState) => Container(
+                                    decoration: const BoxDecoration(
+                                      color: Color.fromARGB(255, 30, 30, 30),
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(24),
                                       ),
-                                      child: Column(
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(20),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                  lang.getText("share"),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 24,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                    ),
+                                    child: CustomDrawer(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(
+                                          24,
+                                        ).copyWith(top: 16, left: 0, right: 0),
+                                        child: SizedBox(
+                                          height:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.height *
+                                              0.5,
+                                          child: Column(
+                                            spacing: 12,
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 24,
+                                                    ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      lang.getText("share"),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 24,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  icon: const Icon(
-                                                    Icons.close,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: DefaultTabController(
-                                              initialIndex: 0,
-                                              length: 2,
-                                              child: Column(
-                                                children: [
-                                                  const TabBar(
-                                                    labelColor: Colors.white,
-                                                    unselectedLabelColor:
-                                                        Colors.grey,
-                                                    indicatorColor:
-                                                        Colors.green,
-                                                    tabs: <Widget>[
-                                                      Tab(text: "NFC"),
-                                                      Tab(text: "QR"),
+                                              ),
+                                              Expanded(
+                                                child: DefaultTabController(
+                                                  initialIndex: 0,
+                                                  length: 2,
+                                                  child: Column(
+                                                    children: [
+                                                      // Tabfül stílus az edzés oldalról
+                                                      Container(
+                                                        margin:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 24,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              const Color.fromARGB(
+                                                                50,
+                                                                64,
+                                                                255,
+                                                                50,
+                                                              ),
+                                                          border: Border.all(
+                                                            color:
+                                                                const Color.fromARGB(
+                                                                  100,
+                                                                  64,
+                                                                  255,
+                                                                  50,
+                                                                ),
+                                                            width: 1,
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                20,
+                                                              ),
+                                                        ),
+                                                        child: TabBar(
+                                                          labelStyle:
+                                                              const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                          splashFactory: NoSplash
+                                                              .splashFactory,
+                                                          indicator: BoxDecoration(
+                                                            color:
+                                                                const Color.fromARGB(
+                                                                  100,
+                                                                  64,
+                                                                  255,
+                                                                  50,
+                                                                ),
+                                                            shape: BoxShape
+                                                                .rectangle,
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  16,
+                                                                ),
+                                                          ),
+                                                          indicatorSize:
+                                                              TabBarIndicatorSize
+                                                                  .tab,
+                                                          indicatorPadding:
+                                                              const EdgeInsets.all(
+                                                                4,
+                                                              ),
+                                                          dividerHeight: 0,
+                                                          labelColor:
+                                                              Colors.white,
+                                                          unselectedLabelColor:
+                                                              Colors.grey,
+                                                          indicatorColor:
+                                                              Colors.green,
+                                                          tabs: const [
+                                                            Tab(text: "NFC"),
+                                                            Tab(text: "QR"),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                top: 24,
+                                                              ),
+                                                          child: TabBarView(
+                                                            children: [
+                                                              // NFC TAB TARTALMA
+                                                              Padding(
+                                                                padding:
+                                                                    const EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          24,
+                                                                    ),
+                                                                child: Column(
+                                                                  spacing: 12,
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Container(
+                                                                        width: double
+                                                                            .infinity,
+                                                                        decoration: BoxDecoration(
+                                                                          borderRadius: BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                        ),
+                                                                        child: IconButton(
+                                                                          style: IconButton.styleFrom(
+                                                                            shape: RoundedRectangleBorder(
+                                                                              borderRadius: BorderRadius.circular(
+                                                                                16,
+                                                                              ),
+                                                                            ),
+                                                                            backgroundColor: const Color.fromARGB(
+                                                                              65,
+                                                                              50,
+                                                                              142,
+                                                                              255,
+                                                                            ),
+                                                                            side: const BorderSide(
+                                                                              color: Color.fromARGB(
+                                                                                100,
+                                                                                50,
+                                                                                142,
+                                                                                255,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          onPressed: () {
+                                                                            startCloudNfcSharing(
+                                                                              context,
+                                                                            );
+                                                                          },
+                                                                          icon: const Icon(
+                                                                            Icons.contactless_rounded,
+                                                                          ),
+                                                                          color:
+                                                                              Colors.white70,
+                                                                          iconSize:
+                                                                              MediaQuery.of(
+                                                                                context,
+                                                                              ).size.width *
+                                                                              0.35,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    // "VAGY" elválasztó
+                                                                    Flex(
+                                                                      direction:
+                                                                          Axis.horizontal,
+                                                                      spacing:
+                                                                          12,
+                                                                      children: [
+                                                                        Expanded(
+                                                                          child: Container(
+                                                                            height:
+                                                                                2,
+                                                                            color:
+                                                                                Colors.white38,
+                                                                          ),
+                                                                        ),
+                                                                        Text(
+                                                                          lang.getText(
+                                                                            "or",
+                                                                          ),
+                                                                          style: const TextStyle(
+                                                                            color:
+                                                                                Colors.white38,
+                                                                            fontSize:
+                                                                                16,
+                                                                            fontWeight:
+                                                                                FontWeight.bold,
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          child: Container(
+                                                                            height:
+                                                                                2,
+                                                                            color:
+                                                                                Colors.white38,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    CustomButton(
+                                                                      onPressed:
+                                                                          () {
+                                                                            startNfcReceivingCloud();
+                                                                          },
+                                                                      title: lang.getText(
+                                                                        "recive_workout",
+                                                                      ), // Lehet, hogy "recive_meal"-re kellene javítani a lang fájlban ha van
+                                                                      iconData:
+                                                                          Icons
+                                                                              .call_received_rounded,
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                              // QR TAB TARTALMA
+                                                              Padding(
+                                                                padding:
+                                                                    const EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          24,
+                                                                    ),
+                                                                child: Column(
+                                                                  spacing: 24,
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Container(
+                                                                        width: double
+                                                                            .infinity,
+                                                                        alignment:
+                                                                            Alignment.center,
+                                                                        padding:
+                                                                            const EdgeInsets.all(
+                                                                              12,
+                                                                            ),
+                                                                        decoration: BoxDecoration(
+                                                                          color: Colors
+                                                                              .white
+                                                                              .withAlpha(
+                                                                                25,
+                                                                              ),
+                                                                          borderRadius: BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                          border: Border.all(
+                                                                            color: Colors.white.withAlpha(
+                                                                              50,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        child:
+                                                                            shareId.isNotEmpty
+                                                                            ? QrImageView(
+                                                                                data: shareId,
+                                                                                version: QrVersions.auto,
+                                                                                dataModuleStyle: const QrDataModuleStyle(
+                                                                                  color: Colors.white,
+                                                                                  dataModuleShape: QrDataModuleShape.square,
+                                                                                ),
+                                                                                eyeStyle: const QrEyeStyle(
+                                                                                  color: Colors.white,
+                                                                                  eyeShape: QrEyeShape.square,
+                                                                                ),
+                                                                              )
+                                                                            : const Column(
+                                                                                spacing: 12,
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                children: [
+                                                                                  Icon(
+                                                                                    Icons.qr_code,
+                                                                                    size: 96,
+                                                                                    color: Colors.white38,
+                                                                                  ),
+                                                                                  Text(
+                                                                                    "Még nincs QR kód",
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white38,
+                                                                                      fontSize: 20,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                      ),
+                                                                    ),
+                                                                    Flex(
+                                                                      direction:
+                                                                          Axis.horizontal,
+                                                                      spacing:
+                                                                          12,
+                                                                      children: [
+                                                                        CustomButton(
+                                                                          onPressed: () async {
+                                                                            await _generateQrCodeOnly(); // Itt lehet kell kis módosítás, mert a workout page visszatér ID-val, itt void volt
+                                                                            // A _generateQrCodeOnly függvényt érdemes módosítani, hogy visszaadja az ID-t, vagy itt a shareId-t frissíteni setState-el
+                                                                          },
+                                                                          variant:
+                                                                              CustomButtonVariant.secondary,
+                                                                          child: const Padding(
+                                                                            padding: EdgeInsets.symmetric(
+                                                                              vertical: 2.5,
+                                                                            ),
+                                                                            child: Icon(
+                                                                              Icons.refresh_rounded,
+                                                                              color: Colors.white,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          child: CustomButton(
+                                                                            onPressed: () {
+                                                                              startScanning(
+                                                                                context,
+                                                                              );
+                                                                            },
+                                                                            title:
+                                                                                "Scan QR code",
+                                                                            iconData:
+                                                                                Icons.qr_code_scanner_rounded,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ],
                                                   ),
-                                                  Expanded(
-                                                    child: TabBarView(
-                                                      children: <Widget>[
-                                                        Center(
-                                                          child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Container(
-                                                                decoration: BoxDecoration(
-                                                                  color:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        11,
-                                                                      ),
-                                                                ),
-                                                                child: IconButton(
-                                                                  onPressed: () {
-                                                                    startCloudNfcSharing(
-                                                                      context,
-                                                                    );
-                                                                  },
-                                                                  icon:
-                                                                      const Icon(
-                                                                        Icons
-                                                                            .nfc,
-                                                                      ),
-                                                                  color: Colors
-                                                                      .white70,
-                                                                  iconSize:
-                                                                      MediaQuery.of(
-                                                                        context,
-                                                                      ).size.width *
-                                                                      0.35,
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.03,
-                                                              ),
-                                                              Text(
-                                                                lang.getText(
-                                                                  "or",
-                                                                ),
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white24,
-                                                                  fontSize: 20,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height *
-                                                                    0.03,
-                                                              ),
-                                                              FilledButton(
-                                                                style: FilledButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  fixedSize: Size(
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.width *
-                                                                        0.55,
-                                                                    MediaQuery.of(
-                                                                          context,
-                                                                        ).size.height *
-                                                                        0.07,
-                                                                  ),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          11,
-                                                                        ),
-                                                                  ),
-                                                                ),
-                                                                onPressed: () {
-                                                                  startNfcReceivingCloud();
-                                                                },
-                                                                child: Text(
-                                                                  lang.getText(
-                                                                    "recive_workout",
-                                                                  ),
-                                                                  style: TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        20,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-
-                                                        Center(
-                                                          child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Container(
-                                                                width:
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).size.width *
-                                                                    0.6,
-                                                                padding:
-                                                                    const EdgeInsets.all(
-                                                                      20,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        20,
-                                                                      ),
-                                                                ),
-                                                                child:
-                                                                    shareId
-                                                                        .isNotEmpty
-                                                                    ? QrImageView(
-                                                                        data:
-                                                                            shareId,
-                                                                        version:
-                                                                            QrVersions.auto,
-                                                                        size:
-                                                                            200.0,
-                                                                      )
-                                                                    : Column(
-                                                                        mainAxisSize:
-                                                                            MainAxisSize.min,
-                                                                        children: [
-                                                                          Icon(
-                                                                            Icons.qr_code,
-                                                                            size:
-                                                                                60,
-                                                                            color:
-                                                                                Colors.black54,
-                                                                          ),
-                                                                          SizedBox(
-                                                                            height:
-                                                                                10,
-                                                                          ),
-                                                                          Text(
-                                                                            "Még nincs QR kód",
-                                                                            style: TextStyle(
-                                                                              color: Colors.black87,
-                                                                            ),
-                                                                            textAlign:
-                                                                                TextAlign.center,
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                              ),
-                                                              SizedBox(
-                                                                height: 20,
-                                                              ),
-
-                                                              FilledButton(
-                                                                style: FilledButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  padding:
-                                                                      EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            30,
-                                                                        vertical:
-                                                                            15,
-                                                                      ),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          11,
-                                                                        ),
-                                                                  ),
-                                                                ),
-                                                                onPressed: () {
-                                                                  _generateQrCodeOnly();
-                                                                },
-                                                                child: Text(
-                                                                  shareId.isEmpty
-                                                                      ? "QR Kód Generálása"
-                                                                      : "QR Kód Frissítése",
-                                                                  style: TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        18,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                              ),
-
-                                                              SizedBox(
-                                                                height: 20,
-                                                              ),
-
-                                                              FilledButton(
-                                                                style: FilledButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        85,
-                                                                        173,
-                                                                        78,
-                                                                      ),
-                                                                  padding:
-                                                                      EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            30,
-                                                                        vertical:
-                                                                            15,
-                                                                      ),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          11,
-                                                                        ),
-                                                                  ),
-                                                                ),
-                                                                onPressed: () {
-                                                                  startScanning(
-                                                                    context,
-                                                                  );
-                                                                },
-                                                                child: Text(
-                                                                  lang.getText(
-                                                                    "read",
-                                                                  ),
-                                                                  style: TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        18,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
+                                                ),
                                               ),
-                                            ),
+                                            ],
                                           ),
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1132,163 +1161,65 @@ class _CMealPageState extends State<CMealPage> {
                   ),
                 ),
               ),
-              Center(
-                child: Container(
-                  margin: EdgeInsets.all(20),
-                  width: double.infinity,
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Stack(
-                            children: [
-                              FilledButton(
-                                onPressed: () {
-                                  setState(() {
-                                    mealindex = 0;
-                                  });
-                                  mealtypecontroller.text =
-                                      _mealtypes[mealindex];
-                                },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: mealindex == 0
-                                      ? const Color.fromARGB(255, 85, 173, 78)
-                                      : const Color.fromARGB(255, 45, 45, 45),
-                                  fixedSize: Size(
-                                    MediaQuery.of(context).size.width * 0.41,
-                                    MediaQuery.of(context).size.height * 0.07,
-                                  ),
-                                  elevation: 8,
-                                  // ignore: deprecated_member_use
-                                  shadowColor: Colors.black.withOpacity(0.8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(11),
-                                    side: const BorderSide(
-                                      color: Colors.white24,
-                                      width: 1,
-                                    ),
-                                  ),
-                                ),
-                                child: Text(lang.getText("breakfast")),
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(width: 20),
-
-                          Stack(
-                            children: [
-                              FilledButton(
-                                onPressed: () {
-                                  setState(() {
-                                    mealindex = 1;
-                                  });
-                                  mealtypecontroller.text =
-                                      _mealtypes[mealindex];
-                                },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: mealindex == 1
-                                      ? const Color.fromARGB(255, 85, 173, 78)
-                                      : const Color.fromARGB(255, 45, 45, 45),
-                                  fixedSize: Size(
-                                    MediaQuery.of(context).size.width * 0.41,
-                                    MediaQuery.of(context).size.height * 0.07,
-                                  ),
-                                  elevation: 8,
-                                  // ignore: deprecated_member_use
-                                  shadowColor: Colors.black.withOpacity(0.8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(11),
-                                    side: const BorderSide(
-                                      color: Colors.white24,
-                                      width: 1,
-                                    ),
-                                  ),
-                                ),
-                                child: Text(lang.getText("lunch")),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 20),
-
-                      Row(
-                        children: [
-                          Stack(
-                            children: [
-                              FilledButton(
-                                onPressed: () {
-                                  setState(() {
-                                    mealindex = 2;
-                                  });
-                                  mealtypecontroller.text =
-                                      _mealtypes[mealindex];
-                                },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: mealindex == 2
-                                      ? const Color.fromARGB(255, 85, 173, 78)
-                                      : const Color.fromARGB(255, 45, 45, 45),
-                                  fixedSize: Size(
-                                    MediaQuery.of(context).size.width * 0.41,
-                                    MediaQuery.of(context).size.height * 0.07,
-                                  ),
-                                  elevation: 8,
-                                  // ignore: deprecated_member_use
-                                  shadowColor: Colors.black.withOpacity(0.8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(11),
-                                    side: const BorderSide(
-                                      color: Colors.white24,
-                                      width: 1,
-                                    ),
-                                  ),
-                                ),
-                                child: Text(lang.getText("dinner")),
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(width: 20),
-
-                          Stack(
-                            children: [
-                              FilledButton(
-                                onPressed: () {
-                                  setState(() {
-                                    mealindex = 3;
-                                  });
-                                  mealtypecontroller.text =
-                                      _mealtypes[mealindex];
-                                },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: mealindex == 3
-                                      ? const Color.fromARGB(255, 85, 173, 78)
-                                      : const Color.fromARGB(255, 45, 45, 45),
-                                  fixedSize: Size(
-                                    MediaQuery.of(context).size.width * 0.41,
-                                    MediaQuery.of(context).size.height * 0.07,
-                                  ),
-                                  elevation: 8,
-                                  // ignore: deprecated_member_use
-                                  shadowColor: Colors.black.withOpacity(0.8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(11),
-                                    side: const BorderSide(
-                                      color: Colors.white24,
-                                      width: 1,
-                                    ),
-                                  ),
-                                ),
-                                child: Text(lang.getText("other")),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 20,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        CustomSelectorButton(
+                          title: lang.getText("breakfast"),
+                          isSelected: mealindex == 0,
+                          onPressed: () {
+                            setState(() {
+                              mealindex = 0;
+                            });
+                            mealtypecontroller.text = _mealtypes[mealindex];
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        CustomSelectorButton(
+                          title: lang.getText("lunch"),
+                          isSelected: mealindex == 1,
+                          onPressed: () {
+                            setState(() {
+                              mealindex = 1;
+                            });
+                            mealtypecontroller.text = _mealtypes[mealindex];
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        CustomSelectorButton(
+                          title: lang.getText("dinner"),
+                          isSelected: mealindex == 2,
+                          onPressed: () {
+                            setState(() {
+                              mealindex = 2;
+                            });
+                            mealtypecontroller.text = _mealtypes[mealindex];
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        CustomSelectorButton(
+                          title: lang.getText("other"),
+                          isSelected: mealindex == 3,
+                          onPressed: () {
+                            setState(() {
+                              mealindex = 3;
+                            });
+                            mealtypecontroller.text = _mealtypes[mealindex];
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
 
@@ -1500,443 +1431,537 @@ class _CMealPageState extends State<CMealPage> {
 
               SizedBox(height: 20),
 
-              Center(
-                child: Text(
-                  lang.getText("my_templates"),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              CustomCard(
+                title: lang.getText("my_templates"),
+                iconData: Icons.folder_copy_outlined,
+                child: FutureBuilder<List<CustomUserMealDto>>(
+                  future: futureCustomMeals,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-              FutureBuilder<List<CustomUserMealDto>>(
-                future: futureCustomMeals,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          "Hiba történt: ${snapshot.error}",
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
 
-                  if (snapshot.hasError) {
-                    return Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        "Hiba történt: ${snapshot.error}",
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    );
-                  }
+                    final meals = snapshot.data ?? [];
 
-                  final meals = snapshot.data ?? [];
+                    if (meals.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Text(
+                            lang.getText("no_added_template_yet"),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
 
-                  if (meals.isEmpty) {
-                    return Center(
-                      child: Text(
-                        lang.getText("no_added_template_yet"),
-                        style: TextStyle(color: Colors.white70, fontSize: 18),
-                      ),
-                    );
-                  }
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: meals.length,
+                      itemBuilder: (context, index) {
+                        final meal = meals[index];
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: meals.length,
-                    itemBuilder: (context, index) {
-                      final meal = meals[index];
-
-                      return GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return StatefulBuilder(
-                                builder: (context, setStateDialog) {
-                                  return Dialog(
-                                    insetPadding: const EdgeInsets.all(20),
-                                    backgroundColor: const Color.fromARGB(
-                                      255,
-                                      30,
-                                      30,
-                                      30,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          40,
-                                          40,
-                                          40,
-                                        ),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.white24,
-                                        ),
+                        return GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return StatefulBuilder(
+                                  builder: (context, setStateDialog) {
+                                    return Dialog(
+                                      insetPadding: const EdgeInsets.all(20),
+                                      backgroundColor: const Color.fromARGB(
+                                        255,
+                                        30,
+                                        30,
+                                        30,
                                       ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            meal.customName.isNotEmpty
-                                                ? meal.customName
-                                                : lang.getText(
-                                                    "unknown_template",
-                                                  ),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromARGB(
+                                            255,
+                                            40,
+                                            40,
+                                            40,
                                           ),
-                                          const SizedBox(height: 12),
-                                          Flexible(
-                                            child: ListView.builder(
-                                              shrinkWrap: true,
-                                              itemCount: meal.meals.length,
-                                              itemBuilder: (context, i) {
-                                                final item = meal.meals[i];
-                                                final cleanName = stripHtmlTags(
-                                                  item.name,
-                                                );
-
-                                                return Container(
-                                                  width: double.infinity,
-                                                  margin:
-                                                      const EdgeInsets.symmetric(
-                                                        vertical: 3,
-                                                        horizontal: 4,
-                                                      ),
-                                                  padding: const EdgeInsets.all(
-                                                    12,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color.fromARGB(
-                                                      255,
-                                                      30,
-                                                      30,
-                                                      30,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white24,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              meal.customName.isNotEmpty
+                                                  ? meal.customName
+                                                  : lang.getText(
+                                                      "unknown_template",
                                                     ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Flexible(
+                                              child: ListView.builder(
+                                                shrinkWrap: true,
+                                                itemCount: meal.meals.length,
+                                                itemBuilder: (context, i) {
+                                                  final item = meal.meals[i];
+                                                  final cleanName =
+                                                      stripHtmlTags(item.name);
+
+                                                  return Container(
+                                                    width: double.infinity,
+                                                    margin:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 3,
+                                                          horizontal: 4,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.all(
                                                           12,
                                                         ),
-                                                    border: Border.all(
-                                                      color: Colors.white24,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            30,
+                                                            30,
+                                                            30,
+                                                          ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.white24,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        "$cleanName (${item.quantity})",
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.bold,
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "$cleanName (${item.quantity})",
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 6,
+                                                        ),
+                                                        Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                '${item.qCalories.toStringAsFixed(3)} kcal',
+                                                                style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white70,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            Expanded(
+                                                              child: Text(
+                                                                '${item.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")}',
+                                                                style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white70,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                '${item.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")}',
+                                                                style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white70,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            Expanded(
+                                                              child: Text(
+                                                                '${item.qFat.toStringAsFixed(3)} g ${lang.getText("fat")}',
+                                                                style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white70,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            showdelete
+                                                                ? Padding(
+                                                                    padding:
+                                                                        EdgeInsets.only(
+                                                                          right:
+                                                                              10,
+                                                                        ),
+                                                                    child: IconButton(
+                                                                      onPressed: () async {
+                                                                        final itemToDelete =
+                                                                            meal.meals[i];
+                                                                        final ok = await deleteMealFromTemplate(
+                                                                          itemToDelete
+                                                                              .Id!,
+                                                                        );
+
+                                                                        if (ok) {
+                                                                          setStateDialog(() {
+                                                                            meal.meals.removeWhere(
+                                                                              (
+                                                                                m,
+                                                                              ) =>
+                                                                                  m.Id ==
+                                                                                  itemToDelete.Id,
+                                                                            );
+                                                                          });
+                                                                          ScaffoldMessenger.of(
+                                                                            context,
+                                                                          ).showSnackBar(
+                                                                            SnackBar(
+                                                                              content: Text(
+                                                                                lang.getText(
+                                                                                  "meal_deleted",
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                        } else {
+                                                                          ScaffoldMessenger.of(
+                                                                            context,
+                                                                          ).showSnackBar(
+                                                                            SnackBar(
+                                                                              content: Text(
+                                                                                lang.getText(
+                                                                                  "deletion_failed",
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                        }
+                                                                      },
+                                                                      icon: Icon(
+                                                                        CupertinoIcons
+                                                                            .trash,
+                                                                        color: Colors
+                                                                            .red,
+                                                                      ),
+                                                                    ),
+                                                                  )
+                                                                : Container(),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            const SizedBox(height: 10),
+
+                                            Center(
+                                              child: ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
+                                                  foregroundColor: Colors.black,
+                                                ),
+                                                onPressed: () async {
+                                                  try {
+                                                    final prefs =
+                                                        await SharedPreferences.getInstance();
+                                                    print(prefs);
+                                                    final userId = prefs.getInt(
+                                                      'userId',
+                                                    );
+                                                    if (userId == null) {
+                                                      throw Exception(
+                                                        lang.getText(
+                                                          "no_userId",
+                                                        ),
+                                                      );
+                                                    }
+
+                                                    await saveTemplateAsUserMeal(
+                                                      meal,
+                                                      userId,
+                                                    );
+
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          lang.getText(
+                                                            "saved_successfully",
+                                                          ),
+                                                        ),
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        margin: EdgeInsets.only(
+                                                          bottom: 30,
+                                                          left: 16,
+                                                          right: 16,
+                                                        ),
+                                                        duration: Duration(
+                                                          milliseconds: 1800,
+                                                        ),
+                                                        animation: CurvedAnimation(
+                                                          parent:
+                                                              kAlwaysCompleteAnimation,
+                                                          curve:
+                                                              Curves.easeInOut,
                                                         ),
                                                       ),
-                                                      const SizedBox(height: 6),
-                                                      Row(
-                                                        children: [
-                                                          Expanded(
-                                                            child: Text(
-                                                              '${item.qCalories.toStringAsFixed(3)} kcal',
-                                                              style:
-                                                                  const TextStyle(
-                                                                    color: Colors
-                                                                        .white70,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                          Expanded(
-                                                            child: Text(
-                                                              '${item.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")}',
-                                                              style:
-                                                                  const TextStyle(
-                                                                    color: Colors
-                                                                        .white70,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ],
+                                                    );
+                                                  } catch (e) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          "Hiba: $e",
+                                                        ),
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        margin: EdgeInsets.only(
+                                                          bottom: 30,
+                                                          left: 16,
+                                                          right: 16,
+                                                        ),
+                                                        duration: Duration(
+                                                          milliseconds: 1800,
+                                                        ),
+                                                        animation: CurvedAnimation(
+                                                          parent:
+                                                              kAlwaysCompleteAnimation,
+                                                          curve:
+                                                              Curves.easeInOut,
+                                                        ),
                                                       ),
-                                                      Row(
-                                                        children: [
-                                                          Expanded(
-                                                            child: Text(
-                                                              '${item.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")}',
-                                                              style:
-                                                                  const TextStyle(
-                                                                    color: Colors
-                                                                        .white70,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                          Expanded(
-                                                            child: Text(
-                                                              '${item.qFat.toStringAsFixed(3)} g ${lang.getText("fat")}',
-                                                              style:
-                                                                  const TextStyle(
-                                                                    color: Colors
-                                                                        .white70,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                          showdelete
-                                                              ? Padding(
-                                                                  padding:
-                                                                      EdgeInsets.only(
-                                                                        right:
-                                                                            10,
-                                                                      ),
-                                                                  child: IconButton(
-                                                                    onPressed: () async {
-                                                                      final itemToDelete =
-                                                                          meal.meals[i];
-                                                                      final ok = await deleteMealFromTemplate(
-                                                                        itemToDelete
-                                                                            .Id!,
-                                                                      );
-
-                                                                      if (ok) {
-                                                                        setStateDialog(() {
-                                                                          meal.meals.removeWhere(
-                                                                            (
-                                                                              m,
-                                                                            ) =>
-                                                                                m.Id ==
-                                                                                itemToDelete.Id,
-                                                                          );
-                                                                        });
-                                                                        ScaffoldMessenger.of(
-                                                                          context,
-                                                                        ).showSnackBar(
-                                                                          SnackBar(
-                                                                            content: Text(
-                                                                              lang.getText(
-                                                                                "meal_deleted",
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        );
-                                                                      } else {
-                                                                        ScaffoldMessenger.of(
-                                                                          context,
-                                                                        ).showSnackBar(
-                                                                          SnackBar(
-                                                                            content: Text(
-                                                                              lang.getText(
-                                                                                "deletion_failed",
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        );
-                                                                      }
-                                                                    },
-
-                                                                    icon: Icon(
-                                                                      CupertinoIcons
-                                                                          .trash,
-                                                                      color: Colors
-                                                                          .red,
-                                                                    ),
-                                                                  ),
-                                                                )
-                                                              : Container(),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-
-                                          Center(
-                                            child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.white,
-                                                foregroundColor: Colors.black,
-                                              ),
-                                              onPressed: () async {
-                                                try {
-                                                  final prefs =
-                                                      await SharedPreferences.getInstance();
-                                                  print(prefs);
-                                                  final userId = prefs.getInt(
-                                                    'userId',
-                                                  );
-                                                  if (userId == null) {
-                                                    throw Exception(
-                                                      lang.getText("no_userId"),
                                                     );
                                                   }
-
-                                                  await saveTemplateAsUserMeal(
-                                                    meal,
-                                                    userId,
+                                                  if (_debounce?.isActive ??
+                                                      false) {
+                                                    _debounce!.cancel();
+                                                  }
+                                                  _debounce = Timer(
+                                                    const Duration(
+                                                      milliseconds: 1500,
+                                                    ),
+                                                    () {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).hideCurrentSnackBar();
+                                                      Navigator.push<
+                                                        List<MealDto>
+                                                      >(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              const Pages(),
+                                                        ),
+                                                      );
+                                                    },
                                                   );
+                                                },
+                                                child: Text(
+                                                  lang.getText("save_as_meal"),
+                                                ),
+                                              ),
+                                            ),
+                                            Center(
+                                              child: ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
+                                                  foregroundColor: Colors.black,
+                                                ),
+                                                onPressed: () async {
+                                                  setStateDialog(() {
+                                                    showdelete = true;
+                                                  });
+                                                },
+                                                child: Text(
+                                                  lang.getText("edit"),
+                                                ),
+                                              ),
+                                            ),
+                                            Center(
+                                              child: ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
+                                                  foregroundColor: Colors.black,
+                                                ),
+                                                onPressed: () async {
+                                                  final result =
+                                                      await Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              AddMealPage(
+                                                                addToTemplate:
+                                                                    true,
+                                                                templateId:
+                                                                    meal.id,
+                                                              ),
+                                                        ),
+                                                      );
 
+                                                  if (result != null &&
+                                                      result is List<MealDto> &&
+                                                      result.isNotEmpty) {
+                                                    setStateDialog(() {
+                                                      meal.meals.addAll(result);
+                                                    });
+                                                  }
+                                                },
+                                                child: Text(
+                                                  lang.getText("add"),
+                                                ),
+                                              ),
+                                            ),
+                                            Center(
+                                              child: ElevatedButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    userMeals.addAll(
+                                                      meal.meals,
+                                                    );
+                                                  });
+                                                  Navigator.pop(context);
                                                   ScaffoldMessenger.of(
-                                                    // ignore: use_build_context_synchronously
                                                     context,
                                                   ).showSnackBar(
                                                     SnackBar(
                                                       content: Text(
-                                                        lang.getText(
-                                                          "saved_successfully",
+                                                        "${meal.customName} ${lang.getText("added_to_list")}",
+                                                      ),
+                                                      duration: const Duration(
+                                                        milliseconds: 1500,
+                                                      ),
+                                                      behavior: SnackBarBehavior
+                                                          .floating,
+                                                    ),
+                                                  );
+                                                },
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor:
+                                                      const Color.fromARGB(
+                                                        255,
+                                                        30,
+                                                        30,
+                                                        30,
+                                                      ),
+                                                  side: const BorderSide(
+                                                    color: Colors.white24,
+                                                    width: 1,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
                                                         ),
-                                                      ),
-                                                      behavior: SnackBarBehavior
-                                                          .floating,
-                                                      margin: EdgeInsets.only(
-                                                        bottom: 30,
-                                                        left: 16,
-                                                        right: 16,
-                                                      ),
-                                                      duration: Duration(
-                                                        milliseconds: 1800,
-                                                      ),
-                                                      animation: CurvedAnimation(
-                                                        parent:
-                                                            kAlwaysCompleteAnimation,
-                                                        curve: Curves.easeInOut,
-                                                      ),
-                                                    ),
-                                                  );
-                                                } catch (e) {
-                                                  ScaffoldMessenger.of(
-                                                    // ignore: use_build_context_synchronously
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text("Hiba: $e"),
-                                                      behavior: SnackBarBehavior
-                                                          .floating,
-                                                      margin: EdgeInsets.only(
-                                                        bottom: 30,
-                                                        left: 16,
-                                                        right: 16,
-                                                      ),
-                                                      duration: Duration(
-                                                        milliseconds: 1800,
-                                                      ),
-                                                      animation: CurvedAnimation(
-                                                        parent:
-                                                            kAlwaysCompleteAnimation,
-                                                        curve: Curves.easeInOut,
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                                if (_debounce?.isActive ??
-                                                    false) {
-                                                  _debounce!.cancel();
-                                                }
-                                                _debounce = Timer(
-                                                  const Duration(
-                                                    milliseconds: 1500,
                                                   ),
-                                                  () {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).hideCurrentSnackBar();
-                                                    Navigator.push<
-                                                      List<MealDto>
-                                                    >(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            const Pages(),
-                                                      ),
-                                                    );
-                                                  },
-                                                );
-                                              },
-                                              child: Text(
-                                                lang.getText("save_as_meal"),
-                                              ),
-                                            ),
-                                          ),
-                                          Center(
-                                            child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.white,
-                                                foregroundColor: Colors.black,
-                                              ),
-                                              onPressed: () async {
-                                                setStateDialog(() {
-                                                  showdelete = true;
-                                                });
-                                              },
-                                              child: Text(lang.getText("edit")),
-                                            ),
-                                          ),
-                                          Center(
-                                            child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.white,
-                                                foregroundColor: Colors.black,
-                                              ),
-                                              onPressed: () async {
-                                                final result =
-                                                    await Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            AddMealPage(
-                                                              addToTemplate:
-                                                                  true,
-                                                              templateId:
-                                                                  meal.id,
-                                                            ),
-                                                      ),
-                                                    );
-
-                                                if (result != null &&
-                                                    result is List<MealDto> &&
-                                                    result.isNotEmpty) {
-                                                  setStateDialog(() {
-                                                    meal.meals.addAll(result);
-                                                  });
-                                                }
-                                              },
-                                              child: Text(lang.getText("add")),
-                                            ),
-                                          ),
-                                          Center(
-                                            child: ElevatedButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  userMeals.addAll(meal.meals);
-                                                });
-                                                Navigator.pop(context);
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      "${meal.customName} ${lang.getText("added_to_list")}",
-                                                    ),
-                                                    duration: const Duration(
-                                                      milliseconds: 1500,
-                                                    ),
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
+                                                ),
+                                                child: Text(
+                                                  lang.getText("continue_meal"),
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
-                                                );
-                                              },
-                                              style: FilledButton.styleFrom(
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                            setState(() {
+                              showdelete = false;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 45, 45, 45),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      meal.customName.isNotEmpty
+                                          ? meal.customName
+                                          : lang.getText("unknown_template"),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${meal.totalCalories} kcal | ${meal.totalProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.totalCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.totalFat.toStringAsFixed(3)} g ${lang.getText("fat")}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.redAccent,
+                                          ),
+                                          onPressed: () async {
+                                            final confirmed = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => Dialog(
                                                 backgroundColor:
                                                     const Color.fromARGB(
                                                       255,
@@ -1944,209 +1969,385 @@ class _CMealPageState extends State<CMealPage> {
                                                       30,
                                                       30,
                                                     ),
-                                                side: const BorderSide(
-                                                  color: Colors.white24,
-                                                  width: 1,
-                                                ),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                lang.getText("continue_meal"),
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          );
-                          setState(() {
-                            showdelete = false;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 6,
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 45, 45, 45),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white24),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    meal.customName.isNotEmpty
-                                        ? meal.customName
-                                        : lang.getText("unknown_template"),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${meal.totalCalories} kcal | ${meal.totalProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.totalCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.totalFat.toStringAsFixed(3)} g ${lang.getText("fat")}',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.redAccent,
-                                        ),
-                                        onPressed: () async {
-                                          final confirmed = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => Dialog(
-                                              backgroundColor:
-                                                  const Color.fromARGB(
-                                                    255,
-                                                    30,
-                                                    30,
-                                                    30,
+                                                      BorderRadius.circular(16),
+                                                  side: const BorderSide(
+                                                    color: Colors.white24,
                                                   ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                                side: const BorderSide(
-                                                  color: Colors.white24,
                                                 ),
-                                              ),
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(
-                                                  20,
-                                                ),
-                                                child: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      lang.getText("delete"),
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 22,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 16),
-                                                    Text(
-                                                      "${lang.getText("sure_delete_template")}\n'${meal.customName}'?",
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontSize: 16,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 24),
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceEvenly,
-                                                      children: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                                false,
-                                                              ),
-                                                          style:
-                                                              TextButton.styleFrom(
-                                                                foregroundColor:
-                                                                    Colors
-                                                                        .white54,
-                                                              ),
-                                                          child: Text(
-                                                            lang.getText(
-                                                              "cancel",
-                                                            ),
-                                                            style:
-                                                                const TextStyle(
-                                                                  fontSize: 16,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                          ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                    20,
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        lang.getText("delete"),
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 22,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
-                                                        FilledButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                                true,
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 16,
+                                                      ),
+                                                      Text(
+                                                        "${lang.getText("sure_delete_template")}\n'${meal.customName}'?",
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: const TextStyle(
+                                                          color: Colors.white70,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 24,
+                                                      ),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceEvenly,
+                                                        children: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                  context,
+                                                                  false,
+                                                                ),
+                                                            style: TextButton.styleFrom(
+                                                              foregroundColor:
+                                                                  Colors
+                                                                      .white54,
+                                                            ),
+                                                            child: Text(
+                                                              lang.getText(
+                                                                "cancel",
                                                               ),
-                                                          style: FilledButton.styleFrom(
-                                                            backgroundColor:
-                                                                Colors
-                                                                    .redAccent,
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
+                                                              style: const TextStyle(
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          FilledButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                  context,
+                                                                  true,
+                                                                ),
+                                                            style: FilledButton.styleFrom(
+                                                              backgroundColor:
+                                                                  Colors
+                                                                      .redAccent,
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
+                                                                    ),
+                                                              ),
+                                                              padding:
+                                                                  const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        20,
+                                                                    vertical:
+                                                                        10,
                                                                   ),
                                                             ),
-                                                            padding:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal:
-                                                                      20,
-                                                                  vertical: 10,
-                                                                ),
-                                                          ),
-                                                          child: Text(
-                                                            lang.getText(
-                                                              "delete",
+                                                            child: Text(
+                                                              lang.getText(
+                                                                "delete",
+                                                              ),
+                                                              style: const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 16,
+                                                              ),
                                                             ),
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  fontSize: 16,
-                                                                ),
                                                           ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
+                                            );
+
+                                            if (confirmed == true) {
+                                              final success =
+                                                  await deleteUserMealTemplate(
+                                                    meal.id,
+                                                  );
+
+                                              if (success) {
+                                                setState(() {
+                                                  meals.removeAt(index);
+                                                });
+
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        lang.getText(
+                                                          "deleted_successfully",
+                                                        ),
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      showCloseIcon: true,
+                                                      closeIconColor:
+                                                          Colors.white70,
+                                                      behavior: SnackBarBehavior
+                                                          .floating,
+                                                      backgroundColor:
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            45,
+                                                            45,
+                                                            45,
+                                                          ),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                        side: const BorderSide(
+                                                          color: Colors.white24,
+                                                          width: 1,
+                                                        ),
+                                                      ),
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                            bottom: 30,
+                                                            left: 16,
+                                                            right: 16,
+                                                          ),
+                                                      duration: const Duration(
+                                                        milliseconds: 1800,
+                                                      ),
+                                                      animation: CurvedAnimation(
+                                                        parent:
+                                                            kAlwaysCompleteAnimation,
+                                                        curve: Curves.easeInOut,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // Bal oldali gomb: Hozzáadás
+                Expanded(
+                  child: CustomButton(
+                    title: lang.getText("add"),
+                    variant: CustomButtonVariant.secondary,
+                    onPressed: () async {
+                      final result = await Navigator.push<List<MealDto>>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddMealPage(),
+                        ),
+                      );
+
+                      if (result != null) {
+                        setState(() {
+                          userMeals.addAll(result);
+                        });
+                      }
+                    },
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Jobb oldali gomb: Tovább / Mentés
+                Expanded(
+                  child: CustomButton(
+                    title: lang.getText("continue"),
+                    variant: CustomButtonVariant.primary,
+                    onPressed: () async {
+                      if (userMeals.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(lang.getText("no_meals_selected")),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return Dialog(
+                            insetPadding: const EdgeInsets.all(20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 40, 40, 40),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      lang.getText("save_sample"),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Stack(
+                                      children: [
+                                        Container(
+                                          width: double.infinity,
+                                          height: null,
+                                          margin: const EdgeInsets.fromLTRB(
+                                            0,
+                                            20,
+                                            0,
+                                            20,
+                                          ),
+                                          padding: const EdgeInsets.fromLTRB(
+                                            0,
+                                            0,
+                                            5,
+                                            5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(
+                                              255,
+                                              72,
+                                              72,
+                                              72,
                                             ),
-                                          );
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: TextField(
+                                            cursorColor: Colors.white,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                            ),
+                                            controller: mealnamecontroller,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                  color: Colors.transparent,
+                                                  width: 2,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                  color: Colors.transparent,
+                                                  width: 1,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            keyboardType: TextInputType.text,
+                                          ),
+                                        ),
 
-                                          if (confirmed == true) {
-                                            final success =
-                                                await deleteUserMealTemplate(
-                                                  meal.id,
+                                        Positioned(
+                                          top:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.height *
+                                              0.01,
+                                          left:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.width *
+                                              0.04,
+                                          child: Text(
+                                            lang.getText("sample_name"),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        FilledButton(
+                                          onPressed: () async {
+                                            try {
+                                              final prefs =
+                                                  await SharedPreferences.getInstance();
+                                              final userId = prefs.getInt(
+                                                'userId',
+                                              );
+                                              if (userId == null) {
+                                                throw Exception(
+                                                  lang.getText(
+                                                    "no_userId_found",
+                                                  ),
                                                 );
+                                              }
 
-                                            if (success) {
-                                              setState(() {
-                                                meals.removeAt(index);
-                                              });
+                                              await saveUserMeals(
+                                                userMeals,
+                                                _mealtypes[mealindex],
+                                                userId,
+                                              );
 
                                               if (context.mounted) {
                                                 ScaffoldMessenger.of(
@@ -2155,35 +2356,12 @@ class _CMealPageState extends State<CMealPage> {
                                                   SnackBar(
                                                     content: Text(
                                                       lang.getText(
-                                                        "deleted_successfully",
-                                                      ),
-                                                      style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
+                                                        "saved_successfully",
                                                       ),
                                                     ),
                                                     showCloseIcon: true,
-                                                    closeIconColor:
-                                                        Colors.white70,
                                                     behavior: SnackBarBehavior
                                                         .floating,
-                                                    backgroundColor:
-                                                        const Color.fromARGB(
-                                                          255,
-                                                          45,
-                                                          45,
-                                                          45,
-                                                        ),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                      side: const BorderSide(
-                                                        color: Colors.white24,
-                                                        width: 1,
-                                                      ),
-                                                    ),
                                                     margin:
                                                         const EdgeInsets.only(
                                                           bottom: 30,
@@ -2201,515 +2379,298 @@ class _CMealPageState extends State<CMealPage> {
                                                   ),
                                                 );
                                               }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text("Hiba: $e"),
+                                                    backgroundColor: Colors.red,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 30,
+                                                          left: 16,
+                                                          right: 16,
+                                                        ),
+                                                    duration: const Duration(
+                                                      milliseconds: 1800,
+                                                    ),
+                                                    animation: CurvedAnimation(
+                                                      parent:
+                                                          kAlwaysCompleteAnimation,
+                                                      curve: Curves.easeInOut,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                              return;
                                             }
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                            if (_debounce?.isActive ?? false) {
+                                              _debounce!.cancel();
+                                            }
+                                            _debounce = Timer(
+                                              const Duration(
+                                                milliseconds: 1500,
+                                              ),
+                                              () {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).hideCurrentSnackBar();
+                                                  Navigator.push<List<MealDto>>(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          const Pages(),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                            );
+                                          },
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                  255,
+                                                  85,
+                                                  173,
+                                                  78,
+                                                ),
+                                            fixedSize: Size(
+                                              MediaQuery.of(
+                                                    context,
+                                                  ).size.width *
+                                                  0.36,
+                                              MediaQuery.of(
+                                                    context,
+                                                  ).size.height *
+                                                  0.07,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(11),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            lang.getText("save_without_sample"),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+
+                                        FilledButton(
+                                          onPressed: () async {
+                                            if (mealnamecontroller.text
+                                                .trim()
+                                                .isEmpty) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    lang.getText(
+                                                      "name_the_template",
+                                                    ),
+                                                  ),
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                              return;
+                                            }
+
+                                            final existingTemplates =
+                                                await futureCustomMeals;
+                                            final newName = mealnamecontroller
+                                                .text
+                                                .trim();
+
+                                            final bool isDuplicate =
+                                                existingTemplates.any(
+                                                  (template) =>
+                                                      template.customName
+                                                          .trim()
+                                                          .toLowerCase() ==
+                                                      newName.toLowerCase(),
+                                                );
+
+                                            if (isDuplicate) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      lang.getText(
+                                                        'duplicate_template',
+                                                      ),
+                                                    ),
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                              return;
+                                            }
+
+                                            try {
+                                              final prefs =
+                                                  await SharedPreferences.getInstance();
+                                              final userId = prefs.getInt(
+                                                'userId',
+                                              );
+                                              if (userId == null) {
+                                                throw Exception(
+                                                  lang.getText(
+                                                    "no_userId_found",
+                                                  ),
+                                                );
+                                              }
+
+                                              await saveUserMealsS(
+                                                userMeals,
+                                                mealnamecontroller.text,
+                                                userId,
+                                              );
+
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      lang.getText(
+                                                        "saved_successfully",
+                                                      ),
+                                                    ),
+                                                    showCloseIcon: true,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 30,
+                                                          left: 16,
+                                                          right: 16,
+                                                        ),
+                                                    duration: const Duration(
+                                                      milliseconds: 1800,
+                                                    ),
+                                                    animation: CurvedAnimation(
+                                                      parent:
+                                                          kAlwaysCompleteAnimation,
+                                                      curve: Curves.easeInOut,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text("Hiba: $e"),
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 30,
+                                                          left: 16,
+                                                          right: 16,
+                                                        ),
+                                                    duration: const Duration(
+                                                      milliseconds: 1800,
+                                                    ),
+                                                    animation: CurvedAnimation(
+                                                      parent:
+                                                          kAlwaysCompleteAnimation,
+                                                      curve: Curves.easeInOut,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                              return;
+                                            }
+                                            if (_debounce?.isActive ?? false) {
+                                              _debounce!.cancel();
+                                            }
+                                            _debounce = Timer(
+                                              const Duration(
+                                                milliseconds: 1500,
+                                              ),
+                                              () {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).hideCurrentSnackBar();
+                                                  Navigator.push<List<MealDto>>(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          const Pages(),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                            );
+                                          },
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                  255,
+                                                  85,
+                                                  173,
+                                                  78,
+                                                ),
+                                            fixedSize: Size(
+                                              MediaQuery.of(
+                                                    context,
+                                                  ).size.width *
+                                                  0.36,
+                                              MediaQuery.of(
+                                                    context,
+                                                  ).size.height *
+                                                  0.07,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(11),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            lang.getText("save"),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              FilledButton(
-                onPressed: () async {
-                  final result = await Navigator.push<List<MealDto>>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddMealPage(),
-                    ),
-                  );
-
-                  if (result != null) {
-                    setState(() {
-                      userMeals.addAll(result);
-                    });
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width * 0.41,
-                    MediaQuery.of(context).size.height * 0.07,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
                   ),
                 ),
-                child: Text(
-                  lang.getText("add"),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              FilledButton(
-                onPressed: () async {
-                  if (userMeals.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(lang.getText("no_meals_selected")),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Dialog(
-                        insetPadding: const EdgeInsets.all(20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 40, 40, 40),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  lang.getText("save_sample"),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Stack(
-                                  children: [
-                                    Container(
-                                      width: double.infinity,
-                                      height: null,
-                                      margin: const EdgeInsets.fromLTRB(
-                                        0,
-                                        20,
-                                        0,
-                                        20,
-                                      ),
-                                      padding: const EdgeInsets.fromLTRB(
-                                        0,
-                                        0,
-                                        5,
-                                        5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          72,
-                                          72,
-                                          72,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: TextField(
-                                        cursorColor: Colors.white,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                        ),
-                                        controller: mealnamecontroller,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.transparent,
-                                              width: 2,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.transparent,
-                                              width: 1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        keyboardType: TextInputType.text,
-                                      ),
-                                    ),
-
-                                    Positioned(
-                                      top:
-                                          MediaQuery.of(context).size.height *
-                                          0.01,
-                                      left:
-                                          MediaQuery.of(context).size.width *
-                                          0.04,
-                                      child: Text(
-                                        lang.getText("sample_name"),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    FilledButton(
-                                      onPressed: () async {
-                                        try {
-                                          final prefs =
-                                              await SharedPreferences.getInstance();
-                                          final userId = prefs.getInt('userId');
-                                          if (userId == null) {
-                                            throw Exception(
-                                              lang.getText("no_userId_found"),
-                                            );
-                                          }
-
-                                          await saveUserMeals(
-                                            userMeals,
-                                            _mealtypes[mealindex],
-                                            userId,
-                                          );
-
-                                          ScaffoldMessenger.of(
-                                            // ignore: use_build_context_synchronously
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                lang.getText(
-                                                  "saved_successfully",
-                                                ),
-                                              ),
-                                              showCloseIcon: true,
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              margin: EdgeInsets.only(
-                                                bottom: 30,
-                                                left: 16,
-                                                right: 16,
-                                              ),
-                                              duration: Duration(
-                                                milliseconds: 1800,
-                                              ),
-                                              animation: CurvedAnimation(
-                                                parent:
-                                                    kAlwaysCompleteAnimation,
-                                                curve: Curves.easeInOut,
-                                              ),
-                                            ),
-                                          );
-                                        } catch (e) {
-                                          ScaffoldMessenger.of(
-                                            // ignore: use_build_context_synchronously
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text("Hiba: $e"),
-                                              backgroundColor: Colors.red,
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              margin: EdgeInsets.only(
-                                                bottom: 30,
-                                                left: 16,
-                                                right: 16,
-                                              ),
-                                              duration: Duration(
-                                                milliseconds: 1800,
-                                              ),
-                                              animation: CurvedAnimation(
-                                                parent:
-                                                    kAlwaysCompleteAnimation,
-                                                curve: Curves.easeInOut,
-                                              ),
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                        if (_debounce?.isActive ?? false) {
-                                          _debounce!.cancel();
-                                        }
-                                        _debounce = Timer(
-                                          const Duration(milliseconds: 1500),
-                                          () {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).hideCurrentSnackBar();
-                                            Navigator.push<List<MealDto>>(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const Pages(),
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: const Color.fromARGB(
-                                          255,
-                                          85,
-                                          173,
-                                          78,
-                                        ),
-                                        fixedSize: Size(
-                                          MediaQuery.of(context).size.width *
-                                              0.36,
-                                          MediaQuery.of(context).size.height *
-                                              0.07,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            11,
-                                          ),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        lang.getText("save_without_sample"),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-
-                                    FilledButton(
-                                      onPressed: () async {
-                                        if (mealnamecontroller.text
-                                            .trim()
-                                            .isEmpty) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                lang.getText(
-                                                  "name_the_template",
-                                                ),
-                                              ),
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                          return;
-                                        }
-
-                                        final existingTemplates =
-                                            await futureCustomMeals;
-                                        final newName = mealnamecontroller.text
-                                            .trim();
-
-                                        final bool isDuplicate =
-                                            existingTemplates.any(
-                                              (template) =>
-                                                  template.customName
-                                                      .trim()
-                                                      .toLowerCase() ==
-                                                  newName.toLowerCase(),
-                                            );
-
-                                        if (isDuplicate) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                lang.getText(
-                                                  'duplicate_template',
-                                                ),
-                                              ),
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                          return;
-                                        }
-
-                                        try {
-                                          final prefs =
-                                              await SharedPreferences.getInstance();
-                                          final userId = prefs.getInt('userId');
-                                          if (userId == null) {
-                                            throw Exception(
-                                              lang.getText("no_userId_found"),
-                                            );
-                                          }
-
-                                          await saveUserMealsS(
-                                            userMeals,
-                                            mealnamecontroller.text,
-                                            userId,
-                                          );
-
-                                          ScaffoldMessenger.of(
-                                            // ignore: use_build_context_synchronously
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                lang.getText(
-                                                  "saved_successfully",
-                                                ),
-                                              ),
-                                              showCloseIcon: true,
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              margin: EdgeInsets.only(
-                                                bottom: 30,
-                                                left: 16,
-                                                right: 16,
-                                              ),
-                                              duration: Duration(
-                                                milliseconds: 1800,
-                                              ),
-                                              animation: CurvedAnimation(
-                                                parent:
-                                                    kAlwaysCompleteAnimation,
-                                                curve: Curves.easeInOut,
-                                              ),
-                                            ),
-                                          );
-                                        } catch (e) {
-                                          ScaffoldMessenger.of(
-                                            // ignore: use_build_context_synchronously
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text("Hiba: $e"),
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              margin: EdgeInsets.only(
-                                                bottom: 30,
-                                                left: 16,
-                                                right: 16,
-                                              ),
-                                              duration: Duration(
-                                                milliseconds: 1800,
-                                              ),
-                                              animation: CurvedAnimation(
-                                                parent:
-                                                    kAlwaysCompleteAnimation,
-                                                curve: Curves.easeInOut,
-                                              ),
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                        if (_debounce?.isActive ?? false) {
-                                          _debounce!.cancel();
-                                        }
-                                        _debounce = Timer(
-                                          const Duration(milliseconds: 1500),
-                                          () {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).hideCurrentSnackBar();
-                                            Navigator.push<List<MealDto>>(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const Pages(),
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: const Color.fromARGB(
-                                          255,
-                                          85,
-                                          173,
-                                          78,
-                                        ),
-                                        fixedSize: Size(
-                                          MediaQuery.of(context).size.width *
-                                              0.36,
-                                          MediaQuery.of(context).size.height *
-                                              0.07,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            11,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        lang.getText("save"),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width * 0.41,
-                    MediaQuery.of(context).size.height * 0.07,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                ),
-                child: Text(
-                  lang.getText("continue"),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
