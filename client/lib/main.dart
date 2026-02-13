@@ -1,6 +1,6 @@
 import "dart:math";
 
-import "package:client/Providers/language_provider.dart";
+import "package:client/providers/language_provider.dart";
 import "package:client/components/drawers/login_drawer.dart";
 import "package:client/components/drawers/register_drawer.dart";
 import "package:client/components/topo_background.dart";
@@ -111,7 +111,10 @@ class MainPage extends HookWidget {
                 end: Alignment.bottomCenter,
                 colors: [Colors.white24, Colors.transparent],
               ).createShader(bounds),
-              child: TopoBackground(foreground: const Color(0xFF7af970), scale: 2),
+              child: TopoBackground(
+                foreground: const Color(0xFF7af970),
+                scale: 2,
+              ),
             ),
           ),
           SafeArea(

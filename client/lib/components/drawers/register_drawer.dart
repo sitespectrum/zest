@@ -8,7 +8,7 @@ import 'package:client/components/details_page.dart';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/constants.dart';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 
 class RegisterDrawer extends StatefulWidget {
   const RegisterDrawer({super.key});

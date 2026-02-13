@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 import 'package:client/components/custom_workout_page.dart';
 import 'package:client/constants.dart';
 import 'package:client/models/workout.dart';

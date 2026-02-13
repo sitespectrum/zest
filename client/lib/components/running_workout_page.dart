@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:client/models/workout.dart';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 import 'package:client/pages.dart';
 import 'package:client/providers/workout_provider.dart';
 import 'package:flutter/material.dart';

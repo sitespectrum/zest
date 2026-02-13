@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 import 'package:client/components/ui/custom_card.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;

@@ -1,5 +1,7 @@
 import 'dart:ui';
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/components/drawers/recent_m_drawer.dart';
+import 'package:client/providers/language_provider.dart';
+import 'package:client/components/drawers/recent_w_drawer.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/providers/workout_provider.dart';
 import 'package:flutter/material.dart';
@@ -396,11 +398,12 @@ class _HomePageState extends State<HomePage>
                                   );
                                 }
 
-                                showDialog(
+                                showModalBottomSheet(
+                                  isScrollControlled: true,
+                                  elevation: 0,
                                   context: context,
                                   builder: (builderContext) {
-                                    return _buildWorkoutDialog(
-                                      context,
+                                    return RecentWDrawer(
                                       lastWorkout,
                                       currentWorkoutNum,
                                       lang,
@@ -511,10 +514,10 @@ class _HomePageState extends State<HomePage>
                           : GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
-                                showDialog(
+                                showModalBottomSheet(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return _buildMealDialog(
+                                    return recentMDrawer(
                                       context,
                                       lastMeal,
                                       lang,
@@ -707,262 +710,6 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
-
-  Widget _buildWorkoutDialog(
-    BuildContext context,
-    UserWorkoutDto lastWorkout,
-    int currentWorkoutNum,
-    LanguageProvider lang,
-    WorkoutProvider workoutProvider,
-  ) {
-    double calculatedVolume = 0;
-    double calculatedDistance = 0;
-
-    for (var ex in lastWorkout.exercises) {
-      final isCardio = ex.exercise?.category?.toLowerCase() == 'cardio';
-      for (var s in ex.sets) {
-        if (isCardio) {
-          calculatedDistance += s.weight;
-        } else {
-          calculatedVolume += s.weight * s.reps;
-        }
-      }
-    }
-
-    String headerValueText = "";
-    String headerLabelText = "";
-
-    if (calculatedVolume > 0 && calculatedDistance > 0) {
-      headerValueText =
-          "${calculatedVolume.toInt()}kg + ${calculatedDistance.toStringAsFixed(1)}km";
-      headerLabelText = lang.getText("volume");
-    } else if (calculatedVolume > 0) {
-      headerValueText = "${calculatedVolume.toInt()} kg";
-      headerLabelText = lang.getText("volume");
-    } else {
-      headerValueText = "${calculatedDistance.toStringAsFixed(1)} km";
-      headerLabelText = lang.getText("distance");
-    }
-
-    final langCode = lang.languageCode;
-
-    return Dialog(
-      insetPadding: const EdgeInsets.all(20),
-      backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 40, 40, 40),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white24),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Text(
-                lastWorkout.workoutName.isEmpty
-                    ? lastWorkout.customName
-                    : lastWorkout.workoutName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const Divider(color: Colors.white24, height: 30),
-
-            Row(
-              children: [
-                _buildStatCell("$currentWorkoutNum.", isHeader: true),
-                _buildStatCell(
-                  "${lastWorkout.totalBurntCalories}",
-                  isHeader: true,
-                ),
-                _buildStatCell(
-                  "${lastWorkout.durationMinutes} ${lang.getText("min")}",
-                  isHeader: true,
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      headerValueText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                _buildStatCell(lang.getText("workout"), color: Colors.grey),
-                _buildStatCell(lang.getText("calories"), color: Colors.grey),
-                _buildStatCell(lang.getText("duration"), color: Colors.grey),
-                _buildStatCell(headerLabelText, color: Colors.grey),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            Builder(
-              builder: (context) {
-                final totalSets = lastWorkout.exercises.fold<int>(
-                  0,
-                  (sum, ex) => sum + ex.sets.where((s) => s.isCompleted).length,
-                );
-                final totalReps = lastWorkout.exercises.fold<int>(
-                  0,
-                  (sum, ex) =>
-                      sum +
-                      ex.sets
-                          .where((s) => s.isCompleted)
-                          .fold<int>(0, (r, set) => r + set.reps),
-                );
-                return Row(
-                  children: [
-                    _buildStatCell(
-                      "${workoutProvider.userWorkouts.length}",
-                      isHeader: true,
-                    ),
-                    _buildStatCell("$totalSets", isHeader: true),
-                    _buildStatCell("$totalReps", isHeader: true),
-                    const Expanded(child: SizedBox()),
-                  ],
-                );
-              },
-            ),
-            Row(
-              children: [
-                _buildStatCell(lang.getText("exercises"), color: Colors.grey),
-                _buildStatCell(lang.getText("sets"), color: Colors.grey),
-                _buildStatCell(lang.getText("reps"), color: Colors.grey),
-                const Expanded(child: SizedBox()),
-              ],
-            ),
-
-            const Divider(color: Colors.white24, height: 30),
-
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: lastWorkout.exercises.length,
-                separatorBuilder: (ctx, i) =>
-                    const Divider(color: Colors.white12),
-                itemBuilder: (context, index) {
-                  final ex = lastWorkout.exercises[index];
-                  final isCardio =
-                      ex.exercise?.category?.toLowerCase() == 'cardio';
-                  final isBodyweight =
-                      ex.exercise?.equipment?.toLowerCase() == 'body only' ||
-                      ex.exercise?.equipment?.toLowerCase() == 'none';
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          ex.exercise?.getName(langCode) ??
-                              lang.getText("unknown_exercise"),
-                          style: const TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      if (ex.sets.isEmpty)
-                        const Text(" - ", style: TextStyle(color: Colors.grey))
-                      else
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: ex.sets.map((set) {
-                              String textToShow = "";
-                              if (isCardio) {
-                                textToShow =
-                                    "${set.weight} km | ${set.reps} ${lang.getText("min")}";
-                              } else if (isBodyweight) {
-                                textToShow =
-                                    "${set.reps} ${lang.getText("reps")}";
-                              } else {
-                                textToShow = "${set.weight} kg x ${set.reps}";
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 2.0,
-                                ),
-                                child: Text(
-                                  textToShow,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Center(
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-                  side: const BorderSide(color: Colors.white24, width: 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  lang.getText("close"),
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-Widget _buildStatCell(
-  String text, {
-  bool isHeader = false,
-  Color color = Colors.white,
-}) {
-  return Expanded(
-    child: Center(
-      child: Text(
-        text,
-        style: TextStyle(
-          color: isHeader ? Colors.white : color,
-          fontWeight: FontWeight.bold,
-          fontSize: isHeader ? 16 : 12,
-        ),
-      ),
-    ),
-  );
 }
 
 Widget _buildLegendItem(Color color, String label) {

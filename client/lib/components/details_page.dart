@@ -1,4 +1,4 @@
-import 'package:client/Providers/language_provider.dart';
+import 'package:client/providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;

@@ -18,7 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'add_workout_page.dart';
-import '../Providers/language_provider.dart';
+import '../providers/language_provider.dart';
 import '../providers/workout_provider.dart';
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -407,9 +407,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(
-        'jwt_token',
-      );
+      final token = prefs.getString('jwt_token');
 
       List<Map<String, dynamic>> jsonList = userWorkouts
           .map((e) => e.toJson())
@@ -905,7 +903,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                   );
                                                                 },
                                                                 child: Text(
-                                                                  lang.getText("read"),
+                                                                  lang.getText(
+                                                                    "read",
+                                                                  ),
                                                                   style: TextStyle(
                                                                     color: Colors
                                                                         .white,

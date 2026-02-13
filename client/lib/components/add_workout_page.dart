@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Providers/language_provider.dart';
+import '../providers/language_provider.dart';
 import '../constants.dart';
 import 'dart:math';
 
@@ -730,7 +730,13 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                             ),
                             child: IconButton(
                               onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateWorkoutPage()));
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const CreateWorkoutPage(),
+                                  ),
+                                );
                               },
                               icon: const Icon(
                                 CupertinoIcons.add_circled,
