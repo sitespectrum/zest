@@ -1,7 +1,6 @@
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/providers/workout_provider.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
@@ -297,16 +296,11 @@ Widget recentWDrawer(
 
           const SizedBox(height: 10),
 
-          SizedBox(
-            width: double.infinity,
-            child: CustomButton(
-              onPressed: () => Navigator.pop(context),
-              variant: CustomButtonVariant.secondary,
-              child: Text(
-                lang.getText("close"),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+          CustomButton(
+            onPressed: () => Navigator.pop(context),
+            title: lang.getText("close"),
+            iconData: Icons.close_rounded,
+            variant: CustomButtonVariant.secondary,
           ),
         ],
       ),

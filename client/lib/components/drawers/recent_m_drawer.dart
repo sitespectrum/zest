@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
 import 'package:provider/provider.dart';
-import 'package:client/components/custom_meal_page.dart';
-import 'package:client/components/custom_workout_page.dart';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/providers/language_provider.dart';
@@ -36,33 +34,65 @@ Widget recentMDrawer(
 
   return CustomDrawer(
     child: SizedBox(
-      width: double.infinity,
+      height: MediaQuery.of(context).size.height * 0.46,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            getTranslatedName(lastMeal.mealName, lang),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.history,
+                      color: Color.fromARGB(150, 50, 146, 255),
+                      size: 28,
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          lastMeal.customName.isNotEmpty
+                              ? lastMeal.customName
+                              : getTranslatedName(lastMeal.mealName, lang),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          lastMeal.eatenAt.toString().split(' ')[0],
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
 
-          Flexible(
+          const Divider(color: Colors.white24),
+
+          Expanded(
             child: ListView.builder(
-              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              physics: const BouncingScrollPhysics(),
               itemCount: lastMeal.meals.length,
               itemBuilder: (context, index) {
                 final meal = lastMeal.meals[index];
                 final cleanName = stripHtmlTags(meal.name);
 
                 return Container(
-                  width: double.infinity,
                   margin: const EdgeInsets.symmetric(
                     vertical: 3,
-                    horizontal: 4,
+                    horizontal: 0,
                   ),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -123,21 +153,11 @@ Widget recentMDrawer(
 
           const SizedBox(height: 10),
 
-          Center(
-            child: FilledButton(
-              onPressed: () => Navigator.pop(context),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-                side: const BorderSide(color: Colors.white24, width: 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                lang.getText("close"),
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
+          CustomButton(
+            onPressed: () => Navigator.pop(context),
+            title: lang.getText("close"),
+            iconData: Icons.close_rounded,
+            variant: CustomButtonVariant.secondary,
           ),
         ],
       ),

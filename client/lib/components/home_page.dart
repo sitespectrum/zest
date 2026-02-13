@@ -517,11 +517,7 @@ class _HomePageState extends State<HomePage>
                                 showModalBottomSheet(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return recentMDrawer(
-                                      context,
-                                      lastMeal,
-                                      lang,
-                                    );
+                                    return RecentMDrawer(lastMeal, lang);
                                   },
                                 );
                               },
@@ -580,132 +576,6 @@ class _HomePageState extends State<HomePage>
               SizedBox(height: MediaQuery.of(context).size.height * 0.13),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMealDialog(
-    BuildContext context,
-    UserMealDto lastMeal,
-    LanguageProvider lang,
-  ) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(20),
-      backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 40, 40, 40),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              getTranslatedName(lastMeal.mealName, lang),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: lastMeal.meals.length,
-                itemBuilder: (context, index) {
-                  final meal = lastMeal.meals[index];
-                  final cleanName = stripHtmlTags(meal.name);
-
-                  return Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 3,
-                      horizontal: 4,
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 30, 30, 30),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "$cleanName (${meal.quantity})",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${meal.qCalories.toStringAsFixed(3)} kcal',
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                '${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein").toLowerCase()}',
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs").toLowerCase()}',
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                '${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat").toLowerCase()}',
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Center(
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-                  side: const BorderSide(color: Colors.white24, width: 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  lang.getText("close"),
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
