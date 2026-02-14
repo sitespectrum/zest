@@ -21,6 +21,7 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
   final TextEditingController userNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool loading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +138,9 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
 
           CustomButton(
             onPressed: () async {
+              setState(() {
+                loading = true;
+              });
               final response = await http.post(
                 Uri.parse("$apiUrl/api/auth/register"),
                 headers: {"Content-Type": "application/json"},
@@ -164,6 +168,9 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
                   );
                 }
               } else {
+                setState(() {
+                  loading = false;
+                });
                 if (context.mounted) {
                   showDialog(
                     context: context,
@@ -177,6 +184,7 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
             },
             title: "Register",
             iconData: Icons.person_add_alt_1_rounded,
+            loading: loading,
           ),
         ],
       ),

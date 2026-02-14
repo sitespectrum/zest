@@ -21,6 +21,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool loading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +104,9 @@ class _LoginDrawerState extends State<LoginDrawer> {
 
           CustomButton(
             onPressed: () async {
+              setState(() {
+                loading = true;
+              });
               final username = _userNameController.text;
               final email = _emailController.text;
               final password = _passwordController.text;
@@ -141,6 +145,9 @@ class _LoginDrawerState extends State<LoginDrawer> {
                   );
                 }
               } else {
+                setState(() {
+                  loading = false;
+                });
                 showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
@@ -152,6 +159,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
             },
             title: "Log in",
             iconData: Icons.login_rounded,
+            loading: loading,
           ),
         ],
       ),

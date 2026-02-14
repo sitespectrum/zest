@@ -29,6 +29,28 @@ final userMealsQuery = buildQueryArgs(
   },
 );
 
+final userCustomMealsQuery = buildQueryArgs(
+  queryKey: ["user", "customMeals", "all"],
+  queryFn: (context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) throw Exception("Nincs token");
+
+    final response = await http.get(
+      Uri.parse("$apiUrl/api/meals/getCustomUserMeals"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
+    } else {
+      throw Exception("Failed to fetch user custom meals: ${response.body}");
+    }
+  },
+);
+
 final calorieGoalQuery = buildQueryArgs(
   queryKey: ["user", "calorieGoal"],
   queryFn: (context) async {

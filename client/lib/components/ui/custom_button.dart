@@ -18,7 +18,7 @@ Widget customButton({
   bool loading = false,
 }) {
   return FilledButton(
-    onPressed: disabled ? null : onPressed,
+    onPressed: disabled || loading ? null : onPressed,
     style: switch (variant) {
       CustomButtonVariant.primary => FilledButton.styleFrom(
         backgroundColor: const Color.fromARGB(50, 64, 255, 50),
@@ -47,9 +47,19 @@ Widget customButton({
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 12,
           children: [
-            if (loading) CircularProgressIndicator(),
-            if (icon != null) icon,
-            if (icon == null && iconData != null) Icon(iconData, size: 20),
+            if (loading)
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: Colors.white38,
+                  strokeCap: StrokeCap.round,
+                  strokeWidth: 2,
+                ),
+              ),
+            if (!loading && icon != null) icon,
+            if (!loading && icon == null && iconData != null)
+              Icon(iconData, size: 20),
 
             if (title != "")
               Text(
