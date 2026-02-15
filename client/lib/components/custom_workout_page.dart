@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:ui';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
+import 'package:client/components/drawers/workout_details_drawer.dart';
+import 'package:client/components/drawers/workout_template_drawer.dart';
 import 'package:client/components/running_workout_page.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/cupertino.dart';
@@ -194,14 +197,20 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () {
-                  stopNfcSharing();
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "Bezárás",
-                  style: TextStyle(color: Colors.white),
+              Container(
+                width: double.infinity,
+                child: CustomButton(
+                  onPressed: () {
+                    stopNfcSharing();
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Bezárás",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -297,16 +306,33 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (c) => const AlertDialog(
+      builder: (c) => AlertDialog(
         backgroundColor: Color.fromARGB(255, 30, 30, 30),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.nfc, size: 60, color: Colors.white),
+            const Icon(Icons.nfc, size: 80, color: Colors.green),
             SizedBox(height: 20),
             Text(
               "Érintsd a másik telefonhoz...",
               style: TextStyle(color: Colors.white),
+            ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: CustomButton(
+                onPressed: () {
+                  FlutterBluePlus.stopScan();
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  "Bezárás",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -520,18 +546,23 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                 ),
               );
             } catch (e) {
-              Navigator.pop(context);
-              debugPrint("Hiba az importálásnál: $e");
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Hiba: ${e.toString()}"),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              if (context.mounted) {
+                Navigator.pop(context);
+                debugPrint("Hiba az importálásnál: $e");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Hiba: ${e.toString()}"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             }
           },
           controller: MobileScannerController(
             detectionSpeed: DetectionSpeed.noDuplicates,
+            autoStart: true,
+            formats: [BarcodeFormat.qrCode],
+            returnImage: false,
           ),
         ),
       ),
@@ -556,430 +587,468 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
               PreferredSize(
                 preferredSize: const Size.fromHeight(60),
                 child: Container(
-                  margin: const EdgeInsets.all(6),
+                  margin: const EdgeInsets.all(5),
                   child: AppBar(
                     title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Text(
-                              lang.getText("new_workout"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: 10.0,
+                                sigmaY: 10.0,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(45, 45, 45, 0.5),
+                                ),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back),
+                                      color: Colors.white,
+                                      padding: EdgeInsets.only(
+                                        left: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        right: 10,
+                                      ),
+                                      constraints: const BoxConstraints(),
+                                      style: IconButton.styleFrom(
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.maybePop(context),
+                                    ),
+                                    Text(
+                                      lang.getText("new_workout"),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                         SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 85, 173, 78),
-                            borderRadius: BorderRadius.circular(11),
+                        IconButton(
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(
+                              50,
+                              50,
+                              146,
+                              255,
+                            ),
+                            disabledBackgroundColor: const Color.fromARGB(
+                              25,
+                              64,
+                              255,
+                              50,
+                            ),
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: Colors.white38,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(
+                              color: const Color.fromARGB(150, 50, 146, 255),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                           ),
-                          child: IconButton(
-                            onPressed: () async {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                elevation: 0,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => StatefulBuilder(
-                                  builder: (context, setPopupState) => Container(
-                                    decoration: const BoxDecoration(
-                                      color: Color.fromARGB(255, 30, 30, 30),
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(24),
-                                      ),
+                          onPressed: () async {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              elevation: 0,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => StatefulBuilder(
+                                builder: (context, setPopupState) => Container(
+                                  decoration: const BoxDecoration(
+                                    color: Color.fromARGB(255, 30, 30, 30),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(24),
                                     ),
-                                    child: CustomDrawer(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(
-                                          24,
-                                        ).copyWith(top: 16, left: 0, right: 0),
-                                        child: SizedBox(
-                                          height:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.5,
-                                          child: Column(
-                                            spacing: 12,
+                                  ),
+                                  child: CustomDrawer(
+                                    child: SizedBox(
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                          0.5,
+                                      child: Column(
+                                        spacing: 12,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 24,
-                                                    ),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      lang.getText("share"),
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 24,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-
-                                              Expanded(
-                                                child: DefaultTabController(
-                                                  initialIndex: 0,
-                                                  length: 2,
-                                                  child: Column(
-                                                    children: [
-                                                      Container(
-                                                        margin:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 24,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              const Color.fromARGB(
-                                                                50,
-                                                                64,
-                                                                255,
-                                                                50,
-                                                              ),
-                                                          border: Border.all(
-                                                            color:
-                                                                const Color.fromARGB(
-                                                                  100,
-                                                                  64,
-                                                                  255,
-                                                                  50,
-                                                                ),
-                                                            width: 1,
-                                                          ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                20,
-                                                              ),
-                                                        ),
-                                                        child: TabBar(
-                                                          labelStyle:
-                                                              const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                          splashFactory: NoSplash
-                                                              .splashFactory,
-                                                          indicator: BoxDecoration(
-                                                            color:
-                                                                const Color.fromARGB(
-                                                                  100,
-                                                                  64,
-                                                                  255,
-                                                                  50,
-                                                                ),
-                                                            shape: BoxShape
-                                                                .rectangle,
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  16,
-                                                                ),
-                                                          ),
-                                                          indicatorSize:
-                                                              TabBarIndicatorSize
-                                                                  .tab,
-                                                          indicatorPadding:
-                                                              const EdgeInsets.all(
-                                                                4,
-                                                              ),
-                                                          dividerHeight: 0,
-                                                          labelColor:
-                                                              Colors.white,
-                                                          unselectedLabelColor:
-                                                              Colors.grey,
-                                                          indicatorColor:
-                                                              Colors.green,
-                                                          tabs: const [
-                                                            Tab(text: "NFC"),
-                                                            Tab(text: "QR"),
-                                                          ],
-                                                        ),
-                                                      ),
-
-                                                      Expanded(
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets.only(
-                                                                top: 24,
-                                                              ),
-                                                          child: TabBarView(
-                                                            children: [
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          24,
-                                                                    ),
-                                                                child: Column(
-                                                                  spacing: 12,
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Expanded(
-                                                                      child: Container(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        decoration: BoxDecoration(
-                                                                          borderRadius: BorderRadius.circular(
-                                                                            16,
-                                                                          ),
-                                                                        ),
-                                                                        child: IconButton(
-                                                                          style: IconButton.styleFrom(
-                                                                            shape: RoundedRectangleBorder(
-                                                                              borderRadius: BorderRadius.circular(
-                                                                                16,
-                                                                              ),
-                                                                            ),
-                                                                            backgroundColor: const Color.fromARGB(
-                                                                              65,
-                                                                              50,
-                                                                              142,
-                                                                              255,
-                                                                            ),
-                                                                            side: const BorderSide(
-                                                                              color: Color.fromARGB(
-                                                                                100,
-                                                                                50,
-                                                                                142,
-                                                                                255,
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                          onPressed: () {
-                                                                            startCloudNfcSharing(
-                                                                              context,
-                                                                            );
-                                                                          },
-                                                                          icon: const Icon(
-                                                                            Icons.contactless_rounded,
-                                                                          ),
-                                                                          color:
-                                                                              Colors.white70,
-                                                                          iconSize:
-                                                                              MediaQuery.of(
-                                                                                context,
-                                                                              ).size.width *
-                                                                              0.35,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-
-                                                                    Flex(
-                                                                      direction:
-                                                                          Axis.horizontal,
-                                                                      spacing:
-                                                                          12,
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child: Container(
-                                                                            height:
-                                                                                2,
-                                                                            color:
-                                                                                Colors.white38,
-                                                                          ),
-                                                                        ),
-                                                                        Text(
-                                                                          lang.getText(
-                                                                            "or",
-                                                                          ),
-                                                                          style: const TextStyle(
-                                                                            color:
-                                                                                Colors.white38,
-                                                                            fontSize:
-                                                                                16,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                          ),
-                                                                        ),
-                                                                        Expanded(
-                                                                          child: Container(
-                                                                            height:
-                                                                                2,
-                                                                            color:
-                                                                                Colors.white38,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-
-                                                                    CustomButton(
-                                                                      onPressed:
-                                                                          () {
-                                                                            startNfcReceivingCloud();
-                                                                          },
-                                                                      title: lang
-                                                                          .getText(
-                                                                            "recive_workout",
-                                                                          ),
-                                                                      iconData:
-                                                                          Icons
-                                                                              .call_received_rounded,
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          24,
-                                                                    ),
-                                                                child: Column(
-                                                                  spacing: 24,
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Expanded(
-                                                                      child: Container(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        alignment:
-                                                                            Alignment.center,
-                                                                        padding:
-                                                                            const EdgeInsets.all(
-                                                                              12,
-                                                                            ),
-                                                                        decoration: BoxDecoration(
-                                                                          color: Colors
-                                                                              .white
-                                                                              .withAlpha(
-                                                                                25,
-                                                                              ),
-                                                                          borderRadius: BorderRadius.circular(
-                                                                            16,
-                                                                          ),
-                                                                          border: Border.all(
-                                                                            color: Colors.white.withAlpha(
-                                                                              50,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        child:
-                                                                            shareId.isNotEmpty
-                                                                            ? QrImageView(
-                                                                                data: shareId,
-                                                                                version: QrVersions.auto,
-                                                                                dataModuleStyle: const QrDataModuleStyle(
-                                                                                  color: Colors.white,
-                                                                                  dataModuleShape: QrDataModuleShape.square,
-                                                                                ),
-                                                                                eyeStyle: const QrEyeStyle(
-                                                                                  color: Colors.white,
-                                                                                  eyeShape: QrEyeShape.square,
-                                                                                ),
-                                                                              )
-                                                                            : const Column(
-                                                                                spacing: 12,
-                                                                                mainAxisSize: MainAxisSize.min,
-                                                                                children: [
-                                                                                  Icon(
-                                                                                    Icons.qr_code,
-                                                                                    size: 96,
-                                                                                    color: Colors.white38,
-                                                                                  ),
-                                                                                  Text(
-                                                                                    "Még nincs QR kód",
-                                                                                    style: TextStyle(
-                                                                                      color: Colors.white38,
-                                                                                      fontSize: 20,
-                                                                                    ),
-                                                                                    textAlign: TextAlign.center,
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                      ),
-                                                                    ),
-
-                                                                    Flex(
-                                                                      direction:
-                                                                          Axis.horizontal,
-                                                                      spacing:
-                                                                          12,
-                                                                      children: [
-                                                                        CustomButton(
-                                                                          onPressed: () async {
-                                                                            final id =
-                                                                                await _generateQrCodeOnly() ??
-                                                                                "";
-                                                                            setPopupState(() {
-                                                                              shareId = id;
-                                                                            });
-                                                                          },
-                                                                          variant:
-                                                                              CustomButtonVariant.secondary,
-                                                                          child: const Padding(
-                                                                            padding: EdgeInsets.symmetric(
-                                                                              vertical: 2.5,
-                                                                            ),
-                                                                            child: Icon(
-                                                                              Icons.refresh_rounded,
-                                                                              color: Colors.white,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        Expanded(
-                                                                          child: CustomButton(
-                                                                            onPressed: () {
-                                                                              startScanning(
-                                                                                context,
-                                                                              );
-                                                                            },
-                                                                            title:
-                                                                                "Scan QR code",
-                                                                            iconData:
-                                                                                Icons.qr_code_scanner_rounded,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                              Text(
+                                                lang.getText("share"),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
+                                          Expanded(
+                                            child: DefaultTabController(
+                                              initialIndex: 0,
+                                              length: 2,
+                                              child: Column(
+                                                children: [
+                                                  Container(
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                            50,
+                                                            64,
+                                                            255,
+                                                            50,
+                                                          ),
+                                                      border: Border.all(
+                                                        color:
+                                                            const Color.fromARGB(
+                                                              100,
+                                                              64,
+                                                              255,
+                                                              50,
+                                                            ),
+                                                        width: 1,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            20,
+                                                          ),
+                                                    ),
+                                                    child: TabBar(
+                                                      labelStyle:
+                                                          const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                      splashFactory: NoSplash
+                                                          .splashFactory,
+                                                      indicator: BoxDecoration(
+                                                        color:
+                                                            const Color.fromARGB(
+                                                              100,
+                                                              64,
+                                                              255,
+                                                              50,
+                                                            ),
+                                                        shape:
+                                                            BoxShape.rectangle,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              16,
+                                                            ),
+                                                      ),
+                                                      indicatorSize:
+                                                          TabBarIndicatorSize
+                                                              .tab,
+                                                      indicatorPadding:
+                                                          const EdgeInsets.all(
+                                                            4,
+                                                          ),
+                                                      dividerHeight: 0,
+                                                      labelColor: Colors.white,
+                                                      unselectedLabelColor:
+                                                          Colors.grey,
+                                                      indicatorColor:
+                                                          Colors.green,
+                                                      tabs: const [
+                                                        Tab(text: "NFC"),
+                                                        Tab(text: "QR"),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            top: 24,
+                                                          ),
+                                                      child: TabBarView(
+                                                        children: [
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                                  horizontal: 0,
+                                                                ),
+                                                            child: Column(
+                                                              spacing: 12,
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
+                                                              children: [
+                                                                Expanded(
+                                                                  child: Container(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    decoration: BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                    ),
+                                                                    child: IconButton(
+                                                                      style: IconButton.styleFrom(
+                                                                        shape: RoundedRectangleBorder(
+                                                                          borderRadius: BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                        ),
+                                                                        backgroundColor: const Color.fromARGB(
+                                                                          65,
+                                                                          50,
+                                                                          142,
+                                                                          255,
+                                                                        ),
+                                                                        side: const BorderSide(
+                                                                          color: Color.fromARGB(
+                                                                            100,
+                                                                            50,
+                                                                            142,
+                                                                            255,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      onPressed: () {
+                                                                        startCloudNfcSharing(
+                                                                          context,
+                                                                        );
+                                                                      },
+                                                                      icon: const Icon(
+                                                                        Icons
+                                                                            .contactless_rounded,
+                                                                      ),
+                                                                      color: Colors
+                                                                          .white70,
+                                                                      iconSize:
+                                                                          MediaQuery.of(
+                                                                            context,
+                                                                          ).size.width *
+                                                                          0.35,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                Flex(
+                                                                  direction: Axis
+                                                                      .horizontal,
+                                                                  spacing: 12,
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Container(
+                                                                        height:
+                                                                            2,
+                                                                        color: Colors
+                                                                            .white38,
+                                                                      ),
+                                                                    ),
+                                                                    Text(
+                                                                      lang.getText(
+                                                                        "or",
+                                                                      ),
+                                                                      style: const TextStyle(
+                                                                        color: Colors
+                                                                            .white38,
+                                                                        fontSize:
+                                                                            16,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: Container(
+                                                                        height:
+                                                                            2,
+                                                                        color: Colors
+                                                                            .white38,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                CustomButton(
+                                                                  onPressed: () {
+                                                                    startNfcReceivingCloud();
+                                                                  },
+                                                                  title: lang
+                                                                      .getText(
+                                                                        "recive_workout",
+                                                                      ),
+                                                                  iconData: Icons
+                                                                      .call_received_rounded,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                                  horizontal: 5,
+                                                                ),
+                                                            child: Column(
+                                                              spacing: 24,
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
+                                                              children: [
+                                                                Expanded(
+                                                                  child: Container(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    alignment:
+                                                                        Alignment
+                                                                            .center,
+                                                                    padding:
+                                                                        const EdgeInsets.all(
+                                                                          12,
+                                                                        ),
+                                                                    decoration: BoxDecoration(
+                                                                      color: Colors
+                                                                          .white
+                                                                          .withAlpha(
+                                                                            25,
+                                                                          ),
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                      border: Border.all(
+                                                                        color: Colors
+                                                                            .white
+                                                                            .withAlpha(
+                                                                              50,
+                                                                            ),
+                                                                      ),
+                                                                    ),
+                                                                    child:
+                                                                        shareId
+                                                                            .isNotEmpty
+                                                                        ? QrImageView(
+                                                                            data:
+                                                                                shareId,
+                                                                            version:
+                                                                                QrVersions.auto,
+                                                                            dataModuleStyle: const QrDataModuleStyle(
+                                                                              color: Colors.white,
+                                                                              dataModuleShape: QrDataModuleShape.square,
+                                                                            ),
+                                                                            eyeStyle: const QrEyeStyle(
+                                                                              color: Colors.white,
+                                                                              eyeShape: QrEyeShape.square,
+                                                                            ),
+                                                                          )
+                                                                        : Column(
+                                                                            spacing:
+                                                                                12,
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Icon(
+                                                                                Icons.qr_code,
+                                                                                size: 96,
+                                                                                color: Colors.white38,
+                                                                              ),
+                                                                              Text(
+                                                                                lang.getText(
+                                                                                  "no_qr_code_yet",
+                                                                                ),
+                                                                                style: TextStyle(
+                                                                                  color: Colors.white38,
+                                                                                  fontSize: 20,
+                                                                                ),
+                                                                                textAlign: TextAlign.center,
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                  ),
+                                                                ),
+                                                                Flex(
+                                                                  direction: Axis
+                                                                      .horizontal,
+                                                                  spacing: 12,
+                                                                  children: [
+                                                                    CustomButton(
+                                                                      onPressed: () async {
+                                                                        await _generateQrCodeOnly();
+                                                                        setPopupState(
+                                                                          () {},
+                                                                        );
+                                                                      },
+                                                                      variant:
+                                                                          CustomButtonVariant
+                                                                              .secondary,
+                                                                      child: const Padding(
+                                                                        padding: EdgeInsets.symmetric(
+                                                                          vertical:
+                                                                              2.5,
+                                                                        ),
+                                                                        child: Icon(
+                                                                          Icons
+                                                                              .refresh_rounded,
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: CustomButton(
+                                                                        onPressed: () {
+                                                                          startScanning(
+                                                                            context,
+                                                                          );
+                                                                        },
+                                                                        title: lang.getText(
+                                                                          "scan",
+                                                                        ),
+                                                                        iconData:
+                                                                            Icons.qr_code_scanner_rounded,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                            icon: const Icon(
-                              CupertinoIcons.share,
-                              size: 25,
-                              color: Colors.white,
-                            ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.share,
+                            size: 25,
+                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
-                    backgroundColor: const Color.fromARGB(255, 58, 58, 58),
+                    automaticallyImplyLeading: false,
+                    backgroundColor: Colors.transparent,
                     iconTheme: const IconThemeData(color: Colors.white),
                   ),
                 ),
@@ -990,7 +1059,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                         child: Column(
                           children: [
                             Padding(
-                              padding: EdgeInsets.all(20),
+                              padding: EdgeInsets.all(30),
                               child: Text(
                                 lang.getText("no_added_exercise_yet"),
                                 style: TextStyle(
@@ -1032,231 +1101,14 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                           return GestureDetector(
                             key: ValueKey(exerciseItem),
                             onTap: () {
-                              showDialog(
+                              showModalBottomSheet(
                                 context: context,
                                 builder: (context) {
                                   return StatefulBuilder(
                                     builder: (context, setStateDialog) {
-                                      return Dialog(
-                                        insetPadding: const EdgeInsets.all(20),
-                                        backgroundColor: const Color.fromARGB(
-                                          255,
-                                          30,
-                                          30,
-                                          30,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                        child: Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            color: const Color.fromARGB(
-                                              255,
-                                              40,
-                                              40,
-                                              40,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.white24,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Expanded(
-                                                child: SingleChildScrollView(
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      if (exerciseItem
-                                                          .images
-                                                          .isNotEmpty)
-                                                        Container(
-                                                          width:
-                                                              double.infinity,
-                                                          clipBehavior:
-                                                              Clip.hardEdge,
-                                                          decoration: BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
-                                                            border: Border.all(
-                                                              color: Colors
-                                                                  .white24,
-                                                            ),
-                                                          ),
-                                                          child: ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
-                                                            child: Transform.scale(
-                                                              scale: 1,
-                                                              child: Image.network(
-                                                                "https://raw.githubusercontent.com/sitespectrum/zest_exercises/main/exercises/${exerciseItem.images[0]}",
-                                                                fit: BoxFit
-                                                                    .contain,
-                                                                loadingBuilder:
-                                                                    (
-                                                                      context,
-                                                                      child,
-                                                                      loadingProgress,
-                                                                    ) {
-                                                                      if (loadingProgress ==
-                                                                          null)
-                                                                        return child;
-                                                                      return const Center(
-                                                                        child:
-                                                                            CircularProgressIndicator(),
-                                                                      );
-                                                                    },
-                                                                errorBuilder:
-                                                                    (
-                                                                      context,
-                                                                      error,
-                                                                      stackTrace,
-                                                                    ) {
-                                                                      return const Center(
-                                                                        child: Icon(
-                                                                          Icons
-                                                                              .fitness_center,
-                                                                          color:
-                                                                              Colors.white24,
-                                                                          size:
-                                                                              50,
-                                                                        ),
-                                                                      );
-                                                                    },
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      const SizedBox(
-                                                        height: 20,
-                                                      ),
-                                                      Text(
-                                                        name,
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 18,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 16,
-                                                      ),
-                                                      Text(
-                                                        lang.getText(
-                                                          "description",
-                                                        ),
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 20,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          decoration:
-                                                              TextDecoration
-                                                                  .underline,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 20,
-                                                      ),
-                                                      Flexible(
-                                                        child: SingleChildScrollView(
-                                                          child: Container(
-                                                            width:
-                                                                double.infinity,
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  12,
-                                                                ),
-                                                            decoration: BoxDecoration(
-                                                              color:
-                                                                  const Color.fromARGB(
-                                                                    255,
-                                                                    30,
-                                                                    30,
-                                                                    30,
-                                                                  ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                              border: Border.all(
-                                                                color: Colors
-                                                                    .white24,
-                                                              ),
-                                                            ),
-                                                            child: Text(
-                                                              exerciseItem
-                                                                  .getInstructions(
-                                                                    langCode,
-                                                                  )
-                                                                  .join('\n\n'),
-                                                              style:
-                                                                  const TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        15,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 16,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context),
-                                                style: FilledButton.styleFrom(
-                                                  backgroundColor:
-                                                      const Color.fromARGB(
-                                                        255,
-                                                        30,
-                                                        30,
-                                                        30,
-                                                      ),
-                                                  side: const BorderSide(
-                                                    color: Colors.white24,
-                                                    width: 1,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  lang.getText("close"),
-                                                  style: TextStyle(
-                                                    color: Colors.red,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                      return WorkoutDetailsDrawer(
+                                        exerciseItem,
+                                        name,
                                       );
                                     },
                                   );
@@ -1264,22 +1116,15 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                               );
                             },
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 6,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(20, 30, 20, 0),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      255,
-                                      45,
-                                      45,
-                                      45,
-                                    ),
+                                    color: const Color(
+                                      0xFF272727,
+                                    ).withOpacity(0.9),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.white24),
                                     boxShadow: [
                                       BoxShadow(
                                         // ignore: deprecated_member_use
@@ -1392,16 +1237,23 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                           ],
                                         ),
                                         Center(
-                                          child: TextButton(
-                                            onPressed: () => {
-                                              setState(() {
-                                                userWorkouts.removeAt(index);
-                                              }),
-                                            },
-                                            child: Text(
-                                              lang.getText("delete"),
-                                              style: TextStyle(
-                                                color: Colors.redAccent,
+                                          child: Container(
+                                            margin: EdgeInsets.only(top: 15),
+                                            width: double.infinity,
+                                            child: CustomButton(
+                                              variant: CustomButtonVariant
+                                                  .primaryDelete,
+                                              onPressed: () => {
+                                                setState(() {
+                                                  userWorkouts.removeAt(index);
+                                                }),
+                                              },
+                                              child: Text(
+                                                lang.getText("delete"),
+                                                style: TextStyle(
+                                                  color: Colors.redAccent,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1417,11 +1269,12 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                       ),
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               CustomCard(
                 title: lang.getText("my_templates"),
                 iconData: Icons.folder_copy_outlined,
+                height: 220,
                 child: FutureBuilder<List<CustomUserWorkoutDto>>(
                   future: futureCustomWorkouts,
                   builder: (context, snapshot) {
@@ -1431,7 +1284,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
                     if (snapshot.hasError) {
                       return Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                         child: Text(
                           "Hiba történt: ${snapshot.error}",
                           style: const TextStyle(color: Colors.red),
@@ -1457,208 +1310,34 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     }
 
                     return ListView.builder(
+                      padding: EdgeInsets.zero,
                       shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: templates.length,
                       itemBuilder: (context, index) {
                         final template = templates[index];
 
                         return GestureDetector(
-                          onTap: () {
-                            showDialog(
+                          onTap: () async {
+                            final result = await showModalBottomSheet<bool>(
                               context: context,
                               builder: (context) {
-                                return StatefulBuilder(
-                                  builder: (context, setStateDialog) {
-                                    return Dialog(
-                                      insetPadding: const EdgeInsets.all(20),
-                                      backgroundColor: const Color.fromARGB(
-                                        255,
-                                        30,
-                                        30,
-                                        30,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color.fromARGB(
-                                            255,
-                                            40,
-                                            40,
-                                            40,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.white24,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              template.customName.isNotEmpty
-                                                  ? template.customName
-                                                  : lang.getText(
-                                                      "unknown_template",
-                                                    ),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Flexible(
-                                              child: ListView.builder(
-                                                shrinkWrap: true,
-                                                itemCount:
-                                                    template.exercises.length,
-                                                itemBuilder: (context, i) {
-                                                  final item =
-                                                      template.exercises[i];
-
-                                                  return Container(
-                                                    width: double.infinity,
-                                                    margin:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 3,
-                                                          horizontal: 4,
-                                                        ),
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          12,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          const Color.fromARGB(
-                                                            255,
-                                                            30,
-                                                            30,
-                                                            30,
-                                                          ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                      border: Border.all(
-                                                        color: Colors.white24,
-                                                      ),
-                                                    ),
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          item.exercise!
-                                                              .getName(
-                                                                langCode,
-                                                              ),
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Center(
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  setState(() {
-                                                    template.exercises
-                                                        .map(
-                                                          (we) => we.exercise,
-                                                        )
-                                                        .where((e) => e != null)
-                                                        .cast<ExerciseDto>()
-                                                        .forEach((exercise) {
-                                                          final exerciseCopy =
-                                                              exercise
-                                                                  .copyWith();
-                                                          exerciseCopy.sets =
-                                                              [];
-                                                          userWorkouts.add(
-                                                            exerciseCopy,
-                                                          );
-                                                        });
-                                                  });
-                                                  Navigator.pop(context);
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        "${template.customName} ${lang.getText("added_to_list")}",
-                                                      ),
-                                                      duration: const Duration(
-                                                        milliseconds: 1500,
-                                                      ),
-                                                      behavior: SnackBarBehavior
-                                                          .floating,
-                                                    ),
-                                                  );
-                                                },
-                                                style: FilledButton.styleFrom(
-                                                  backgroundColor:
-                                                      const Color.fromARGB(
-                                                        255,
-                                                        30,
-                                                        30,
-                                                        30,
-                                                      ),
-                                                  side: const BorderSide(
-                                                    color: Colors.white24,
-                                                    width: 1,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  lang.getText("load_template"),
-                                                  style: const TextStyle(
-                                                    color: Colors.red,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                return WorkoutTemplateDrawer(
+                                  template,
+                                  userWorkouts,
                                 );
                               },
                             );
+
+                            if (result == true) {
+                              setState(() {});
+                            }
                           },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 45, 45, 45),
+                                color: const Color.fromARGB(255, 55, 55, 55),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white24),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
@@ -1683,156 +1362,179 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                             ),
                                           ),
                                         ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.redAccent,
-                                          ),
-                                          onPressed: () async {
-                                            final confirmed = await showDialog<bool>(
-                                              context: context,
-                                              builder: (context) => Dialog(
-                                                backgroundColor:
-                                                    const Color.fromARGB(
-                                                      255,
-                                                      30,
-                                                      30,
-                                                      30,
-                                                    ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                  side: const BorderSide(
-                                                    color: Colors.white24,
-                                                  ),
-                                                ),
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    20,
-                                                  ),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        lang.getText("delete"),
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 22,
-                                                          fontWeight:
-                                                              FontWeight.bold,
+                                        Center(
+                                          child: Container(
+                                            margin: EdgeInsets.only(top: 15),
+                                            child: CustomButton(
+                                              variant: CustomButtonVariant
+                                                  .primaryDelete,
+                                              onPressed: () async {
+                                                final confirmed = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (context) => Dialog(
+                                                    backgroundColor:
+                                                        const Color.fromARGB(
+                                                          255,
+                                                          30,
+                                                          30,
+                                                          30,
                                                         ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 16,
-                                                      ),
-                                                      Text(
-                                                        "${lang.getText("sure_delete_template")}\n'${template.customName}'?",
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: const TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 24,
-                                                      ),
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceEvenly,
-                                                        children: [
-                                                          TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.pop(
-                                                                  context,
-                                                                  false,
-                                                                ),
-                                                            child: Text(
-                                                              lang.getText(
-                                                                "cancel",
-                                                              ),
-                                                              style: const TextStyle(
-                                                                color: Colors
-                                                                    .white54,
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
                                                           ),
-                                                          FilledButton(
-                                                            onPressed: () =>
-                                                                Navigator.pop(
-                                                                  context,
-                                                                  true,
+                                                      side: const BorderSide(
+                                                        color: Colors.white24,
+                                                      ),
+                                                    ),
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            20,
+                                                          ),
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Text(
+                                                            lang.getText(
+                                                              "delete",
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 22,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
                                                                 ),
-                                                            style: FilledButton.styleFrom(
-                                                              backgroundColor:
-                                                                  Colors
-                                                                      .redAccent,
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12,
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 16,
+                                                          ),
+                                                          Text(
+                                                            "${lang.getText("sure_delete_template")}\n'${template.customName}'?",
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white70,
+                                                                  fontSize: 16,
+                                                                ),
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 24,
+                                                          ),
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceEvenly,
+                                                            children: [
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                      false,
                                                                     ),
+                                                                child: Text(
+                                                                  lang.getText(
+                                                                    "cancel",
+                                                                  ),
+                                                                  style: const TextStyle(
+                                                                    color: Colors
+                                                                        .white54,
+                                                                    fontSize:
+                                                                        16,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
                                                               ),
-                                                            ),
-                                                            child: Text(
-                                                              lang.getText(
-                                                                "delete",
+                                                              FilledButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                      true,
+                                                                    ),
+                                                                style: FilledButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .redAccent,
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          12,
+                                                                        ),
+                                                                  ),
+                                                                ),
+                                                                child: Text(
+                                                                  lang.getText(
+                                                                    "delete",
+                                                                  ),
+                                                                  style: const TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontSize:
+                                                                        16,
+                                                                  ),
+                                                                ),
                                                               ),
-                                                              style: const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 16,
-                                                              ),
-                                                            ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
-                                                    ],
+                                                    ),
                                                   ),
+                                                );
+
+                                                if (confirmed == true) {
+                                                  final success =
+                                                      await deleteUserWorkoutTemplate(
+                                                        template.id,
+                                                      );
+
+                                                  if (success) {
+                                                    setState(() {
+                                                      templates.removeAt(index);
+                                                    });
+
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            lang.getText(
+                                                              "deleted_successfully",
+                                                            ),
+                                                          ),
+                                                          backgroundColor:
+                                                              Colors.green,
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              child: Text(
+                                                lang.getText("delete"),
+                                                style: TextStyle(
+                                                  color: Colors.redAccent,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                            );
-
-                                            if (confirmed == true) {
-                                              final success =
-                                                  await deleteUserWorkoutTemplate(
-                                                    template.id,
-                                                  );
-
-                                              if (success) {
-                                                setState(() {
-                                                  templates.removeAt(index);
-                                                });
-
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        lang.getText(
-                                                          "deleted_successfully",
-                                                        ),
-                                                      ),
-                                                      backgroundColor:
-                                                          Colors.green,
-                                                      behavior: SnackBarBehavior
-                                                          .floating,
-                                                    ),
-                                                  );
-                                                }
-                                              }
-                                            }
-                                          },
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1865,6 +1567,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     children: [
                       Expanded(
                         child: CustomButton(
+                          iconData: Icons.add,
                           title: lang.getText("add"),
                           variant: CustomButtonVariant.secondary,
                           onPressed: () async {
@@ -1888,10 +1591,11 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: CustomButton(
+                          iconData: Icons.skip_next,
                           title: workoutProvider.isWorkoutActive
                               ? lang.getText("continue_workout")
                               : lang.getText("start"),
-                          variant: CustomButtonVariant.primary,
+                          variant: CustomButtonVariant.primaryWorkout,
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -1910,8 +1614,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     children: [
                       Expanded(
                         child: CustomButton(
+                          iconData: Icons.add,
                           title: lang.getText("add"),
-                          variant: CustomButtonVariant.primary,
+                          variant: CustomButtonVariant.primaryWorkout,
                           onPressed: () async {
                             final result =
                                 await Navigator.push<List<ExerciseDto>>(

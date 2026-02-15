@@ -148,7 +148,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
                 );
               }
             },
-            title: "Log in",
+            title: lang.getText("login"),
             iconData: Icons.login_rounded,
           ),
         ],

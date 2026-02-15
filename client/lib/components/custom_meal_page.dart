@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'dart:ui';
+import 'package:client/components/drawers/meal_template_drawer.dart';
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
@@ -93,33 +95,6 @@ class _CMealPageState extends State<CMealPage> {
       throw Exception(
         "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
       );
-    }
-  }
-
-  Future<bool> deleteMealFromTemplate(int id) async {
-    final url = Uri.parse("$apiUrl/api/Meals/DeleteCustomMeal?id=$id");
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-
-    try {
-      final response = await http.delete(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        print("Nem sikerült törölni: ${response.body}");
-        print("Status: ${response.statusCode}, body: ${response.body}");
-        return false;
-      }
-    } catch (e) {
-      print("Hiba törlés közben: $e");
-      return false;
     }
   }
 
@@ -741,422 +716,465 @@ class _CMealPageState extends State<CMealPage> {
               PreferredSize(
                 preferredSize: const Size.fromHeight(60),
                 child: Container(
-                  margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
+                  margin: const EdgeInsets.fromLTRB(5, 6, 5, 0),
                   child: AppBar(
+                    backgroundColor: Colors.transparent,
                     title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Text(
-                              lang.getText("new_meal"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: 10.0,
+                                sigmaY: 10.0,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(45, 45, 45, 0.5),
+                                ),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back),
+                                      color: Colors.white,
+                                      padding: EdgeInsets.only(
+                                        left: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        right: 10,
+                                      ),
+                                      constraints: const BoxConstraints(),
+                                      style: IconButton.styleFrom(
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.maybePop(context),
+                                    ),
+                                    Text(
+                                      lang.getText("new_meal"),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 85, 173, 78),
-                            borderRadius: BorderRadius.circular(11),
+                        IconButton(
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(
+                              50,
+                              255,
+                              156,
+                              122,
+                            ),
+                            disabledBackgroundColor: const Color.fromARGB(
+                              25,
+                              64,
+                              255,
+                              50,
+                            ),
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: Colors.white38,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(
+                              color: const Color.fromARGB(255, 255, 115, 69),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                           ),
-                          child: IconButton(
-                            onPressed: () async {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                elevation: 0,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => StatefulBuilder(
-                                  builder: (context, setPopupState) => Container(
-                                    decoration: const BoxDecoration(
-                                      color: Color.fromARGB(255, 30, 30, 30),
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(24),
-                                      ),
+                          onPressed: () async {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              elevation: 0,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => StatefulBuilder(
+                                builder: (context, setPopupState) => Container(
+                                  decoration: const BoxDecoration(
+                                    color: Color.fromARGB(255, 30, 30, 30),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(24),
                                     ),
-                                    child: CustomDrawer(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(
-                                          24,
-                                        ).copyWith(top: 16, left: 0, right: 0),
-                                        child: SizedBox(
-                                          height:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.5,
-                                          child: Column(
-                                            spacing: 12,
+                                  ),
+                                  child: CustomDrawer(
+                                    child: SizedBox(
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                          0.5,
+                                      child: Column(
+                                        spacing: 12,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 24,
-                                                    ),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      lang.getText("share"),
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 24,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Expanded(
-                                                child: DefaultTabController(
-                                                  initialIndex: 0,
-                                                  length: 2,
-                                                  child: Column(
-                                                    children: [
-                                                      // Tabfül stílus az edzés oldalról
-                                                      Container(
-                                                        margin:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 24,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              const Color.fromARGB(
-                                                                50,
-                                                                64,
-                                                                255,
-                                                                50,
-                                                              ),
-                                                          border: Border.all(
-                                                            color:
-                                                                const Color.fromARGB(
-                                                                  100,
-                                                                  64,
-                                                                  255,
-                                                                  50,
-                                                                ),
-                                                            width: 1,
-                                                          ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                20,
-                                                              ),
-                                                        ),
-                                                        child: TabBar(
-                                                          labelStyle:
-                                                              const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                          splashFactory: NoSplash
-                                                              .splashFactory,
-                                                          indicator: BoxDecoration(
-                                                            color:
-                                                                const Color.fromARGB(
-                                                                  100,
-                                                                  64,
-                                                                  255,
-                                                                  50,
-                                                                ),
-                                                            shape: BoxShape
-                                                                .rectangle,
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  16,
-                                                                ),
-                                                          ),
-                                                          indicatorSize:
-                                                              TabBarIndicatorSize
-                                                                  .tab,
-                                                          indicatorPadding:
-                                                              const EdgeInsets.all(
-                                                                4,
-                                                              ),
-                                                          dividerHeight: 0,
-                                                          labelColor:
-                                                              Colors.white,
-                                                          unselectedLabelColor:
-                                                              Colors.grey,
-                                                          indicatorColor:
-                                                              Colors.green,
-                                                          tabs: const [
-                                                            Tab(text: "NFC"),
-                                                            Tab(text: "QR"),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets.only(
-                                                                top: 24,
-                                                              ),
-                                                          child: TabBarView(
-                                                            children: [
-                                                              // NFC TAB TARTALMA
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          24,
-                                                                    ),
-                                                                child: Column(
-                                                                  spacing: 12,
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Expanded(
-                                                                      child: Container(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        decoration: BoxDecoration(
-                                                                          borderRadius: BorderRadius.circular(
-                                                                            16,
-                                                                          ),
-                                                                        ),
-                                                                        child: IconButton(
-                                                                          style: IconButton.styleFrom(
-                                                                            shape: RoundedRectangleBorder(
-                                                                              borderRadius: BorderRadius.circular(
-                                                                                16,
-                                                                              ),
-                                                                            ),
-                                                                            backgroundColor: const Color.fromARGB(
-                                                                              65,
-                                                                              50,
-                                                                              142,
-                                                                              255,
-                                                                            ),
-                                                                            side: const BorderSide(
-                                                                              color: Color.fromARGB(
-                                                                                100,
-                                                                                50,
-                                                                                142,
-                                                                                255,
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                          onPressed: () {
-                                                                            startCloudNfcSharing(
-                                                                              context,
-                                                                            );
-                                                                          },
-                                                                          icon: const Icon(
-                                                                            Icons.contactless_rounded,
-                                                                          ),
-                                                                          color:
-                                                                              Colors.white70,
-                                                                          iconSize:
-                                                                              MediaQuery.of(
-                                                                                context,
-                                                                              ).size.width *
-                                                                              0.35,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                    // "VAGY" elválasztó
-                                                                    Flex(
-                                                                      direction:
-                                                                          Axis.horizontal,
-                                                                      spacing:
-                                                                          12,
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child: Container(
-                                                                            height:
-                                                                                2,
-                                                                            color:
-                                                                                Colors.white38,
-                                                                          ),
-                                                                        ),
-                                                                        Text(
-                                                                          lang.getText(
-                                                                            "or",
-                                                                          ),
-                                                                          style: const TextStyle(
-                                                                            color:
-                                                                                Colors.white38,
-                                                                            fontSize:
-                                                                                16,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                          ),
-                                                                        ),
-                                                                        Expanded(
-                                                                          child: Container(
-                                                                            height:
-                                                                                2,
-                                                                            color:
-                                                                                Colors.white38,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                    CustomButton(
-                                                                      onPressed:
-                                                                          () {
-                                                                            startNfcReceivingCloud();
-                                                                          },
-                                                                      title: lang.getText(
-                                                                        "recive_workout",
-                                                                      ), // Lehet, hogy "recive_meal"-re kellene javítani a lang fájlban ha van
-                                                                      iconData:
-                                                                          Icons
-                                                                              .call_received_rounded,
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              // QR TAB TARTALMA
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          24,
-                                                                    ),
-                                                                child: Column(
-                                                                  spacing: 24,
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Expanded(
-                                                                      child: Container(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        alignment:
-                                                                            Alignment.center,
-                                                                        padding:
-                                                                            const EdgeInsets.all(
-                                                                              12,
-                                                                            ),
-                                                                        decoration: BoxDecoration(
-                                                                          color: Colors
-                                                                              .white
-                                                                              .withAlpha(
-                                                                                25,
-                                                                              ),
-                                                                          borderRadius: BorderRadius.circular(
-                                                                            16,
-                                                                          ),
-                                                                          border: Border.all(
-                                                                            color: Colors.white.withAlpha(
-                                                                              50,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        child:
-                                                                            shareId.isNotEmpty
-                                                                            ? QrImageView(
-                                                                                data: shareId,
-                                                                                version: QrVersions.auto,
-                                                                                dataModuleStyle: const QrDataModuleStyle(
-                                                                                  color: Colors.white,
-                                                                                  dataModuleShape: QrDataModuleShape.square,
-                                                                                ),
-                                                                                eyeStyle: const QrEyeStyle(
-                                                                                  color: Colors.white,
-                                                                                  eyeShape: QrEyeShape.square,
-                                                                                ),
-                                                                              )
-                                                                            : const Column(
-                                                                                spacing: 12,
-                                                                                mainAxisSize: MainAxisSize.min,
-                                                                                children: [
-                                                                                  Icon(
-                                                                                    Icons.qr_code,
-                                                                                    size: 96,
-                                                                                    color: Colors.white38,
-                                                                                  ),
-                                                                                  Text(
-                                                                                    "Még nincs QR kód",
-                                                                                    style: TextStyle(
-                                                                                      color: Colors.white38,
-                                                                                      fontSize: 20,
-                                                                                    ),
-                                                                                    textAlign: TextAlign.center,
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                      ),
-                                                                    ),
-                                                                    Flex(
-                                                                      direction:
-                                                                          Axis.horizontal,
-                                                                      spacing:
-                                                                          12,
-                                                                      children: [
-                                                                        CustomButton(
-                                                                          onPressed: () async {
-                                                                            await _generateQrCodeOnly(); // Itt lehet kell kis módosítás, mert a workout page visszatér ID-val, itt void volt
-                                                                            // A _generateQrCodeOnly függvényt érdemes módosítani, hogy visszaadja az ID-t, vagy itt a shareId-t frissíteni setState-el
-                                                                          },
-                                                                          variant:
-                                                                              CustomButtonVariant.secondary,
-                                                                          child: const Padding(
-                                                                            padding: EdgeInsets.symmetric(
-                                                                              vertical: 2.5,
-                                                                            ),
-                                                                            child: Icon(
-                                                                              Icons.refresh_rounded,
-                                                                              color: Colors.white,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        Expanded(
-                                                                          child: CustomButton(
-                                                                            onPressed: () {
-                                                                              startScanning(
-                                                                                context,
-                                                                              );
-                                                                            },
-                                                                            title:
-                                                                                "Scan QR code",
-                                                                            iconData:
-                                                                                Icons.qr_code_scanner_rounded,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                              Text(
+                                                lang.getText("share"),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
+                                          Expanded(
+                                            child: DefaultTabController(
+                                              initialIndex: 0,
+                                              length: 2,
+                                              child: Column(
+                                                children: [
+                                                  Container(
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          const Color.fromARGB(
+                                                            50,
+                                                            64,
+                                                            255,
+                                                            50,
+                                                          ),
+                                                      border: Border.all(
+                                                        color:
+                                                            const Color.fromARGB(
+                                                              100,
+                                                              64,
+                                                              255,
+                                                              50,
+                                                            ),
+                                                        width: 1,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            20,
+                                                          ),
+                                                    ),
+                                                    child: TabBar(
+                                                      labelStyle:
+                                                          const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                      splashFactory: NoSplash
+                                                          .splashFactory,
+                                                      indicator: BoxDecoration(
+                                                        color:
+                                                            const Color.fromARGB(
+                                                              100,
+                                                              64,
+                                                              255,
+                                                              50,
+                                                            ),
+                                                        shape:
+                                                            BoxShape.rectangle,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              16,
+                                                            ),
+                                                      ),
+                                                      indicatorSize:
+                                                          TabBarIndicatorSize
+                                                              .tab,
+                                                      indicatorPadding:
+                                                          const EdgeInsets.all(
+                                                            4,
+                                                          ),
+                                                      dividerHeight: 0,
+                                                      labelColor: Colors.white,
+                                                      unselectedLabelColor:
+                                                          Colors.grey,
+                                                      indicatorColor:
+                                                          Colors.green,
+                                                      tabs: const [
+                                                        Tab(text: "NFC"),
+                                                        Tab(text: "QR"),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            top: 24,
+                                                          ),
+                                                      child: TabBarView(
+                                                        children: [
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                                  horizontal: 0,
+                                                                ),
+                                                            child: Column(
+                                                              spacing: 12,
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
+                                                              children: [
+                                                                Expanded(
+                                                                  child: Container(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    decoration: BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                    ),
+                                                                    child: IconButton(
+                                                                      style: IconButton.styleFrom(
+                                                                        shape: RoundedRectangleBorder(
+                                                                          borderRadius: BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                        ),
+                                                                        backgroundColor: const Color.fromARGB(
+                                                                          65,
+                                                                          50,
+                                                                          142,
+                                                                          255,
+                                                                        ),
+                                                                        side: const BorderSide(
+                                                                          color: Color.fromARGB(
+                                                                            100,
+                                                                            50,
+                                                                            142,
+                                                                            255,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      onPressed: () {
+                                                                        startCloudNfcSharing(
+                                                                          context,
+                                                                        );
+                                                                      },
+                                                                      icon: const Icon(
+                                                                        Icons
+                                                                            .contactless_rounded,
+                                                                      ),
+                                                                      color: Colors
+                                                                          .white70,
+                                                                      iconSize:
+                                                                          MediaQuery.of(
+                                                                            context,
+                                                                          ).size.width *
+                                                                          0.35,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                Flex(
+                                                                  direction: Axis
+                                                                      .horizontal,
+                                                                  spacing: 12,
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Container(
+                                                                        height:
+                                                                            2,
+                                                                        color: Colors
+                                                                            .white38,
+                                                                      ),
+                                                                    ),
+                                                                    Text(
+                                                                      lang.getText(
+                                                                        "or",
+                                                                      ),
+                                                                      style: const TextStyle(
+                                                                        color: Colors
+                                                                            .white38,
+                                                                        fontSize:
+                                                                            16,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: Container(
+                                                                        height:
+                                                                            2,
+                                                                        color: Colors
+                                                                            .white38,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                CustomButton(
+                                                                  onPressed: () {
+                                                                    startNfcReceivingCloud();
+                                                                  },
+                                                                  title: lang
+                                                                      .getText(
+                                                                        "recive_workout",
+                                                                      ),
+                                                                  iconData: Icons
+                                                                      .call_received_rounded,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                                  horizontal: 5,
+                                                                ),
+                                                            child: Column(
+                                                              spacing: 24,
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
+                                                              children: [
+                                                                Expanded(
+                                                                  child: Container(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    alignment:
+                                                                        Alignment
+                                                                            .center,
+                                                                    padding:
+                                                                        const EdgeInsets.all(
+                                                                          12,
+                                                                        ),
+                                                                    decoration: BoxDecoration(
+                                                                      color: Colors
+                                                                          .white
+                                                                          .withAlpha(
+                                                                            25,
+                                                                          ),
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            16,
+                                                                          ),
+                                                                      border: Border.all(
+                                                                        color: Colors
+                                                                            .white
+                                                                            .withAlpha(
+                                                                              50,
+                                                                            ),
+                                                                      ),
+                                                                    ),
+                                                                    child:
+                                                                        shareId
+                                                                            .isNotEmpty
+                                                                        ? QrImageView(
+                                                                            data:
+                                                                                shareId,
+                                                                            version:
+                                                                                QrVersions.auto,
+                                                                            dataModuleStyle: const QrDataModuleStyle(
+                                                                              color: Colors.white,
+                                                                              dataModuleShape: QrDataModuleShape.square,
+                                                                            ),
+                                                                            eyeStyle: const QrEyeStyle(
+                                                                              color: Colors.white,
+                                                                              eyeShape: QrEyeShape.square,
+                                                                            ),
+                                                                          )
+                                                                        : Column(
+                                                                            spacing:
+                                                                                12,
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Icon(
+                                                                                Icons.qr_code,
+                                                                                size: 96,
+                                                                                color: Colors.white38,
+                                                                              ),
+                                                                              Text(
+                                                                                lang.getText(
+                                                                                  "no_qr_code_yet",
+                                                                                ),
+                                                                                style: TextStyle(
+                                                                                  color: Colors.white38,
+                                                                                  fontSize: 20,
+                                                                                ),
+                                                                                textAlign: TextAlign.center,
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                  ),
+                                                                ),
+                                                                Flex(
+                                                                  direction: Axis
+                                                                      .horizontal,
+                                                                  spacing: 12,
+                                                                  children: [
+                                                                    CustomButton(
+                                                                      onPressed:
+                                                                          () async {
+                                                                            await _generateQrCodeOnly();
+                                                                          },
+                                                                      variant:
+                                                                          CustomButtonVariant
+                                                                              .secondary,
+                                                                      child: const Padding(
+                                                                        padding: EdgeInsets.symmetric(
+                                                                          vertical:
+                                                                              2.5,
+                                                                        ),
+                                                                        child: Icon(
+                                                                          Icons
+                                                                              .refresh_rounded,
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: CustomButton(
+                                                                        onPressed: () {
+                                                                          startScanning(
+                                                                            context,
+                                                                          );
+                                                                        },
+                                                                        title: lang.getText(
+                                                                          "scan",
+                                                                        ),
+                                                                        iconData:
+                                                                            Icons.qr_code_scanner_rounded,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                            icon: const Icon(
-                              CupertinoIcons.share,
-                              size: 25,
-                              color: Colors.white,
-                            ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.share,
+                            size: 25,
+                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
+                    automaticallyImplyLeading: false,
                     iconTheme: const IconThemeData(color: Colors.white),
                   ),
                 ),
@@ -1170,52 +1188,144 @@ class _CMealPageState extends State<CMealPage> {
                   children: [
                     Row(
                       children: [
-                        CustomSelectorButton(
-                          title: lang.getText("breakfast"),
-                          isSelected: mealindex == 0,
-                          onPressed: () {
-                            setState(() {
-                              mealindex = 0;
-                            });
-                            mealtypecontroller.text = _mealtypes[mealindex];
-                          },
+                        Expanded(
+                          child: Column(
+                            children: [
+                              CustomSelectorButton(
+                                iconData: Icons.coffee_rounded,
+                                activeColor: const Color.fromARGB(
+                                  255,
+                                  255,
+                                  115,
+                                  69,
+                                ),
+                                isSelected: mealindex == 0,
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 0;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                              ),
+                              SizedBox(height: 5),
+                              AnimatedDefaultTextStyle(
+                                style: TextStyle(
+                                  color: mealindex == 0
+                                      ? Colors.white
+                                      : Colors.white24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                duration: const Duration(milliseconds: 200),
+                                child: Text(lang.getText("breakfast")),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        CustomSelectorButton(
-                          title: lang.getText("lunch"),
-                          isSelected: mealindex == 1,
-                          onPressed: () {
-                            setState(() {
-                              mealindex = 1;
-                            });
-                            mealtypecontroller.text = _mealtypes[mealindex];
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        CustomSelectorButton(
-                          title: lang.getText("dinner"),
-                          isSelected: mealindex == 2,
-                          onPressed: () {
-                            setState(() {
-                              mealindex = 2;
-                            });
-                            mealtypecontroller.text = _mealtypes[mealindex];
-                          },
+                        Expanded(
+                          child: Column(
+                            children: [
+                              CustomSelectorButton(
+                                iconData: Icons.wb_sunny_rounded,
+                                activeColor: const Color.fromARGB(
+                                  255,
+                                  255,
+                                  115,
+                                  69,
+                                ),
+                                isSelected: mealindex == 1,
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 1;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                              ),
+                              SizedBox(height: 5),
+                              AnimatedDefaultTextStyle(
+                                style: TextStyle(
+                                  color: mealindex == 1
+                                      ? Colors.white
+                                      : Colors.white24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                duration: const Duration(milliseconds: 200),
+                                child: Text(lang.getText("lunch")),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        CustomSelectorButton(
-                          title: lang.getText("other"),
-                          isSelected: mealindex == 3,
-                          onPressed: () {
-                            setState(() {
-                              mealindex = 3;
-                            });
-                            mealtypecontroller.text = _mealtypes[mealindex];
-                          },
+                        Expanded(
+                          child: Column(
+                            children: [
+                              CustomSelectorButton(
+                                iconData: Icons.wb_twilight_rounded,
+                                activeColor: const Color.fromARGB(
+                                  255,
+                                  255,
+                                  115,
+                                  69,
+                                ),
+                                isSelected: mealindex == 2,
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 2;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                              ),
+                              SizedBox(height: 5),
+                              AnimatedDefaultTextStyle(
+                                style: TextStyle(
+                                  color: mealindex == 2
+                                      ? Colors.white
+                                      : Colors.white24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                duration: const Duration(milliseconds: 200),
+                                child: Text(lang.getText("dinner")),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              CustomSelectorButton(
+                                iconData: Icons.cookie_rounded,
+                                activeColor: const Color.fromARGB(
+                                  255,
+                                  255,
+                                  115,
+                                  69,
+                                ),
+                                isSelected: mealindex == 3,
+                                onPressed: () {
+                                  setState(() {
+                                    mealindex = 3;
+                                  });
+                                  mealtypecontroller.text =
+                                      _mealtypes[mealindex];
+                                },
+                              ),
+                              SizedBox(height: 5),
+                              AnimatedDefaultTextStyle(
+                                style: TextStyle(
+                                  color: mealindex == 3
+                                      ? Colors.white
+                                      : Colors.white24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                duration: const Duration(milliseconds: 200),
+                                child: Text(lang.getText("other")),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -1257,9 +1367,10 @@ class _CMealPageState extends State<CMealPage> {
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 45, 45, 45),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white24),
+                                  color: const Color(
+                                    0xFF272727,
+                                  ).withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
                                       // ignore: deprecated_member_use
@@ -1297,16 +1408,23 @@ class _CMealPageState extends State<CMealPage> {
                                         ],
                                       ),
                                       Center(
-                                        child: TextButton(
-                                          onPressed: () => {
-                                            setState(() {
-                                              userMeals.remove(meal);
-                                            }),
-                                          },
-                                          child: Text(
-                                            lang.getText("delete"),
-                                            style: TextStyle(
-                                              color: Colors.redAccent,
+                                        child: Container(
+                                          margin: EdgeInsets.only(top: 15),
+                                          width: double.infinity,
+                                          child: CustomButton(
+                                            variant: CustomButtonVariant
+                                                .primaryDelete,
+                                            onPressed: () => {
+                                              setState(() {
+                                                userMeals.remove(meal);
+                                              }),
+                                            },
+                                            child: Text(
+                                              lang.getText("delete"),
+                                              style: TextStyle(
+                                                color: Colors.redAccent,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1323,110 +1441,80 @@ class _CMealPageState extends State<CMealPage> {
 
               SizedBox(height: 20),
 
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 45, 45, 45),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
-                      boxShadow: [
-                        BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
+              CustomCard(
+                title: lang.getText("summary"),
+                iconData: Icons.assessment,
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        Row(
+                        Stack(
                           children: [
-                            Stack(
-                              children: [
-                                Text(
-                                  '${lang.getText("calories")}: $userCaloriesSum kcal',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        Row(
-                          children: [
-                            Stack(
-                              children: [
-                                Text(
-                                  '${lang.getText("protein")}: ${userProteinsSum.toStringAsFixed(3)} g',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        Row(
-                          children: [
-                            Stack(
-                              children: [
-                                Text(
-                                  '${lang.getText("carbs")}: ${userCarbsSum.toStringAsFixed(3)} g',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        Row(
-                          children: [
-                            Stack(
-                              children: [
-                                Text(
-                                  '${lang.getText("fat")}: ${userFatSum.toStringAsFixed(3)} g',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              '${lang.getText("calories")}: $userCaloriesSum kcal',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.006,
-                    left: MediaQuery.of(context).size.width * 0.09,
-                    child: Text(
-                      lang.getText("summary"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+
+                    Row(
+                      children: [
+                        Stack(
+                          children: [
+                            Text(
+                              '${lang.getText("protein")}: ${userProteinsSum.toStringAsFixed(3)} g',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+
+                    Row(
+                      children: [
+                        Stack(
+                          children: [
+                            Text(
+                              '${lang.getText("carbs")}: ${userCarbsSum.toStringAsFixed(3)} g',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    Row(
+                      children: [
+                        Stack(
+                          children: [
+                            Text(
+                              '${lang.getText("fat")}: ${userFatSum.toStringAsFixed(3)} g',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
 
               SizedBox(height: 20),
@@ -1434,6 +1522,7 @@ class _CMealPageState extends State<CMealPage> {
               CustomCard(
                 title: lang.getText("my_templates"),
                 iconData: Icons.folder_copy_outlined,
+                height: 370,
                 child: FutureBuilder<List<CustomUserMealDto>>(
                   future: futureCustomMeals,
                   builder: (context, snapshot) {
@@ -1469,449 +1558,24 @@ class _CMealPageState extends State<CMealPage> {
                     }
 
                     return ListView.builder(
+                      padding: EdgeInsets.zero,
                       shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: meals.length,
                       itemBuilder: (context, index) {
                         final meal = meals[index];
 
                         return GestureDetector(
                           onTap: () {
-                            showDialog(
+                            showModalBottomSheet(
                               context: context,
                               builder: (context) {
                                 return StatefulBuilder(
                                   builder: (context, setStateDialog) {
-                                    return Dialog(
-                                      insetPadding: const EdgeInsets.all(20),
-                                      backgroundColor: const Color.fromARGB(
-                                        255,
-                                        30,
-                                        30,
-                                        30,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color.fromARGB(
-                                            255,
-                                            40,
-                                            40,
-                                            40,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.white24,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              meal.customName.isNotEmpty
-                                                  ? meal.customName
-                                                  : lang.getText(
-                                                      "unknown_template",
-                                                    ),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Flexible(
-                                              child: ListView.builder(
-                                                shrinkWrap: true,
-                                                itemCount: meal.meals.length,
-                                                itemBuilder: (context, i) {
-                                                  final item = meal.meals[i];
-                                                  final cleanName =
-                                                      stripHtmlTags(item.name);
-
-                                                  return Container(
-                                                    width: double.infinity,
-                                                    margin:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 3,
-                                                          horizontal: 4,
-                                                        ),
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          12,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          const Color.fromARGB(
-                                                            255,
-                                                            30,
-                                                            30,
-                                                            30,
-                                                          ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                      border: Border.all(
-                                                        color: Colors.white24,
-                                                      ),
-                                                    ),
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          "$cleanName (${item.quantity})",
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 6,
-                                                        ),
-                                                        Row(
-                                                          children: [
-                                                            Expanded(
-                                                              child: Text(
-                                                                '${item.qCalories.toStringAsFixed(3)} kcal',
-                                                                style: const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            Expanded(
-                                                              child: Text(
-                                                                '${item.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")}',
-                                                                style: const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Row(
-                                                          children: [
-                                                            Expanded(
-                                                              child: Text(
-                                                                '${item.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")}',
-                                                                style: const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            Expanded(
-                                                              child: Text(
-                                                                '${item.qFat.toStringAsFixed(3)} g ${lang.getText("fat")}',
-                                                                style: const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            showdelete
-                                                                ? Padding(
-                                                                    padding:
-                                                                        EdgeInsets.only(
-                                                                          right:
-                                                                              10,
-                                                                        ),
-                                                                    child: IconButton(
-                                                                      onPressed: () async {
-                                                                        final itemToDelete =
-                                                                            meal.meals[i];
-                                                                        final ok = await deleteMealFromTemplate(
-                                                                          itemToDelete
-                                                                              .Id!,
-                                                                        );
-
-                                                                        if (ok) {
-                                                                          setStateDialog(() {
-                                                                            meal.meals.removeWhere(
-                                                                              (
-                                                                                m,
-                                                                              ) =>
-                                                                                  m.Id ==
-                                                                                  itemToDelete.Id,
-                                                                            );
-                                                                          });
-                                                                          ScaffoldMessenger.of(
-                                                                            context,
-                                                                          ).showSnackBar(
-                                                                            SnackBar(
-                                                                              content: Text(
-                                                                                lang.getText(
-                                                                                  "meal_deleted",
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          );
-                                                                        } else {
-                                                                          ScaffoldMessenger.of(
-                                                                            context,
-                                                                          ).showSnackBar(
-                                                                            SnackBar(
-                                                                              content: Text(
-                                                                                lang.getText(
-                                                                                  "deletion_failed",
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          );
-                                                                        }
-                                                                      },
-                                                                      icon: Icon(
-                                                                        CupertinoIcons
-                                                                            .trash,
-                                                                        color: Colors
-                                                                            .red,
-                                                                      ),
-                                                                    ),
-                                                                  )
-                                                                : Container(),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                            const SizedBox(height: 10),
-
-                                            Center(
-                                              child: ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.white,
-                                                  foregroundColor: Colors.black,
-                                                ),
-                                                onPressed: () async {
-                                                  try {
-                                                    final prefs =
-                                                        await SharedPreferences.getInstance();
-                                                    print(prefs);
-                                                    final userId = prefs.getInt(
-                                                      'userId',
-                                                    );
-                                                    if (userId == null) {
-                                                      throw Exception(
-                                                        lang.getText(
-                                                          "no_userId",
-                                                        ),
-                                                      );
-                                                    }
-
-                                                    await saveTemplateAsUserMeal(
-                                                      meal,
-                                                      userId,
-                                                    );
-
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          lang.getText(
-                                                            "saved_successfully",
-                                                          ),
-                                                        ),
-                                                        behavior:
-                                                            SnackBarBehavior
-                                                                .floating,
-                                                        margin: EdgeInsets.only(
-                                                          bottom: 30,
-                                                          left: 16,
-                                                          right: 16,
-                                                        ),
-                                                        duration: Duration(
-                                                          milliseconds: 1800,
-                                                        ),
-                                                        animation: CurvedAnimation(
-                                                          parent:
-                                                              kAlwaysCompleteAnimation,
-                                                          curve:
-                                                              Curves.easeInOut,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  } catch (e) {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          "Hiba: $e",
-                                                        ),
-                                                        behavior:
-                                                            SnackBarBehavior
-                                                                .floating,
-                                                        margin: EdgeInsets.only(
-                                                          bottom: 30,
-                                                          left: 16,
-                                                          right: 16,
-                                                        ),
-                                                        duration: Duration(
-                                                          milliseconds: 1800,
-                                                        ),
-                                                        animation: CurvedAnimation(
-                                                          parent:
-                                                              kAlwaysCompleteAnimation,
-                                                          curve:
-                                                              Curves.easeInOut,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                  if (_debounce?.isActive ??
-                                                      false) {
-                                                    _debounce!.cancel();
-                                                  }
-                                                  _debounce = Timer(
-                                                    const Duration(
-                                                      milliseconds: 1500,
-                                                    ),
-                                                    () {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).hideCurrentSnackBar();
-                                                      Navigator.push<
-                                                        List<MealDto>
-                                                      >(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const Pages(),
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                child: Text(
-                                                  lang.getText("save_as_meal"),
-                                                ),
-                                              ),
-                                            ),
-                                            Center(
-                                              child: ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.white,
-                                                  foregroundColor: Colors.black,
-                                                ),
-                                                onPressed: () async {
-                                                  setStateDialog(() {
-                                                    showdelete = true;
-                                                  });
-                                                },
-                                                child: Text(
-                                                  lang.getText("edit"),
-                                                ),
-                                              ),
-                                            ),
-                                            Center(
-                                              child: ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.white,
-                                                  foregroundColor: Colors.black,
-                                                ),
-                                                onPressed: () async {
-                                                  final result =
-                                                      await Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              AddMealPage(
-                                                                addToTemplate:
-                                                                    true,
-                                                                templateId:
-                                                                    meal.id,
-                                                              ),
-                                                        ),
-                                                      );
-
-                                                  if (result != null &&
-                                                      result is List<MealDto> &&
-                                                      result.isNotEmpty) {
-                                                    setStateDialog(() {
-                                                      meal.meals.addAll(result);
-                                                    });
-                                                  }
-                                                },
-                                                child: Text(
-                                                  lang.getText("add"),
-                                                ),
-                                              ),
-                                            ),
-                                            Center(
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  setState(() {
-                                                    userMeals.addAll(
-                                                      meal.meals,
-                                                    );
-                                                  });
-                                                  Navigator.pop(context);
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        "${meal.customName} ${lang.getText("added_to_list")}",
-                                                      ),
-                                                      duration: const Duration(
-                                                        milliseconds: 1500,
-                                                      ),
-                                                      behavior: SnackBarBehavior
-                                                          .floating,
-                                                    ),
-                                                  );
-                                                },
-                                                style: FilledButton.styleFrom(
-                                                  backgroundColor:
-                                                      const Color.fromARGB(
-                                                        255,
-                                                        30,
-                                                        30,
-                                                        30,
-                                                      ),
-                                                  side: const BorderSide(
-                                                    color: Colors.white24,
-                                                    width: 1,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  lang.getText("continue_meal"),
-                                                  style: TextStyle(
-                                                    color: Colors.red,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                    return MealTemplateDrawer(
+                                      meal,
+                                      userMeals,
+                                      showdelete,
+                                      UserMealsSampleSave,
                                     );
                                   },
                                 );
@@ -1925,9 +1589,8 @@ class _CMealPageState extends State<CMealPage> {
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 45, 45, 45),
+                                color: const Color.fromARGB(255, 55, 55, 55),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white24),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
@@ -1951,13 +1614,13 @@ class _CMealPageState extends State<CMealPage> {
                                         color: Colors.white70,
                                       ),
                                     ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.redAccent,
-                                          ),
+                                    Center(
+                                      child: Container(
+                                        margin: EdgeInsets.only(top: 15),
+                                        width: double.infinity,
+                                        child: CustomButton(
+                                          variant:
+                                              CustomButtonVariant.primaryDelete,
                                           onPressed: () async {
                                             final confirmed = await showDialog<bool>(
                                               context: context,
@@ -2149,8 +1812,15 @@ class _CMealPageState extends State<CMealPage> {
                                               }
                                             }
                                           },
+                                          child: Text(
+                                            lang.getText("delete"),
+                                            style: TextStyle(
+                                              color: Colors.redAccent,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -2171,9 +1841,9 @@ class _CMealPageState extends State<CMealPage> {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                // Bal oldali gomb: Hozzáadás
                 Expanded(
                   child: CustomButton(
+                    iconData: Icons.add,
                     title: lang.getText("add"),
                     variant: CustomButtonVariant.secondary,
                     onPressed: () async {
@@ -2195,11 +1865,11 @@ class _CMealPageState extends State<CMealPage> {
 
                 const SizedBox(width: 12),
 
-                // Jobb oldali gomb: Tovább / Mentés
                 Expanded(
                   child: CustomButton(
+                    iconData: Icons.skip_next,
                     title: lang.getText("continue"),
-                    variant: CustomButtonVariant.primary,
+                    variant: CustomButtonVariant.primaryMeal,
                     onPressed: () async {
                       if (userMeals.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
