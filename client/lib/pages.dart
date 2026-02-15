@@ -9,6 +9,7 @@ import 'package:zest_client/components/drawers/add_drawer.dart';
 import 'package:zest_client/components/health_page.dart';
 import 'package:zest_client/components/home_page.dart';
 import 'package:zest_client/components/profile_page.dart';
+import 'package:zest_client/components/topo_background.dart';
 import 'package:zest_client/components/workout_page.dart';
 import 'package:zest_client/providers/language_provider.dart';
 
@@ -36,10 +37,32 @@ Widget pages(BuildContext context) {
   return Scaffold(
     extendBody: true,
 
-    body: PageView(
-      controller: pageController,
-      onPageChanged: onPageChanged,
-      children: const [HomePage(), WorkoutPage(), HealthPage(), ProfilePage()],
+    body: Stack(
+      children: [
+        // bg effect
+        Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.5,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.transparent, Color.fromARGB(50, 64, 255, 50)],
+              transform: GradientRotation(-0.5 * pi),
+            ),
+          ),
+          child: Opacity(opacity: 98 / 255, child: TopoBackground()),
+        ),
+
+        PageView(
+          controller: pageController,
+          onPageChanged: onPageChanged,
+          children: const [
+            HomePage(),
+            WorkoutPage(),
+            HealthPage(),
+            ProfilePage(),
+          ],
+        ),
+      ],
     ),
 
     bottomNavigationBar: Padding(
@@ -151,5 +174,104 @@ Widget navBar(
         ),
       ),
     ),
+  );
+}
+
+@hwidget
+Widget mainPageLayout(
+  BuildContext context, {
+  required String title,
+  required IconData icon,
+  required List<Widget> children,
+}) {
+  return Stack(
+    children: [
+      SingleChildScrollView(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color.fromARGB(255, 20, 20, 20),
+                          Colors.transparent,
+                        ],
+                        transform: GradientRotation(-0.5 * pi),
+                      ),
+                    ),
+                  ),
+
+                  Expanded(
+                    child: Container(
+                      color: const Color.fromARGB(255, 20, 20, 20),
+                      width: double.infinity,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.all(24).copyWith(top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [const SizedBox(height: 50), ...children],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      Positioned(
+        top: 12,
+        left: 24,
+        right: 24,
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadiusGeometry.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  // filter: ImageFilter.blur(),
+                  child: Container(
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 20,
+                      top: 8,
+                      bottom: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(75, 0, 0, 0),
+                    ),
+                    child: Row(
+                      spacing: 8,
+                      children: [
+                        Icon(icon, color: Colors.white, size: 24),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
   );
 }

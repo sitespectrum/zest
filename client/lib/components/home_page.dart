@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -9,10 +8,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/add_meal_page.dart';
-import 'package:zest_client/components/topo_background.dart';
 import 'package:zest_client/components/ui/custom_card.dart';
 import 'package:zest_client/models/meal.dart';
 import 'package:zest_client/models/workout.dart';
+import 'package:zest_client/pages.dart';
 import 'package:zest_client/providers/language_provider.dart';
 import 'package:zest_client/providers/workout_provider.dart';
 import 'package:zest_client/queries/queries.dart';
@@ -43,260 +42,36 @@ Widget homePage(BuildContext context) {
   final meals = useQuery(userMealsQuery);
   final workouts = useQuery(userWorkoutsQuery);
 
-  return SingleChildScrollView(
-    padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-    child: Stack(
-      children: [
-        // bg effect
-        Container(
-          width: double.infinity,
-          height: MediaQuery.of(context).size.height * 0.5,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.transparent, Color.fromARGB(50, 64, 255, 50)],
-              transform: GradientRotation(-0.5 * pi),
-            ),
-          ),
-          child: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.white38, Colors.transparent],
-            ).createShader(bounds),
-            child: TopoBackground(),
-          ),
-        ),
-
-        // main content
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  return MainPageLayout(
+    title: lang.getText("home_page"),
+    icon: Icons.home_rounded,
+    children: [
+      // calorie count text
+      Container(
+        margin: const EdgeInsets.fromLTRB(0, 72, 0, 8),
+        child: Column(
           children: [
-            // app bar + spacing
-            PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: Container(
-                margin: const EdgeInsets.all(6),
-                child: AppBar(
-                  title: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.only(
-                          left: 16,
-                          right: 20,
-                          top: 8,
-                          bottom: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color.fromARGB(75, 0, 0, 0),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Row(
-                          spacing: 8,
-                          children: [
-                            Icon(
-                              Icons.home_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                            Text(
-                              lang.getText("home_page"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  automaticallyImplyLeading: false,
-                  backgroundColor: Colors.transparent,
-                ),
-              ),
-            ),
-
-            // calorie count text
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              margin: const EdgeInsets.fromLTRB(0, 64, 0, 8),
-              child: Column(
+            Text.rich(
+              TextSpan(
                 children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          // text: (asyncSnapshot.data?[0] ?? 0)
-                          //     .toStringAsFixed(0),
-                          text: "1643",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 44,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TextSpan(
-                          // text: (asyncSnapshot.data?[0] ?? 0)
-                          //     .toStringAsFixed(0),
-                          text: " / 2154 kcal",
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  TextSpan(
+                    // text: (asyncSnapshot.data?[0] ?? 0)
+                    //     .toStringAsFixed(0),
+                    text: "1643",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 44,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            // bar
-            Container(
-              height: 32,
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: Color.fromARGB(25, 255, 255, 255),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Flex(
-                direction: Axis.horizontal,
-                children: [
-                  Expanded(
-                    flex: 1643,
-                    child: Flex(
-                      direction: Axis.horizontal,
-                      children: [
-                        Expanded(
-                          flex: 13,
-                          child: Container(color: const Color(0xFF1f84d8)),
-                        ),
-                        Expanded(
-                          flex: 15,
-                          child: Container(color: const Color(0xFFe3d135)),
-                        ),
-                        Expanded(
-                          flex: 7,
-                          child: Container(color: const Color(0xFFd93c30)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(flex: 2154 - 1643, child: Container()),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // legend
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 24),
-              child: Flex(
-                spacing: 18,
-                direction: Axis.horizontal,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Row(
-                    spacing: 6,
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1f84d8),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      Text(
-                        "Fehérje",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  Row(
-                    spacing: 6,
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFe3d135),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      Text(
-                        "Szénhidrát",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  Row(
-                    spacing: 6,
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFd93c30),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      Text(
-                        "Zsír",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // cards
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                spacing: 24,
-                children: [
-                  // last workout
-                  CustomCard(
-                    title: lang.getText("recent_workout"),
-                    iconData: Icons.fitness_center_rounded,
-                    child: LastWorkoutCardContent(
-                      lastWorkout:
-                          ((workouts.data ?? [])
-                                ..sort((a, b) => b.date.compareTo(a.date)))
-                              .firstOrNull,
-                    ),
-                  ),
-
-                  // last meal
-                  CustomCard(
-                    title: lang.getText("recent_meal"),
-                    iconData: Icons.fastfood_rounded,
-                    child: LastMealCardContent(
-                      lastMeal:
-                          ((meals.data ?? [])..sort(
-                                (a, b) => b.eatenAt.compareTo(a.eatenAt),
-                              ))
-                              .firstOrNull,
+                  TextSpan(
+                    // text: (asyncSnapshot.data?[0] ?? 0)
+                    //     .toStringAsFixed(0),
+                    text: " / 2154 kcal",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -304,8 +79,149 @@ Widget homePage(BuildContext context) {
             ),
           ],
         ),
-      ],
-    ),
+      ),
+
+      // bar
+      Container(
+        height: 32,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Color.fromARGB(25, 255, 255, 255),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Flex(
+          direction: Axis.horizontal,
+          children: [
+            Expanded(
+              flex: 1643,
+              child: Flex(
+                direction: Axis.horizontal,
+                children: [
+                  Expanded(
+                    flex: 13,
+                    child: Container(color: const Color(0xFF1f84d8)),
+                  ),
+                  Expanded(
+                    flex: 15,
+                    child: Container(color: const Color(0xFFe3d135)),
+                  ),
+                  Expanded(
+                    flex: 7,
+                    child: Container(color: const Color(0xFFd93c30)),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(flex: 2154 - 1643, child: Container()),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 12),
+
+      // legend
+      Flex(
+        spacing: 18,
+        direction: Axis.horizontal,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Row(
+            spacing: 6,
+            children: [
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1f84d8),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Text(
+                "Fehérje",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          Row(
+            spacing: 6,
+            children: [
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFe3d135),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Text(
+                "Szénhidrát",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          Row(
+            spacing: 6,
+            children: [
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFd93c30),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Text(
+                "Zsír",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 24),
+
+      // cards
+      Column(
+        spacing: 24,
+        children: [
+          // last workout
+          CustomCard(
+            title: lang.getText("recent_workout"),
+            iconData: Icons.fitness_center_rounded,
+            child: LastWorkoutCardContent(
+              lastWorkout:
+                  ((workouts.data ?? [])
+                        ..sort((a, b) => b.date.compareTo(a.date)))
+                      .firstOrNull,
+            ),
+          ),
+
+          // last meal
+          CustomCard(
+            title: lang.getText("recent_meal"),
+            iconData: Icons.fastfood_rounded,
+            child: LastMealCardContent(
+              lastMeal:
+                  ((meals.data ?? [])
+                        ..sort((a, b) => b.eatenAt.compareTo(a.eatenAt)))
+                      .firstOrNull,
+            ),
+          ),
+        ],
+      ),
+    ],
   );
 }
 

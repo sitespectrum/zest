@@ -10,7 +10,7 @@ enum CustomButtonVariant { primary, secondary }
 Widget customButton({
   required void Function()? onPressed,
   String title = "",
-  CustomButtonVariant variant = CustomButtonVariant.primary,
+  CustomButtonVariant variant = .primary,
   IconData? iconData,
   Widget? icon,
   Widget? child,
@@ -20,7 +20,7 @@ Widget customButton({
   return FilledButton(
     onPressed: disabled || loading ? null : onPressed,
     style: switch (variant) {
-      CustomButtonVariant.primary => FilledButton.styleFrom(
+      .primary => FilledButton.styleFrom(
         backgroundColor: const Color.fromARGB(50, 64, 255, 50),
         disabledBackgroundColor: const Color.fromARGB(25, 64, 255, 50),
         foregroundColor: Colors.white,
@@ -33,7 +33,7 @@ Widget customButton({
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       ),
-      CustomButtonVariant.secondary => FilledButton.styleFrom(
+      .secondary => FilledButton.styleFrom(
         backgroundColor: const Color.fromARGB(25, 255, 255, 255),
         foregroundColor: Colors.white,
         disabledForegroundColor: Colors.white38,

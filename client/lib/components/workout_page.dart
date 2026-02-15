@@ -10,7 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zest_client/components/custom_workout_page.dart';
+import 'package:zest_client/components/ui/custom_card.dart';
 import 'package:zest_client/models/workout.dart';
+import 'package:zest_client/pages.dart';
 import 'package:zest_client/providers/language_provider.dart';
 import 'package:zest_client/servers.dart';
 
@@ -83,492 +85,400 @@ Widget workoutPage(BuildContext context) {
       ? StartingDayOfWeek.monday
       : StartingDayOfWeek.sunday;
 
-  return SingleChildScrollView(
-    child: FutureBuilder<List<UserWorkoutDto>>(
-      future: futureWorkouts.value,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              "Hiba történt: ${snapshot.error}",
-              style: TextStyle(color: Colors.red),
+  return MainPageLayout(
+    title: lang.getText("workout_page"),
+    icon: Icons.fitness_center_rounded,
+    children: [
+      const SizedBox(height: 24),
+
+      CustomCard(
+        title: lang.getText("previous_meals"),
+        child: TableCalendar(
+          locale: calendarLocale,
+          startingDayOfWeek: startDay,
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 12, 31),
+          focusedDay: focusedDay.value,
+          selectedDayPredicate: (day) => isSameDay(selectedDay.value, day),
+          headerStyle: HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
+            titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18),
+            leftChevronIcon: const Icon(
+              Icons.chevron_left,
+              color: Colors.white,
             ),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: Container(
-                margin: const EdgeInsets.all(6),
-                child: AppBar(
-                  title: Text(
-                    lang.getText("workout_page"),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  automaticallyImplyLeading: false,
-                  backgroundColor: Colors.transparent,
-                ),
-              ),
+            rightChevronIcon: const Icon(
+              Icons.chevron_right,
+              color: Colors.white,
             ),
+          ),
+          calendarStyle: CalendarStyle(
+            todayDecoration: BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+            selectedDecoration: BoxDecoration(
+              color: Color.fromARGB(255, 58, 58, 58),
+              shape: BoxShape.circle,
+            ),
+            defaultTextStyle: const TextStyle(color: Colors.white),
+            weekendTextStyle: const TextStyle(color: Colors.white),
+          ),
+          onDaySelected: (newSelectedDay, newFocusedDay) async {
+            selectedDay.value = newSelectedDay;
+            focusedDay.value = newFocusedDay;
 
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 45, 45, 45),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white24),
-                    boxShadow: [
-                      BoxShadow(
-                        // ignore: deprecated_member_use
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+            final allWorkouts = await fetchUserWorkouts();
+            final grouped = groupWorkoutsByDay(allWorkouts);
+
+            final int window = 30;
+            final DateTime startDate = DateTime(
+              newSelectedDay.year,
+              newSelectedDay.month,
+              newSelectedDay.day,
+            ).subtract(Duration(days: window));
+            final List<DateTime> days = List.generate(
+              window * 2 + 1,
+              (i) => startDate.add(Duration(days: i)),
+            );
+            final int initialPage = window;
+
+            if (!context.mounted) return;
+
+            DateTime tempSelectedDay = selectedDay.value ?? DateTime.now();
+
+            showDialog(
+              context: context,
+              builder: (context) {
+                final PageController controller = PageController(
+                  initialPage: initialPage,
+                );
+                return StatefulBuilder(
+                  builder: (context, setStateDialog) {
+                    return Dialog(
+                      insetPadding: const EdgeInsets.all(15),
+                      backgroundColor: const Color.fromARGB(255, 40, 40, 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: Colors.white24),
                       ),
-                    ],
-                  ),
-                  child: TableCalendar(
-                    locale: calendarLocale,
-                    startingDayOfWeek: startDay,
-                    firstDay: DateTime.utc(2020, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    focusedDay: focusedDay.value,
-                    selectedDayPredicate: (day) =>
-                        isSameDay(selectedDay.value, day),
-                    headerStyle: HeaderStyle(
-                      formatButtonVisible: false,
-                      titleCentered: true,
-                      titleTextStyle: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
-                      leftChevronIcon: const Icon(
-                        Icons.chevron_left,
-                        color: Colors.white,
-                      ),
-                      rightChevronIcon: const Icon(
-                        Icons.chevron_right,
-                        color: Colors.white,
-                      ),
-                    ),
-                    calendarStyle: CalendarStyle(
-                      todayDecoration: BoxDecoration(
-                        color: Colors.green,
-                        shape: BoxShape.circle,
-                      ),
-                      selectedDecoration: BoxDecoration(
-                        color: Color.fromARGB(255, 58, 58, 58),
-                        shape: BoxShape.circle,
-                      ),
-                      defaultTextStyle: const TextStyle(color: Colors.white),
-                      weekendTextStyle: const TextStyle(color: Colors.white),
-                    ),
-                    onDaySelected: (newSelectedDay, newFocusedDay) async {
-                      selectedDay.value = newSelectedDay;
-                      focusedDay.value = newFocusedDay;
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.65,
+                        width: double.infinity,
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: PageView.builder(
+                                controller: controller,
+                                itemCount: days.length,
+                                onPageChanged: (page) {
+                                  final DateTime newDay = days[page];
+                                  selectedDay.value = newDay;
+                                  focusedDay.value = newDay;
+                                  newSelectedDay = newDay;
+                                },
+                                itemBuilder: (context, index) {
+                                  final DateTime day = days[index];
+                                  final List<UserWorkoutDto> workoutsForDay =
+                                      grouped[day] ?? [];
 
-                      final allWorkouts = await fetchUserWorkouts();
-                      final grouped = groupWorkoutsByDay(allWorkouts);
-
-                      final int window = 30;
-                      final DateTime startDate = DateTime(
-                        newSelectedDay.year,
-                        newSelectedDay.month,
-                        newSelectedDay.day,
-                      ).subtract(Duration(days: window));
-                      final List<DateTime> days = List.generate(
-                        window * 2 + 1,
-                        (i) => startDate.add(Duration(days: i)),
-                      );
-                      final int initialPage = window;
-
-                      if (!context.mounted) return;
-
-                      DateTime tempSelectedDay =
-                          selectedDay.value ?? DateTime.now();
-
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          final PageController controller = PageController(
-                            initialPage: initialPage,
-                          );
-                          return StatefulBuilder(
-                            builder: (context, setStateDialog) {
-                              return Dialog(
-                                insetPadding: const EdgeInsets.all(15),
-                                backgroundColor: const Color.fromARGB(
-                                  255,
-                                  40,
-                                  40,
-                                  40,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  side: const BorderSide(color: Colors.white24),
-                                ),
-                                child: SizedBox(
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.65,
-                                  width: double.infinity,
-                                  child: Column(
-                                    children: [
-                                      Expanded(
-                                        child: PageView.builder(
-                                          controller: controller,
-                                          itemCount: days.length,
-                                          onPageChanged: (page) {
-                                            final DateTime newDay = days[page];
-                                            selectedDay.value = newDay;
-                                            focusedDay.value = newDay;
-                                            newSelectedDay = newDay;
-                                          },
-                                          itemBuilder: (context, index) {
-                                            final DateTime day = days[index];
-                                            final List<UserWorkoutDto>
-                                            workoutsForDay = grouped[day] ?? [];
-
-                                            return Padding(
-                                              padding: const EdgeInsets.all(16),
-                                              child: Column(
-                                                children: [
-                                                  Text(
-                                                    DateFormat.yMd(
-                                                      calendarLocale,
-                                                    ).format(day),
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
+                                  return Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          DateFormat.yMd(
+                                            calendarLocale,
+                                          ).format(day),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Expanded(
+                                          child: workoutsForDay.isEmpty
+                                              ? Center(
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.calendar_month,
+                                                        size: 56,
+                                                        color: Colors.white24,
+                                                      ),
+                                                      SizedBox(height: 8),
+                                                      Text(
+                                                        lang.getText(
+                                                          "no_data_on_this_day",
+                                                        ),
+                                                        style: TextStyle(
+                                                          color: Colors.white70,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  const SizedBox(height: 12),
-                                                  Expanded(
-                                                    child:
-                                                        workoutsForDay.isEmpty
-                                                        ? Center(
-                                                            child: Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons
-                                                                      .calendar_month,
-                                                                  size: 56,
-                                                                  color: Colors
-                                                                      .white24,
-                                                                ),
-                                                                SizedBox(
-                                                                  height: 8,
-                                                                ),
-                                                                Text(
-                                                                  lang.getText(
-                                                                    "no_data_on_this_day",
-                                                                  ),
-                                                                  style: TextStyle(
+                                                )
+                                              : ListView.builder(
+                                                  itemCount:
+                                                      workoutsForDay.length,
+                                                  itemBuilder: (context, i) {
+                                                    final workout =
+                                                        workoutsForDay[i];
+                                                    final displayName =
+                                                        (workout
+                                                            .customName
+                                                            .isNotEmpty)
+                                                        ? workout.customName
+                                                        : workout.workoutName;
+
+                                                    return Container(
+                                                      margin:
+                                                          const EdgeInsets.symmetric(
+                                                            vertical: 6,
+                                                          ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            12,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            const Color.fromARGB(
+                                                              255,
+                                                              30,
+                                                              30,
+                                                              30,
+                                                            ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10,
+                                                            ),
+                                                        border: Border.all(
+                                                          color: Colors.white24,
+                                                        ),
+                                                      ),
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Expanded(
+                                                                child: Text(
+                                                                  displayName,
+                                                                  style: const TextStyle(
                                                                     color: Colors
-                                                                        .white70,
+                                                                        .white,
                                                                     fontSize:
                                                                         16,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
                                                                   ),
                                                                 ),
-                                                              ],
-                                                            ),
-                                                          )
-                                                        : ListView.builder(
-                                                            itemCount:
-                                                                workoutsForDay
-                                                                    .length,
-                                                            itemBuilder: (context, i) {
-                                                              final workout =
-                                                                  workoutsForDay[i];
-                                                              final displayName =
-                                                                  (workout
-                                                                      .customName
-                                                                      .isNotEmpty)
-                                                                  ? workout
-                                                                        .customName
-                                                                  : workout
-                                                                        .workoutName;
-
-                                                              return Container(
-                                                                margin:
-                                                                    const EdgeInsets.symmetric(
-                                                                      vertical:
-                                                                          6,
-                                                                    ),
-                                                                padding:
-                                                                    const EdgeInsets.all(
-                                                                      12,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  color:
-                                                                      const Color.fromARGB(
-                                                                        255,
-                                                                        30,
-                                                                        30,
-                                                                        30,
-                                                                      ),
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        10,
-                                                                      ),
-                                                                  border: Border.all(
-                                                                    color: Colors
-                                                                        .white24,
-                                                                  ),
-                                                                ),
-                                                                child: Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: [
-                                                                    Row(
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment
-                                                                              .spaceBetween,
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child: Text(
-                                                                            displayName,
-                                                                            style: const TextStyle(
-                                                                              color: Colors.white,
-                                                                              fontSize: 16,
-                                                                              fontWeight: FontWeight.bold,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        IconButton(
-                                                                          icon: const Icon(
-                                                                            Icons.delete,
-                                                                            color:
-                                                                                Colors.red,
-                                                                          ),
-                                                                          onPressed: () async {
-                                                                            final success = await deleteMeal(
-                                                                              workout.id,
-                                                                            );
-
-                                                                            if (success) {
-                                                                              setStateDialog(
-                                                                                () {
-                                                                                  grouped[day]!.removeAt(
-                                                                                    i,
-                                                                                  );
-                                                                                },
-                                                                              );
-
-                                                                              futureWorkouts.value = fetchUserWorkouts();
-                                                                            }
-                                                                          },
-                                                                        ),
-                                                                      ],
-                                                                    ),
-
-                                                                    const SizedBox(
-                                                                      height: 6,
-                                                                    ),
-
-                                                                    Column(
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .start,
-                                                                      children: [
-                                                                        const SizedBox(
-                                                                          height:
-                                                                              8,
-                                                                        ),
-                                                                        ...workout.exercises.map((
-                                                                          exerciseData,
-                                                                        ) {
-                                                                          return Padding(
-                                                                            padding: const EdgeInsets.only(
-                                                                              bottom: 8.0,
-                                                                            ),
-                                                                            child: Column(
-                                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                                              children: [
-                                                                                Text(
-                                                                                  exerciseData.exercise?.getName(
-                                                                                        langCode,
-                                                                                      ) ??
-                                                                                      lang.getText(
-                                                                                        "unknown_exercise",
-                                                                                      ),
-                                                                                  style: const TextStyle(
-                                                                                    color: Colors.green,
-                                                                                    fontWeight: FontWeight.bold,
-                                                                                    fontSize: 14,
-                                                                                  ),
-                                                                                ),
-                                                                                Padding(
-                                                                                  padding: const EdgeInsets.only(
-                                                                                    left: 10.0,
-                                                                                    top: 2,
-                                                                                  ),
-                                                                                  child: Column(
-                                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                    children: exerciseData.sets.map(
-                                                                                      (
-                                                                                        set,
-                                                                                      ) {
-                                                                                        final isCardio =
-                                                                                            exerciseData.exercise?.category?.toLowerCase() ==
-                                                                                            'cardio';
-                                                                                        final isBodyweight =
-                                                                                            exerciseData.exercise?.equipment?.toLowerCase() ==
-                                                                                                'body only' ||
-                                                                                            exerciseData.exercise?.equipment?.toLowerCase() ==
-                                                                                                'none';
-
-                                                                                        String textToShow = "";
-
-                                                                                        if (isCardio) {
-                                                                                          textToShow = "${set.weight} km | ${set.reps} ${lang.getText("min")}";
-                                                                                        } else if (isBodyweight) {
-                                                                                          textToShow = "${set.reps} ${lang.getText("reps")}";
-                                                                                        } else {
-                                                                                          textToShow = "${set.weight} kg x ${set.reps}";
-                                                                                        }
-
-                                                                                        return Text(
-                                                                                          textToShow,
-                                                                                          style: const TextStyle(
-                                                                                            color: Colors.white70,
-                                                                                            fontSize: 13,
-                                                                                          ),
-                                                                                        );
-                                                                                      },
-                                                                                    ).toList(),
-                                                                                  ),
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          );
-                                                                        }).toList(),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              );
-                                                            },
-                                                          ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  ElevatedButton.icon(
-                                                    onPressed: () async {
-                                                      await Navigator.of(
-                                                        context,
-                                                      ).push(
-                                                        MaterialPageRoute(
-                                                          builder: (_) =>
-                                                              CWorkoutPage(
-                                                                selectedDay:
-                                                                    tempSelectedDay,
                                                               ),
-                                                        ),
-                                                      );
+                                                              IconButton(
+                                                                icon: const Icon(
+                                                                  Icons.delete,
+                                                                  color: Colors
+                                                                      .red,
+                                                                ),
+                                                                onPressed: () async {
+                                                                  final success =
+                                                                      await deleteMeal(
+                                                                        workout
+                                                                            .id,
+                                                                      );
 
-                                                      selectedDay.value =
-                                                          DateTime.now();
-                                                      newSelectedDay =
-                                                          DateTime.now();
-                                                      focusedDay.value =
-                                                          DateTime.now();
-                                                    },
-                                                    icon: const Icon(
-                                                      Icons.add,
-                                                      color: Colors.white,
-                                                    ),
-                                                    label: Text(
-                                                      lang.getText(
-                                                        "add_new_workout",
+                                                                  if (success) {
+                                                                    setStateDialog(() {
+                                                                      grouped[day]!
+                                                                          .removeAt(
+                                                                            i,
+                                                                          );
+                                                                    });
+
+                                                                    futureWorkouts
+                                                                            .value =
+                                                                        fetchUserWorkouts();
+                                                                  }
+                                                                },
+                                                              ),
+                                                            ],
+                                                          ),
+
+                                                          const SizedBox(
+                                                            height: 6,
+                                                          ),
+
+                                                          Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              const SizedBox(
+                                                                height: 8,
+                                                              ),
+                                                              ...workout.exercises.map((
+                                                                exerciseData,
+                                                              ) {
+                                                                return Padding(
+                                                                  padding:
+                                                                      const EdgeInsets.only(
+                                                                        bottom:
+                                                                            8.0,
+                                                                      ),
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      Text(
+                                                                        exerciseData.exercise?.getName(
+                                                                              langCode,
+                                                                            ) ??
+                                                                            lang.getText(
+                                                                              "unknown_exercise",
+                                                                            ),
+                                                                        style: const TextStyle(
+                                                                          color:
+                                                                              Colors.green,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontSize:
+                                                                              14,
+                                                                        ),
+                                                                      ),
+                                                                      Padding(
+                                                                        padding: const EdgeInsets.only(
+                                                                          left:
+                                                                              10.0,
+                                                                          top:
+                                                                              2,
+                                                                        ),
+                                                                        child: Column(
+                                                                          crossAxisAlignment:
+                                                                              CrossAxisAlignment.start,
+                                                                          children: exerciseData.sets.map((
+                                                                            set,
+                                                                          ) {
+                                                                            final isCardio =
+                                                                                exerciseData.exercise?.category.toLowerCase() ==
+                                                                                'cardio';
+                                                                            final isBodyweight =
+                                                                                exerciseData.exercise?.equipment.toLowerCase() ==
+                                                                                    'body only' ||
+                                                                                exerciseData.exercise?.equipment.toLowerCase() ==
+                                                                                    'none';
+
+                                                                            String
+                                                                            textToShow =
+                                                                                "";
+
+                                                                            if (isCardio) {
+                                                                              textToShow = "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+                                                                            } else if (isBodyweight) {
+                                                                              textToShow = "${set.reps} ${lang.getText("reps")}";
+                                                                            } else {
+                                                                              textToShow = "${set.weight} kg x ${set.reps}";
+                                                                            }
+
+                                                                            return Text(
+                                                                              textToShow,
+                                                                              style: const TextStyle(
+                                                                                color: Colors.white70,
+                                                                                fontSize: 13,
+                                                                              ),
+                                                                            );
+                                                                          }).toList(),
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              }),
+                                                            ],
+                                                          ),
+                                                        ],
                                                       ),
-                                                    ),
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.green,
-                                                          foregroundColor:
-                                                              Colors.white,
-                                                        ),
-                                                  ),
-                                                ],
+                                                    );
+                                                  },
+                                                ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        ElevatedButton.icon(
+                                          onPressed: () async {
+                                            await Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => CWorkoutPage(
+                                                  selectedDay: tempSelectedDay,
+                                                ),
                                               ),
                                             );
+
+                                            selectedDay.value = DateTime.now();
+                                            newSelectedDay = DateTime.now();
+                                            focusedDay.value = DateTime.now();
                                           },
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
-                                        ),
-                                        child: FilledButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  30,
-                                                  30,
-                                                  30,
-                                                ),
-                                            side: const BorderSide(
-                                              color: Colors.white24,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
+                                          icon: const Icon(
+                                            Icons.add,
+                                            color: Colors.white,
                                           ),
-                                          child: Text(
-                                            lang.getText("close"),
-                                            style: TextStyle(color: Colors.red),
+                                          label: Text(
+                                            lang.getText("add_new_workout"),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            foregroundColor: Colors.white,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: FilledButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    30,
+                                    30,
+                                    30,
+                                  ),
+                                  side: const BorderSide(color: Colors.white24),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-                Positioned(
-                  top: MediaQuery.of(context).size.height * 0.005,
-                  left: MediaQuery.of(context).size.width * 0.09,
-                  child: Text(
-                    lang.getText("previous_meals"),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    ),
+                                child: Text(
+                                  lang.getText("close"),
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
+      ),
+    ],
   );
 }
