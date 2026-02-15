@@ -46,7 +46,7 @@ Widget recentMDrawer(
                   children: [
                     const Icon(
                       Icons.history,
-                      color: Color.fromARGB(150, 50, 146, 255),
+                      color: Color(0xFFff9c7a),
                       size: 28,
                     ),
                     const SizedBox(width: 10),

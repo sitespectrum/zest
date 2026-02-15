@@ -12,6 +12,7 @@ Widget customCard({
   String title = "",
   IconData? iconData,
   Widget? icon,
+  final double? height,
 }) {
   return Container(
     width: double.infinity,
@@ -33,8 +34,8 @@ Widget customCard({
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
-              bottomLeft: Radius.circular(8),
-              bottomRight: Radius.circular(8),
+              bottomLeft: Radius.circular(4),
+              bottomRight: Radius.circular(4),
             ),
           ),
           child: Row(
@@ -56,12 +57,13 @@ Widget customCard({
           ),
         ),
         Container(
+          height: height,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: const Color(0xFF272727).withOpacity(0.9),
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(8),
-              topRight: Radius.circular(8),
+              topLeft: Radius.circular(4),
+              topRight: Radius.circular(4),
               bottomLeft: Radius.circular(16),
               bottomRight: Radius.circular(16),
             ),
