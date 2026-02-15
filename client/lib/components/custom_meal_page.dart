@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -13,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zest_client/components/add_meal_page.dart';
 import 'package:zest_client/components/drawers/share_drawer.dart';
+import 'package:zest_client/components/pages/meal_scan_qr.dart';
 import 'package:zest_client/components/ui/custom_button.dart';
 import 'package:zest_client/components/ui/custom_card.dart';
 import 'package:zest_client/components/ui/custom_separator.dart';
@@ -74,7 +74,6 @@ Widget cMealPage(BuildContext context, {required DateTime selectedDay}) {
     final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
@@ -180,7 +179,6 @@ Widget cMealPage(BuildContext context, {required DateTime selectedDay}) {
     final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
@@ -233,7 +231,6 @@ Widget cMealPage(BuildContext context, {required DateTime selectedDay}) {
     final totalFat = meals.fold<double>(0.0, (sum, meal) => sum + meal.fat);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
 
     if (token == null || token.isEmpty) throw Exception("Nincs token.");
 
@@ -295,72 +292,7 @@ Widget cMealPage(BuildContext context, {required DateTime selectedDay}) {
 
   void startScanning(BuildContext context) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AiBarcodeScanner(
-          onDetect: (BarcodeCapture capture) async {
-            String scannedValue = capture.barcodes.first.rawValue ?? "";
-
-            if (scannedValue.isEmpty) return;
-
-            Navigator.of(context).pop();
-
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (c) => const Center(child: CircularProgressIndicator()),
-            );
-
-            try {
-              List<MealDto> newMeals = [];
-
-              if (scannedValue.startsWith("[")) {
-                List<dynamic> decodedData = jsonDecode(scannedValue);
-                newMeals = decodedData
-                    .map((item) => MealDto.fromJson(item))
-                    .toList();
-              } else {
-                final response = await http.get(
-                  Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
-                );
-
-                if (response.statusCode == 200) {
-                  List<dynamic> decodedData = jsonDecode(response.body);
-                  newMeals = decodedData
-                      .map((item) => MealDto.fromJson(item))
-                      .toList();
-                } else {
-                  throw Exception("Nem található vagy lejárt megosztás.");
-                }
-              }
-
-              Navigator.pop(context);
-
-              userMeals.value = [...userMeals.value, ...newMeals];
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    "${newMeals.length} ${lang.getText("added_to_list")}",
-                  ),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            } catch (e) {
-              Navigator.pop(context);
-              debugPrint("Hiba az importálásnál: $e");
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Hiba: ${e.toString()}"),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          controller: MobileScannerController(
-            detectionSpeed: DetectionSpeed.noDuplicates,
-          ),
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => MealScanQrPage(meals: userMeals)),
     );
   }
 
@@ -1428,17 +1360,17 @@ Widget cMealPage(BuildContext context, {required DateTime selectedDay}) {
         ),
       ],
     ),
-    bottomNavigationBar: SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                // color: Colors.white.withAlpha(25),
-                padding: const EdgeInsets.all(24).copyWith(top: 24),
+    bottomNavigationBar: Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              color: Colors.black.withAlpha(25),
+              padding: const EdgeInsets.all(24).copyWith(top: 24),
+              child: SafeArea(
                 child: Row(
                   spacing: 12,
                   children: [
@@ -1954,8 +1886,8 @@ Widget cMealPage(BuildContext context, {required DateTime selectedDay}) {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }

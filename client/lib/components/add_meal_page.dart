@@ -279,13 +279,9 @@ class _AddMealPageState extends State<AddMealPage> {
     try {
       Uri? uri;
       if (lang == "hu") {
-        setState(() {
-          uri = Uri.parse('$apiUrl/api/meals/husearch?q=$q');
-        });
+        uri = Uri.parse('$apiUrl/api/meals/husearch?q=$q');
       } else if (lang == "en") {
-        setState(() {
-          uri = Uri.parse('$apiUrl/api/meals/ensearch?q=$q');
-        });
+        uri = Uri.parse('$apiUrl/api/meals/ensearch?q=$q');
       }
       final response = await http.get(uri!);
       print("URI: $uri");
@@ -311,14 +307,14 @@ class _AddMealPageState extends State<AddMealPage> {
       } else if (decoded is Map<String, dynamic>) {
         if (decoded['results2'] is List) {
           items = decoded['results2'];
-        } else if (decoded['results'] is List)
+        } else if (decoded['results'] is List) {
           items = decoded['results'];
-        else if (decoded['data'] is List)
+        } else if (decoded['data'] is List) {
           items = decoded['data'];
-        else if (decoded['food_list'] is List)
+        } else if (decoded['food_list'] is List) {
           items = decoded['food_list'];
-        else {
-          print(
+        } else {
+          throw Exception(
             "Hiba: Nem találtam listát a JSON objektumban. Kulcsok: ${decoded.keys}",
           );
         }
@@ -358,740 +354,329 @@ class _AddMealPageState extends State<AddMealPage> {
         }
 
         // ignore: deprecated_member_use
-        return WillPopScope(
-          onWillPop: () async {
-            if (widget.addToTemplate) {
-              Navigator.pop(context, templateMeals);
-            } else {
-              Navigator.pop(context, userMeals);
-            }
-            return false;
-          },
-          child: Scaffold(
-            body: SingleChildScrollView(
-              controller: _scrollController,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
-                    child: AppBar(
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: SizedBox(
-                                height: 48,
-                                child: TextField(
-                                  controller: _controller,
-                                  onChanged: (value) {
-                                    if (_debounce?.isActive ?? false) {
-                                      _debounce!.cancel();
-                                    }
-                                    _debounce = Timer(
-                                      const Duration(milliseconds: 600),
-                                      () {
-                                        _searchMeals(value);
-                                      },
-                                    );
-                                  },
-                                  cursorColor: Colors.white,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                  ),
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: const Color.fromARGB(
-                                      255,
-                                      45,
-                                      45,
-                                      45,
-                                    ),
-                                    hintText: lang.getText("search_hint"),
-                                    hintStyle: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                ),
+        return Scaffold(
+          body: SingleChildScrollView(
+            controller: _scrollController,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                AppBar(
+                  title: Row(
+                    children: [
+                      //search field
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: TextField(
+                            controller: _controller,
+                            onChanged: (value) {
+                              if (_debounce?.isActive ?? false) {
+                                _debounce!.cancel();
+                              }
+                              _debounce = Timer(
+                                const Duration(milliseconds: 600),
+                                () {
+                                  _searchMeals(value);
+                                },
+                              );
+                            },
+                            cursorColor: Colors.white,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color.fromARGB(255, 45, 45, 45),
+                              hintText: lang.getText("search_hint"),
+                              hintStyle: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 4),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 85, 173, 78),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                Future.microtask(() async {
-                                  bool hasPopped = false;
-                                  final scannedCode =
-                                      // ignore: use_build_context_synchronously
-                                      await Navigator.of(context).push<String>(
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AiBarcodeScanner(
-                                                onDetect: (capture) {
-                                                  if (hasPopped) return;
-                                                  final code = capture
-                                                      .barcodes
-                                                      .first
-                                                      .rawValue;
-                                                  if (code != null) {
-                                                    hasPopped = true;
-                                                    Navigator.of(
-                                                      context,
-                                                    ).pop(code);
-                                                  }
-                                                },
-                                              ),
-                                        ),
-                                      );
-
-                                  if (scannedCode != null &&
-                                      scannedCode.isNotEmpty) {
-                                    final results = await fetchMealsByBarcode(
-                                      scannedCode,
-                                    );
-                                    if (results.isNotEmpty) {
-                                      setState(() {
-                                        searchResults = results;
-                                        anyResults = true;
-                                      });
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        // ignore: use_build_context_synchronously
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            lang.getText("no_barcode_found"),
-                                          ),
-                                          backgroundColor: Colors.red,
-                                          behavior: SnackBarBehavior.floating,
-                                          margin: EdgeInsets.only(
-                                            bottom: 30,
-                                            left: 16,
-                                            right: 16,
-                                          ),
-                                          duration: Duration(
-                                            milliseconds: 1800,
-                                          ),
-                                          animation: CurvedAnimation(
-                                            parent: kAlwaysCompleteAnimation,
-                                            curve: Curves.easeInOut,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                });
-                              },
-                              icon: const Icon(
-                                CupertinoIcons.barcode,
-                                size: 25,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      backgroundColor: const Color.fromARGB(255, 58, 58, 58),
-                      iconTheme: const IconThemeData(color: Colors.white),
-                    ),
-                  ),
-
-                  !anyResults
-                      ? ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: searchResults.length,
-                          itemBuilder: (context, index) {
-                            final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(meal.name);
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
+                              contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
-                                vertical: 6,
+                                vertical: 8,
                               ),
+                              border: OutlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Colors.white24,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Colors.white24,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Colors.grey,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // barcode button
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 85, 173, 78),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            Future.microtask(() async {
+                              bool hasPopped = false;
+                              final scannedCode =
+                                  // ignore: use_build_context_synchronously
+                                  await Navigator.of(context).push<String>(
+                                    MaterialPageRoute(
+                                      builder: (context) => AiBarcodeScanner(
+                                        onDetect: (capture) {
+                                          if (hasPopped) return;
+                                          final code =
+                                              capture.barcodes.first.rawValue;
+                                          if (code != null) {
+                                            hasPopped = true;
+                                            Navigator.of(context).pop(code);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  );
+
+                              if (scannedCode != null &&
+                                  scannedCode.isNotEmpty) {
+                                final results = await fetchMealsByBarcode(
+                                  scannedCode,
+                                );
+                                if (results.isNotEmpty) {
+                                  setState(() {
+                                    searchResults = results;
+                                    anyResults = true;
+                                  });
+                                } else {
+                                  ScaffoldMessenger.of(
+                                    // ignore: use_build_context_synchronously
+                                    context,
+                                  ).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        lang.getText("no_barcode_found"),
+                                      ),
+                                      backgroundColor: Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                      margin: EdgeInsets.only(
+                                        bottom: 30,
+                                        left: 16,
+                                        right: 16,
+                                      ),
+                                      duration: Duration(milliseconds: 1800),
+                                      animation: CurvedAnimation(
+                                        parent: kAlwaysCompleteAnimation,
+                                        curve: Curves.easeInOut,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            });
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.barcode,
+                            size: 25,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                !anyResults
+                    ? ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: searchResults.length,
+                        itemBuilder: (context, index) {
+                          final meal = searchResults[index];
+                          final cleanName = stripHtmlTags(meal.name);
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: GestureDetector(
+                              onTap: () async {
+                                if (widget.addToTemplate) {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final userId = prefs.getInt("userId");
+                                  print("userId: $userId");
+                                  if (userId != null &&
+                                      widget.templateId != null) {
+                                    await addFoodToTemplate(
+                                      widget.templateId!,
+                                      userId,
+                                      meal,
+                                    );
+                                    print(widget.templateId);
+                                    setState(() {
+                                      templateMeals.add(meal);
+                                    });
+                                  }
+                                } else {
+                                  setState(() {
+                                    userMeals.add(meal);
+                                  });
+                                }
+                                final cleanName = stripHtmlTags(meal.name);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '$cleanName ${lang.getText("added_to_list")}',
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: EdgeInsets.only(
+                                      bottom: 30,
+                                      left: 16,
+                                      right: 16,
+                                    ),
+                                    duration: Duration(milliseconds: 1800),
+                                    animation: CurvedAnimation(
+                                      parent: kAlwaysCompleteAnimation,
+                                      curve: Curves.easeInOut,
+                                    ),
+                                  ),
+                                );
+                              },
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 45, 45, 45),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      // ignore: deprecated_member_use
-                                      color: Colors.black.withOpacity(0.5),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                                  color: Colors.white.withAlpha(25),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () async {
-                                    if (widget.addToTemplate) {
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      final userId = prefs.getInt("userId");
-                                      print("userId: $userId");
-                                      if (userId != null &&
-                                          widget.templateId != null) {
-                                        await addFoodToTemplate(
-                                          widget.templateId!,
-                                          userId,
-                                          meal,
-                                        );
-                                        print(widget.templateId);
-                                        setState(() {
-                                          templateMeals.add(meal);
-                                        });
-                                      }
-                                    } else {
-                                      setState(() {
-                                        userMeals.add(meal);
-                                      });
-                                    }
-                                    final cleanName = stripHtmlTags(meal.name);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '$cleanName ${lang.getText("added_to_list")}',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        cleanName,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    );
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                        255,
-                                        45,
-                                        45,
-                                        45,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.white24),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          // ignore: deprecated_member_use
-                                          color: Colors.black.withOpacity(0.5),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                      const SizedBox(height: 6),
+                                      Row(
                                         children: [
-                                          Text(
-                                            cleanName,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | ${lang.getText("portion")}: ${meal.quantity} ${meal.piece}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white70,
-                                                  ),
-                                                ),
+                                          Expanded(
+                                            child: Text(
+                                              '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | ${lang.getText("portion")}: ${meal.quantity} ${meal.piece}',
+                                              style: const TextStyle(
+                                                color: Colors.white70,
                                               ),
-                                            ],
+                                            ),
                                           ),
                                         ],
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        )
-                      : isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: searchResults.length,
-                          itemBuilder: (context, index) {
-                            final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(meal.name);
+                            ),
+                          );
+                        },
+                      )
+                    : isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: searchResults.length,
+                        itemBuilder: (context, index) {
+                          final meal = searchResults[index];
+                          final cleanName = stripHtmlTags(meal.name);
 
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: InkWell(
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 45, 45, 45),
                                 borderRadius: BorderRadius.circular(12),
-                                onTap: () async {
-                                  final units = await _fetchUnit(meal.foodId);
-                                  if (units.isEmpty) {
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          lang.getText("no_unit_found"),
-                                        ),
-                                        backgroundColor: Colors.red,
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
-                                        ),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  String selectedUnit =
-                                      (units.first["Name"]?.toString() ?? '')
-                                          .replaceFirst("UNIT_", "");
-                                  double baseWeight =
-                                      double.tryParse(
-                                        units.first["nWeight"]?.toString() ??
-                                            '1',
-                                      ) ??
-                                      1.0;
-                                  double multiplier = baseWeight / 100;
-
-                                  final updatedMeal = await showDialog<MealDto>(
-                                    // ignore: use_build_context_synchronously
-                                    context: context,
-                                    builder: (context) {
-                                      return StatefulBuilder(
-                                        builder: (context, setState) {
-                                          return Center(
-                                            child: SingleChildScrollView(
-                                              child: Dialog(
-                                                backgroundColor:
-                                                    const Color.fromARGB(
-                                                      255,
-                                                      35,
-                                                      35,
-                                                      35,
-                                                    ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    16,
-                                                  ),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        lang.getText(
-                                                          "choose_quantity",
-                                                        ),
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 20,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      Container(
-                                                        width:
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).size.width *
-                                                            0.3,
-                                                        height:
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).size.height *
-                                                            0.06,
-                                                        padding:
-                                                            const EdgeInsets.fromLTRB(
-                                                              0,
-                                                              0,
-                                                              0,
-                                                              18,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              const Color.fromARGB(
-                                                                255,
-                                                                72,
-                                                                72,
-                                                                72,
-                                                              ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        child: TextField(
-                                                          cursorColor:
-                                                              Colors.white,
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 20,
-                                                              ),
-                                                          controller:
-                                                              quantitycontroller,
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          decoration: InputDecoration(
-                                                            border: OutlineInputBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                            ),
-                                                            focusedBorder: OutlineInputBorder(
-                                                              borderSide:
-                                                                  const BorderSide(
-                                                                    color: Colors
-                                                                        .transparent,
-                                                                    width: 2,
-                                                                  ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                            ),
-                                                            enabledBorder: OutlineInputBorder(
-                                                              borderSide:
-                                                                  const BorderSide(
-                                                                    color: Colors
-                                                                        .transparent,
-                                                                    width: 1,
-                                                                  ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                          keyboardType:
-                                                              TextInputType
-                                                                  .number,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      Wrap(
-                                                        spacing: 8,
-                                                        runSpacing: 8,
-                                                        children: units.map((
-                                                          unit,
-                                                        ) {
-                                                          final name =
-                                                              unit["Name"]
-                                                                  .replaceFirst(
-                                                                    "UNIT_",
-                                                                    "",
-                                                                  );
-                                                          final weight =
-                                                              double.tryParse(
-                                                                unit["nWeight"],
-                                                              ) ??
-                                                              1.0;
-                                                          final isSelected =
-                                                              name ==
-                                                              selectedUnit;
-
-                                                          return ChoiceChip(
-                                                            label: Text(
-                                                              "$name (${weight.toStringAsFixed(0)}g/ml)",
-                                                              style: TextStyle(
-                                                                color:
-                                                                    isSelected
-                                                                    ? Colors
-                                                                          .black
-                                                                    : Colors
-                                                                          .white,
-                                                              ),
-                                                            ),
-                                                            selected:
-                                                                isSelected,
-                                                            selectedColor:
-                                                                Colors.white,
-                                                            backgroundColor:
-                                                                const Color.fromARGB(
-                                                                  255,
-                                                                  60,
-                                                                  60,
-                                                                  60,
-                                                                ),
-                                                            onSelected: (selected) {
-                                                              if (selected) {
-                                                                setState(() {
-                                                                  selectedUnit =
-                                                                      name;
-                                                                  baseWeight =
-                                                                      weight;
-                                                                  multiplier =
-                                                                      baseWeight /
-                                                                      100;
-                                                                });
-                                                              }
-                                                            },
-                                                          );
-                                                        }).toList(),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 20,
-                                                      ),
-                                                      ElevatedButton(
-                                                        onPressed: () {
-                                                          final quantity =
-                                                              int.tryParse(
-                                                                quantitycontroller
-                                                                    .text,
-                                                              ) ??
-                                                              1;
-                                                          final updatedMeal = MealDto(
-                                                            foodId: meal.foodId,
-                                                            name: meal.name,
-                                                            calories:
-                                                                (meal.calories *
-                                                                        multiplier)
-                                                                    .round(),
-                                                            protein:
-                                                                meal.protein *
-                                                                multiplier,
-                                                            carbs:
-                                                                meal.carbs *
-                                                                multiplier,
-                                                            fat:
-                                                                meal.fat *
-                                                                multiplier,
-                                                            quantity: quantity,
-                                                            baseWeight:
-                                                                baseWeight,
-                                                            unit: selectedUnit,
-                                                            multiplier:
-                                                                multiplier,
-                                                          );
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(updatedMeal);
-                                                        },
-                                                        style:
-                                                            ElevatedButton.styleFrom(
-                                                              backgroundColor:
-                                                                  Colors.white,
-                                                              foregroundColor:
-                                                                  Colors.black,
-                                                            ),
-                                                        child: Text(
-                                                          lang.getText("add"),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  );
-                                  if (updatedMeal != null) {
-                                    if (widget.addToTemplate) {
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      final userId = prefs.getInt("userId");
-
-                                      if (userId != null &&
-                                          widget.templateId != null) {
-                                        final newId = await addFoodToTemplate(
-                                          widget.templateId!,
-                                          userId,
-                                          updatedMeal,
-                                        );
-
-                                        if (newId != null) {
-                                          final mealWithId = updatedMeal
-                                              .copyWith(id: newId);
-
-                                          setState(() {
-                                            templateMeals.add(mealWithId);
-                                          });
-                                        }
-                                      } else {
-                                        print(
-                                          "HIBA: UserId vagy TemplateId null! User: $userId, Template: ${widget.templateId}",
-                                        );
-                                      }
-                                    } else {
-                                      setState(() {
-                                        userMeals.add(updatedMeal);
-                                      });
-                                    }
-
-                                    final cleanName = stripHtmlTags(
-                                      updatedMeal.name,
-                                    );
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '$cleanName ${lang.getText("added_to_list")}',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      255,
-                                      45,
-                                      45,
-                                      45,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.white24),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        // ignore: deprecated_member_use
-                                        color: Colors.black.withOpacity(0.5),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                                border: Border.all(color: Colors.white24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    // ignore: deprecated_member_use
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      cleanName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
                                       children: [
-                                        Text(
-                                          cleanName,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | adag: ${meal.quantity} ${meal.piece}',
-                                                style: const TextStyle(
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
+                                        Expanded(
+                                          child: Text(
+                                            '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | adag: ${meal.quantity} ${meal.piece}',
+                                            style: const TextStyle(
+                                              color: Colors.white70,
                                             ),
-                                          ],
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                ],
-              ),
+                            ),
+                          );
+                        },
+                      ),
+              ],
             ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () => {
-                if (_scrollController.hasClients)
-                  {
-                    _scrollController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOut,
-                    ),
-                  },
-              },
-              backgroundColor: const Color.fromRGBO(85, 173, 78, 1),
-              child: const Icon(
-                Icons.arrow_upward,
-                color: Colors.white,
-                size: 32,
-              ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => {
+              if (_scrollController.hasClients)
+                {
+                  _scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOut,
+                  ),
+                },
+            },
+            backgroundColor: const Color.fromRGBO(85, 173, 78, 1),
+            child: const Icon(
+              Icons.arrow_upward,
+              color: Colors.white,
+              size: 32,
             ),
           ),
         );

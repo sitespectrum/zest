@@ -466,74 +466,56 @@ Widget lastMealCardContent(BuildContext context, {UserMealDto? lastMeal}) {
         },
       );
     },
-    child: Container(
-      width: double.infinity,
-      // margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 45, 45, 45),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white24),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "${getTranslatedName(lastMeal.mealName, lang)} - $formattedDate",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: MediaQuery.of(context).size.height * 0.021,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-              ),
-              Text(
-                "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-              ),
-              Text(
-                "${lang.getText("carbs")}: ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-              ),
-              Text(
-                "${lang.getText("fat")}: ${lastMeal.totalFat.toStringAsFixed(1)} g",
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-              ),
-            ],
-          ),
-
-          Padding(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height * 0.055,
-            ),
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "${getTranslatedName(lastMeal.mealName, lang)} - $formattedDate",
+              style: TextStyle(
                 color: Colors.white,
-                shape: BoxShape.circle,
+                fontSize: MediaQuery.of(context).size.height * 0.021,
+                fontWeight: FontWeight.bold,
               ),
-              child: const Icon(Icons.arrow_forward, color: Colors.black),
             ),
+            const SizedBox(height: 8),
+            Text(
+              "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            Text(
+              "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            Text(
+              "${lang.getText("carbs")}: ${lastMeal.totalCarbs.toStringAsFixed(1)} g",
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
+            Text(
+              "${lang.getText("fat")}: ${lastMeal.totalFat.toStringAsFixed(1)} g",
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ],
+        ),
+
+        Padding(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).size.height * 0.055,
           ),
-        ],
-      ),
+          child: Container(
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_forward, color: Colors.black),
+          ),
+        ),
+      ],
     ),
   );
 }
