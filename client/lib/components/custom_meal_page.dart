@@ -345,14 +345,20 @@ class _CMealPageState extends State<CMealPage> {
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () {
-                  stopNfcSharing();
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "Bezárás",
-                  style: TextStyle(color: Colors.white),
+              Container(
+                width: double.infinity,
+                child: CustomButton(
+                  onPressed: () {
+                    stopNfcSharing();
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Bezárás",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -448,16 +454,33 @@ class _CMealPageState extends State<CMealPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (c) => const AlertDialog(
+      builder: (c) => AlertDialog(
         backgroundColor: Color.fromARGB(255, 30, 30, 30),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.nfc, size: 60, color: Colors.white),
+            const Icon(Icons.nfc, size: 80, color: Colors.green),
             SizedBox(height: 20),
             Text(
               "Érintsd a másik telefonhoz...",
               style: TextStyle(color: Colors.white),
+            ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: CustomButton(
+                onPressed: () {
+                  FlutterBluePlus.stopScan();
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  "Bezárás",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -716,7 +739,7 @@ class _CMealPageState extends State<CMealPage> {
               PreferredSize(
                 preferredSize: const Size.fromHeight(60),
                 child: Container(
-                  margin: const EdgeInsets.fromLTRB(5, 6, 5, 0),
+                  margin: const EdgeInsets.all(5),
                   child: AppBar(
                     backgroundColor: Colors.transparent,
                     title: Row(

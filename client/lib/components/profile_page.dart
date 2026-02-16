@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/components/utils/keyboard_aware_drawer.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/components/ui/custom_button.dart';
@@ -31,7 +32,7 @@ class _ProfilePageState extends State<ProfilePage>
   bool loggedIn = false;
   Map<String, dynamic>? userData;
   bool isLoading = true;
-  String currentLanguage = "Magyar";
+  String currentLanguage = "hu";
 
   @override
   bool get wantKeepAlive => true;
@@ -98,6 +99,35 @@ class _ProfilePageState extends State<ProfilePage>
       "Extrém_aktív",
     ];
 
+    Future<void> _selectDate(BuildContext context) async {
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: DateTime.tryParse(birthController.text) ?? DateTime(2000),
+        firstDate: DateTime(1900),
+        lastDate: DateTime.now(),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.dark(
+                primary: Color.fromARGB(255, 85, 173, 78),
+                onPrimary: Colors.white,
+                surface: Color(0xFF272727),
+                onSurface: Colors.white,
+              ),
+              dialogBackgroundColor: const Color(0xFF272727),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (picked != null) {
+        setState(() {
+          birthController.text = DateFormat('yyyy-MM-dd').format(picked);
+        });
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -109,137 +139,182 @@ class _ProfilePageState extends State<ProfilePage>
               height: MediaQuery.of(context).size.height * 0.78,
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        lang.getText("modify_details"),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  Container(
+                    margin: EdgeInsets.only(top: 10, bottom: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          lang.getText("modify_details"),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close, color: Colors.white),
-                      ),
-                    ],
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close, color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
-
+                  SizedBox(height: 10),
                   Expanded(
                     child: SingleChildScrollView(
                       physics: BouncingScrollPhysics(),
                       child: Column(
                         children: [
-                          Center(
-                            child: _buildProfessionalLanguageInput(
-                              context,
-                              lang.getText("language"),
-                              selectedLanguage,
-                              (val) =>
-                                  setPopupState(() => selectedLanguage = val!),
-                            ),
+                          _buildStyledDropdown(
+                            label: lang.getText("language"),
+                            value: selectedLanguage,
+                            items: const [
+                              DropdownMenuItem(
+                                value: "hu",
+                                child: Text("Magyar"),
+                              ),
+                              DropdownMenuItem(
+                                value: "en",
+                                child: Text("English"),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              setPopupState(() => selectedLanguage = val!);
+                              Provider.of<LanguageProvider>(
+                                context,
+                                listen: false,
+                              ).changeLanguage(val!);
+                            },
+                            isLangSelector: true,
                           ),
+                          SizedBox(height: 20),
                           Center(
                             child: _buildSectionHeader(
                               lang.getText("personal_details"),
                             ),
                           ),
-                          _buildProfessionalInput(
-                            context,
-                            lang.getText("username_hint"),
+                          SizedBox(height: 20),
+                          CustomTextField(
                             nameController,
+                            lang.getText("username_hint"),
+                            isPassword: false,
                             isNumber: false,
+                            isSuffix: false,
                           ),
-                          _buildProfessionalInput(
-                            context,
-                            lang.getText("password_hint"),
+                          SizedBox(height: 20),
+                          CustomTextField(
                             passwordController,
+                            lang.getText("password_hint"),
                             isNumber: false,
                             isPassword: true,
+                            isSuffix: false,
                           ),
-
+                          SizedBox(height: 20),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildProfessionalInput(
-                                context,
-                                lang.getText("height"),
-                                heightController,
-                                widthFactor: 0.42,
-                                suffix: " cm",
+                              Expanded(
+                                child: CustomTextField(
+                                  heightController,
+                                  lang.getText("height"),
+                                  isNumber: true,
+                                  isSuffix: true,
+                                  suffix: " cm",
+                                ),
                               ),
-                              _buildProfessionalInput(
-                                context,
-                                lang.getText("weight"),
-                                weightController,
-                                widthFactor: 0.42,
-                                suffix: " kg",
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: CustomTextField(
+                                  weightController,
+                                  lang.getText("weight"),
+                                  isNumber: true,
+                                  isSuffix: true,
+                                  suffix: " kg",
+                                ),
                               ),
                             ],
                           ),
-
+                          SizedBox(height: 20),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildProfessionalDateInput(
-                                context,
-                                lang.getText("born_in"),
-                                birthController,
-                                () async {
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: selectedBirth,
-                                    firstDate: DateTime(1950),
-                                    lastDate: DateTime.now(),
-                                    builder: (context, child) => Theme(
-                                      data: ThemeData.dark().copyWith(
-                                        colorScheme: const ColorScheme.dark(
-                                          primary: Colors.green,
-                                          onPrimary: Colors.white,
-                                          surface: Color.fromARGB(
-                                            255,
-                                            72,
-                                            72,
-                                            72,
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => _selectDate(context),
+                                  child: InputDecorator(
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      prefixIconConstraints:
+                                          const BoxConstraints(
+                                            minWidth: 40,
+                                            minHeight: 40,
                                           ),
-                                          onSurface: Colors.white,
-                                        ),
-                                        dialogBackgroundColor:
-                                            const Color.fromARGB(
-                                              255,
-                                              72,
-                                              72,
-                                              72,
-                                            ),
+                                      contentPadding: const EdgeInsets.fromLTRB(
+                                        12,
+                                        16,
+                                        12,
+                                        16,
                                       ),
-                                      child: child!,
+                                      labelText: lang.getText("born_in"),
+                                      labelStyle: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      prefixIcon: const Icon(
+                                        Icons.calendar_today,
+                                        color: Colors.white70,
+                                      ),
+                                      filled: true,
+                                      fillColor: const Color(0xFF272727),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Colors.white.withAlpha(20),
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                     ),
-                                  );
-                                  if (picked != null) {
-                                    setPopupState(() {
-                                      selectedBirth = picked;
-                                      birthController.text = DateFormat(
-                                        'yyyy-MM-dd',
-                                      ).format(picked);
-                                    });
-                                  }
-                                },
+                                    child: Text(
+                                      birthController.text.isEmpty
+                                          ? "ÉÉÉÉ-HH-NN"
+                                          : birthController.text,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                              _buildProfessionalGenderInput(
-                                context,
-                                lang.getText("gender"),
-                                selectedGender,
-                                (val) =>
-                                    setPopupState(() => selectedGender = val!),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: _buildStyledDropdown(
+                                  label: lang.getText("gender"),
+                                  value: selectedGender,
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: "Férfi",
+                                      child: Text(lang.getText("male")),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: "Nő",
+                                      child: Text(lang.getText("female")),
+                                    ),
+                                  ],
+                                  onChanged: (val) => setPopupState(
+                                    () => selectedGender = val!,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-
+                          SizedBox(height: 20),
                           Center(
                             child: _buildSectionHeader(lang.getText("goals")),
                           ),
+                          SizedBox(height: 20),
                           Column(
                             children: List.generate(
                               3,
@@ -257,6 +332,7 @@ class _ProfilePageState extends State<ProfilePage>
                               lang.getText("activity"),
                             ),
                           ),
+                          SizedBox(height: 20),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Column(
@@ -469,250 +545,6 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  Widget _buildProfessionalInput(
-    BuildContext context,
-    String label,
-    TextEditingController controller, {
-    bool isNumber = true,
-    double widthFactor = 0.9,
-    bool isPassword = false,
-    String? suffix,
-  }) {
-    return Stack(
-      children: [
-        Container(
-          width: MediaQuery.of(context).size.width * widthFactor,
-          height: MediaQuery.of(context).size.height * 0.092,
-          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 5),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 72, 72, 72),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-            style: const TextStyle(color: Colors.white, fontSize: 18),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-              suffixText: suffix,
-              suffixStyle: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).size.height * -0.003,
-          left: MediaQuery.of(context).size.width * 0.03,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfessionalDateInput(
-    BuildContext context,
-    String label,
-    TextEditingController controller,
-    VoidCallback onTap,
-  ) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: MediaQuery.of(context).size.width * 0.42,
-          height: MediaQuery.of(context).size.height * 0.092,
-          margin: const EdgeInsets.only(right: 4),
-          padding: const EdgeInsets.fromLTRB(5, 7, 0.5, 2),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 72, 72, 72),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.075,
-                child: TextField(
-                  readOnly: true,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    filled: false,
-                    prefixIcon: Icon(Icons.calendar_today),
-                    prefixIconColor: Colors.white,
-                    prefixIconConstraints: BoxConstraints(
-                      minWidth: 35,
-                      minHeight: 35,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onTap: onTap,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).size.height * -0.015,
-          left: MediaQuery.of(context).size.width * 0.02,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfessionalGenderInput(
-    BuildContext context,
-    String label,
-    String value,
-    ValueChanged<String?> onChange,
-  ) {
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
-    return Stack(
-      children: [
-        Container(
-          width: MediaQuery.of(context).size.width * 0.42,
-          height: MediaQuery.of(context).size.height * 0.092,
-          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
-          padding: const EdgeInsets.fromLTRB(1, 9, 8, 5),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 72, 72, 72),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: value,
-            dropdownColor: const Color.fromARGB(255, 72, 72, 72),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 10),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: "Férfi",
-                child: Text(
-                  lang.getText("male"),
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-              DropdownMenuItem(
-                value: "Nő",
-                child: Text(
-                  lang.getText("female"),
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-            ],
-            onChanged: onChange,
-          ),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).size.height * -0.003,
-          left: MediaQuery.of(context).size.width * 0.015,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfessionalLanguageInput(
-    BuildContext context,
-    String label,
-    String value,
-    ValueChanged<String?> onChange,
-  ) {
-    return Stack(
-      children: [
-        Container(
-          width: MediaQuery.of(context).size.width * 0.4,
-          height: MediaQuery.of(context).size.height * 0.092,
-          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
-          padding: const EdgeInsets.fromLTRB(1, 9, 8, 5),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 72, 72, 72),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: Provider.of<LanguageProvider>(context).languageCode,
-            dropdownColor: const Color.fromARGB(255, 72, 72, 72),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 10),
-            ),
-            items: const [
-              DropdownMenuItem(
-                value: "hu",
-                child: Text(
-                  "Magyar",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-              DropdownMenuItem(
-                value: "en",
-                child: Text(
-                  "English",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-            ],
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                Provider.of<LanguageProvider>(
-                  context,
-                  listen: false,
-                ).changeLanguage(newValue);
-              }
-            },
-          ),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).size.height * -0.003,
-          left: MediaQuery.of(context).size.width * 0.015,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSelectionCard(
     String title,
     bool isSelected,
@@ -727,9 +559,10 @@ class _ProfilePageState extends State<ProfilePage>
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color.fromARGB(255, 85, 173, 78)
+              ? const Color.fromARGB(50, 64, 255, 50)
               : const Color.fromARGB(255, 58, 58, 58),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Color.fromARGB(100, 64, 255, 50)),
         ),
         child: Column(
           children: [
@@ -757,7 +590,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildSectionHeader(String title) => Padding(
-    padding: const EdgeInsets.only(top: 10, bottom: 5),
+    padding: const EdgeInsets.only(top: 10, bottom: 10),
     child: Align(
       alignment: Alignment.center,
       child: Text(
@@ -800,6 +633,56 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStyledDropdown({
+    required String label,
+    required String value,
+    required List<DropdownMenuItem<String>> items,
+    required ValueChanged<String?> onChanged,
+    bool isLangSelector = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color.fromRGBO(39, 39, 39, 1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      margin: isLangSelector
+          ? const EdgeInsets.only(top: 30)
+          : const EdgeInsets.all(0),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        dropdownColor: const Color(0xFF272727),
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+        icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+          alignLabelWithHint: true,
+          isDense: true,
+          labelText: label,
+          labelStyle: const TextStyle(
+            color: Colors.white70,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          fillColor: const Color.fromRGBO(45, 45, 45, 1),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+              color: Color.fromARGB(100, 64, 255, 50),
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white.withAlpha(20), width: 1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
       ),
     );
   }

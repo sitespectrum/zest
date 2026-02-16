@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'dart:ui';
+import 'package:client/components/ui/custom_button.dart';
+import 'package:client/components/ui/custom_drawer.dart';
+import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +17,7 @@ class CreateWorkoutPage extends StatefulWidget {
 }
 
 class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
-  final TextEditingController namecontroller = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
 
   String? selectedEquipment;
   String? selectedForce;
@@ -32,52 +36,6 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchAllOptions();
     });
-  }
-
-  Future<void> saveNewExercise() async {
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
-    final langCode = Provider.of<LanguageProvider>(
-      context,
-      listen: false,
-    ).languageCode;
-    final name = namecontroller.text;
-    final equipment = selectedEquipment;
-    final force = selectedForce;
-
-    final response = await http.post(
-      Uri.parse("$apiUrl/api/workout/newExercise"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "name": name,
-        "equipment": equipment,
-        "force": force,
-        "primaryMuscles": selectedPrimaryMuscle != null
-            ? [selectedPrimaryMuscle]
-            : [],
-        "secondaryMuscles": selectedSecondaryMuscle != null
-            ? [selectedSecondaryMuscle]
-            : [],
-        "langCode": langCode,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Sikeres mentés!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } else {
-      print("Hiba: ${response.body}");
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Hiba történt: ${response.statusCode}")),
-        );
-      }
-    }
   }
 
   Future<void> _fetchAllOptions() async {
@@ -102,7 +60,7 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
         });
       }
     } catch (e) {
-      print("Hiba az adatok betöltésekor: $e");
+      debugPrint("Hiba az adatok betöltésekor: $e");
       if (mounted) setState(() => isLoading = false);
     }
   }
@@ -117,154 +75,190 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
         return data.cast<String>();
       }
     } catch (e) {
-      print("API Hiba ($endpoint): $e");
+      debugPrint("API Hiba ($endpoint): $e");
     }
     return [];
   }
 
-  Widget _buildSelectorField({
+  Future<void> saveNewExercise() async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    final langCode = lang.languageCode;
+
+    if (nameController.text.isEmpty ||
+        selectedEquipment == null ||
+        selectedForce == null ||
+        selectedPrimaryMuscle == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(lang.getText("fill_all_fields") ?? "Hiányzó adatok!"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/workout/newExercise"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": nameController.text,
+          "equipment": selectedEquipment,
+          "force": selectedForce,
+          "primaryMuscles": [selectedPrimaryMuscle],
+          "secondaryMuscles": selectedSecondaryMuscle != null
+              ? [selectedSecondaryMuscle]
+              : [],
+          "langCode": langCode,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(lang.getText("saved_successfully")),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Hiba történt: ${response.statusCode}")),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Hálózati hiba: $e")));
+      }
+    }
+  }
+
+  Widget _buildSelector({
     required BuildContext context,
     required String label,
     required String? currentValue,
     required List<String> options,
     required Function(String) onSelect,
   }) {
-    final lang = Provider.of<LanguageProvider>(context);
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
-          backgroundColor: Colors.transparent,
           elevation: 0,
-          builder: (context) => StatefulBuilder(
-            builder: (context, setPopupState) => Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.7,
-                clipBehavior: Clip.hardEdge,
-                decoration: const BoxDecoration(
-                  color: Color.fromARGB(255, 35, 35, 35),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "$label ${lang.getText("select")}",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.close, color: Colors.white),
-                          ),
-                        ],
+          builder: (context) => CustomDrawer(
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: options.isEmpty
-                          ? const Center(
-                              child: Text(
-                                "Nincs elérhető adat",
-                                style: TextStyle(color: Colors.white54),
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: options.length,
-                              itemBuilder: (context, index) {
-                                final option = options[index];
-                                final isSelected = option == currentValue;
-                                return ListTile(
-                                  title: Text(
-                                    option,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? const Color.fromARGB(
-                                              255,
-                                              85,
-                                              173,
-                                              78,
-                                            )
-                                          : Colors.white70,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  trailing: isSelected
-                                      ? const Icon(
-                                          Icons.check,
-                                          color: Color.fromARGB(
-                                            255,
-                                            85,
-                                            173,
-                                            78,
-                                          ),
-                                        )
-                                      : null,
-                                  onTap: () {
-                                    onSelect(option);
-                                    Navigator.pop(context);
-                                  },
-                                );
-                              },
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: options.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "Nincs adat",
+                              style: TextStyle(color: Colors.white54),
                             ),
-                    ),
-                  ],
-                ),
+                          )
+                        : ListView.builder(
+                            itemCount: options.length,
+                            physics: const BouncingScrollPhysics(),
+                            itemBuilder: (context, index) {
+                              final option = options[index];
+                              final isSelected = option == currentValue;
+
+                              return ListTile(
+                                title: Text(
+                                  option,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? const Color.fromARGB(255, 85, 173, 78)
+                                        : Colors.white70,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                trailing: isSelected
+                                    ? const Icon(
+                                        Icons.check,
+                                        color: Color.fromARGB(255, 85, 173, 78),
+                                      )
+                                    : null,
+                                onTap: () {
+                                  onSelect(option);
+                                  Navigator.pop(context);
+                                  FocusScope.of(context).unfocus();
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
             ),
           ),
         );
       },
-      child: Container(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.height * 0.085,
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 72, 72, 72),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    currentValue ?? "Válassz...",
-                    style: TextStyle(
-                      color: currentValue != null
-                          ? Colors.white
-                          : Colors.white38,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_drop_down,
-                  color: Colors.white70,
-                  size: 20,
-                ),
-              ],
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(
+            color: Colors.white70,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          filled: true,
+          fillColor: const Color(0xFF272727),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+              color: Color.fromARGB(150, 50, 146, 255),
+              width: 2,
             ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white.withAlpha(20), width: 1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 16,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              currentValue ?? "",
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            const Icon(Icons.arrow_drop_down, color: Colors.white70),
           ],
         ),
       ),
@@ -276,307 +270,167 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
     final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
+      backgroundColor: const Color(0xFF1E1E1E),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color.fromARGB(255, 85, 173, 78),
+              ),
+            )
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
+                children: [
                   PreferredSize(
                     preferredSize: const Size.fromHeight(60),
                     child: Container(
                       margin: const EdgeInsets.all(6),
                       child: AppBar(
-                        iconTheme: IconThemeData(color: Colors.white),
-                        title: Text(
-                          lang.getText('create_exercise'),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        backgroundColor: Color.fromARGB(255, 58, 58, 58),
-                      ),
-                    ),
-                  ),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Stack(
+                        backgroundColor: Colors.transparent,
+                        automaticallyImplyLeading: false,
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              width: double.infinity,
-                              height:
-                                  MediaQuery.of(context).size.height * 0.085,
-                              margin: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                              padding: const EdgeInsets.fromLTRB(10, 12, 8, 5),
-                              decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 72, 72, 72),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                children: [
-                                  TextField(
-                                    cursorColor: Colors.white,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                    controller: namecontroller,
-                                    decoration: InputDecoration(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 0,
-                                            vertical: 0,
-                                          ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.transparent,
-                                          width: 2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.transparent,
-                                          width: 1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    keyboardType: TextInputType.text,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: ClipRect(
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 10.0,
+                                    sigmaY: 10.0,
                                   ),
-                                ],
-                              ),
-                            ),
-
-                            Positioned(
-                              top: MediaQuery.of(context).size.height * 0.008,
-                              left: MediaQuery.of(context).size.width * 0.08,
-                              child: Text(
-                                lang.getText("name"),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color.fromRGBO(
+                                        45,
+                                        45,
+                                        45,
+                                        0.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.arrow_back),
+                                          color: Colors.white,
+                                          padding: EdgeInsets.only(
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            right: 10,
+                                          ),
+                                          constraints: const BoxConstraints(),
+                                          style: IconButton.styleFrom(
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                          onPressed: () =>
+                                              Navigator.maybePop(context),
+                                        ),
+                                        Text(
+                                          lang.getText("new_workout"),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Stack(
-                        children: [
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.41,
-                            height: MediaQuery.of(context).size.height * 0.085,
-                            margin: const EdgeInsets.fromLTRB(20, 20, 5, 20),
-                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 5),
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 72, 72, 72),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Stack(
-                              children: [
-                                _buildSelectorField(
-                                  context: context,
-                                  label: lang.getText("equipment"),
-                                  currentValue: selectedEquipment,
-                                  options: equipmentList,
-                                  onSelect: (val) =>
-                                      setState(() => selectedEquipment = val),
-                                ),
-                              ],
-                            ),
-                          ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 20,
+                    ),
+                    child: Column(
+                      children: [
+                        CustomTextField(
+                          nameController,
+                          lang.getText("name"),
+                          isNumber: false,
+                          isCreateWorkout: true,
+                        ),
+                        const SizedBox(height: 15),
 
-                          Positioned(
-                            top: MediaQuery.of(context).size.height * 0.008,
-                            left: MediaQuery.of(context).size.width * 0.08,
-                            child: Text(
-                              lang.getText("equipment"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildSelector(
+                                context: context,
+                                label: lang.getText("equipment"),
+                                currentValue: selectedEquipment,
+                                options: equipmentList,
+                                onSelect: (val) =>
+                                    setState(() => selectedEquipment = val),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-
-                      Stack(
-                        children: [
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.41,
-                            height: MediaQuery.of(context).size.height * 0.085,
-                            margin: const EdgeInsets.fromLTRB(5, 20, 20, 20),
-                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 5),
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 72, 72, 72),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Stack(
-                              children: [
-                                _buildSelectorField(
-                                  context: context,
-                                  label: lang.getText("force"),
-                                  currentValue: selectedForce,
-                                  options: forces,
-                                  onSelect: (val) =>
-                                      setState(() => selectedForce = val),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          Positioned(
-                            top: MediaQuery.of(context).size.height * 0.008,
-                            left: MediaQuery.of(context).size.width * 0.04,
-                            child: Text(
-                              lang.getText("force"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: _buildSelector(
+                                context: context,
+                                label: lang.getText("force"),
+                                currentValue: selectedForce,
+                                options: forces,
+                                onSelect: (val) =>
+                                    setState(() => selectedForce = val),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                          ],
+                        ),
+                        const SizedBox(height: 15),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Stack(
-                        children: [
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.41,
-                            height: MediaQuery.of(context).size.height * 0.085,
-                            margin: const EdgeInsets.fromLTRB(20, 20, 5, 20),
-                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 5),
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 72, 72, 72),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Stack(
-                              children: [
-                                _buildSelectorField(
-                                  context: context,
-                                  label: lang.getText("primaryMuscle"),
-                                  currentValue: selectedPrimaryMuscle,
-                                  options: muscles,
-                                  onSelect: (val) => setState(
-                                    () => selectedPrimaryMuscle = val,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          Positioned(
-                            top: MediaQuery.of(context).size.height * 0.008,
-                            left: MediaQuery.of(context).size.width * 0.08,
-                            child: Text(
-                              lang.getText("primaryMuscle"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildSelector(
+                                context: context,
+                                label: lang.getText("primaryMuscle"),
+                                currentValue: selectedPrimaryMuscle,
+                                options: muscles,
+                                onSelect: (val) =>
+                                    setState(() => selectedPrimaryMuscle = val),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-
-                      Stack(
-                        children: [
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.41,
-                            height: MediaQuery.of(context).size.height * 0.085,
-                            margin: const EdgeInsets.fromLTRB(5, 20, 20, 20),
-                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 5),
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 72, 72, 72),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Stack(
-                              children: [
-                                _buildSelectorField(
-                                  context: context,
-                                  label: lang.getText("secondaryMuscle"),
-                                  currentValue: selectedSecondaryMuscle,
-                                  options: muscles,
-                                  onSelect: (val) => setState(
-                                    () => selectedSecondaryMuscle = val,
-                                  ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: _buildSelector(
+                                context: context,
+                                label: lang.getText("secondaryMuscle"),
+                                currentValue: selectedSecondaryMuscle,
+                                options: muscles,
+                                onSelect: (val) => setState(
+                                  () => selectedSecondaryMuscle = val,
                                 ),
-                              ],
-                            ),
-                          ),
-
-                          Positioned(
-                            top: MediaQuery.of(context).size.height * 0.008,
-                            left: MediaQuery.of(context).size.width * 0.04,
-                            child: Text(
-                              lang.getText("secondaryMuscle"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            FilledButton(
-              onPressed: () async {
-                saveNewExercise();
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width * 0.8888,
-                  MediaQuery.of(context).size.height * 0.07,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(11),
-                ),
-              ),
-              child: Text(
-                lang.getText("save"),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: CustomButton(
+            onPressed: saveNewExercise,
+            title: lang.getText("save"),
+            iconData: Icons.save,
+            variant: CustomButtonVariant.primaryWorkout,
+          ),
         ),
       ),
     );
