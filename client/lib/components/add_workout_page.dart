@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:client/components/create_workout_page.dart';
+import 'package:client/components/ui/custom_button.dart';
 import 'package:client/models/workout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/language_provider.dart';
 import '../constants.dart';
 import 'dart:math';
+import 'package:client/components/ui/custom_snackbar.dart';
 
 class AddWorkoutPage extends StatefulWidget {
   final bool addToTemplate;
@@ -22,7 +25,7 @@ class AddWorkoutPage extends StatefulWidget {
   });
 
   @override
-  State<AddWorkoutPage> createState() => _AddMealPageState();
+  State<AddWorkoutPage> createState() => _AddWorkoutPageState();
 }
 
 String stripHtmlTags(String htmlText) {
@@ -30,7 +33,7 @@ String stripHtmlTags(String htmlText) {
   return htmlText.replaceAll(exp, '');
 }
 
-class _AddMealPageState extends State<AddWorkoutPage> {
+class _AddWorkoutPageState extends State<AddWorkoutPage> {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController quantitycontroller = TextEditingController();
   final barcodeController = TextEditingController();
@@ -44,29 +47,10 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   Set<int> _topExerciseIds = {};
   bool _isInit = true;
 
+  final Color primaryBlue = const Color.fromARGB(255, 50, 146, 255);
+
   List<ExerciseDto> userWorkouts = [];
   List<ExerciseDto> templateWorkouts = [];
-
-  void addMeal(ExerciseDto exercise) {
-    setState(() {
-      userWorkouts.add(exercise);
-    });
-    final cleanName = stripHtmlTags(exercise.name);
-    final lang = Provider.of<LanguageProvider>(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$cleanName ${lang.getText("added_to_list")}'),
-        showCloseIcon: true,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
-        duration: Duration(milliseconds: 1800),
-        animation: CurvedAnimation(
-          parent: kAlwaysCompleteAnimation,
-          curve: Curves.easeInOut,
-        ),
-      ),
-    );
-  }
 
   final ScrollController _scrollController = ScrollController();
   late Future<List<UserWorkoutDto>> futureExercises;
@@ -90,6 +74,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -134,8 +119,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
         '$apiUrl/api/Workout/filter-by-muscle?muscle=${Uri.encodeQueryComponent(muscle)}',
       );
 
-      print("DEBUG: Keresés indítása erre: $uri");
-
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -147,7 +130,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
         }
 
         if (decoded is! List) {
-          print("Hiba: A szerver nem listát küldött: $decoded");
           setState(() => searchResults = []);
           return;
         }
@@ -159,7 +141,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
           searchResults = sortedResults;
         });
       } else {
-        print("Szerver hiba kód: ${response.statusCode}");
         setState(() {
           searchResults = [];
         });
@@ -185,7 +166,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
 
     return Container(
       height: 50,
-      margin: const EdgeInsets.symmetric(vertical: 10),
+      margin: const EdgeInsets.only(top: 10, bottom: 10),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: muscleFilters.length,
@@ -214,7 +195,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                 });
               },
               backgroundColor: const Color.fromARGB(255, 45, 45, 45),
-              selectedColor: const Color.fromARGB(255, 85, 173, 78),
+              selectedColor: primaryBlue,
               checkmarkColor: Colors.white,
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : Colors.white70,
@@ -283,17 +264,10 @@ class _AddMealPageState extends State<AddWorkoutPage> {
 
     final cleanName = stripHtmlTags(exercise.getName(langCode));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$cleanName ${lang.getText("added_to_list")}'),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 30, left: 16, right: 16),
-          duration: const Duration(milliseconds: 1800),
-          animation: CurvedAnimation(
-            parent: kAlwaysCompleteAnimation,
-            curve: Curves.easeInOut,
-          ),
-        ),
+      CustomSnackbar.show(
+        context,
+        '$cleanName ${lang.getText("added")}',
+        backgroundColor: primaryBlue,
       );
     }
   }
@@ -301,9 +275,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
   void _showExerciseDetails(ExerciseDto exercise) {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     final langCode = lang.languageCode;
-    print(
-      "DEBUG LEÍRÁS: ${exercise.instructions} / HU: ${exercise.instructionsHu}",
-    );
 
     showDialog(
       context: context,
@@ -410,27 +381,13 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: FilledButton(
+                          child: CustomButton(
+                            variant: CustomButtonVariant.secondary,
                             onPressed: () => Navigator.pop(context),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(
-                                255,
-                                30,
-                                30,
-                                30,
-                              ),
-                              side: const BorderSide(
-                                color: Colors.white24,
-                                width: 1,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
                             child: Text(
                               lang.getText("close"),
                               style: const TextStyle(
-                                color: Colors.red,
+                                color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -439,22 +396,12 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: FilledButton(
+                          child: CustomButton(
+                            variant: CustomButtonVariant.primaryWorkout,
                             onPressed: () {
                               _addExerciseWrapper(exercise);
                               Navigator.pop(context);
                             },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(
-                                255,
-                                85,
-                                173,
-                                78,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
                             child: Text(
                               lang.getText("add"),
                               style: const TextStyle(
@@ -489,8 +436,6 @@ class _AddMealPageState extends State<AddWorkoutPage> {
       "exerciseId": exercise.id,
     });
 
-    print("Adding exercise ${exercise.id} to template $templateId");
-
     try {
       final response = await http.post(
         url,
@@ -502,11 +447,9 @@ class _AddMealPageState extends State<AddWorkoutPage> {
         final data = jsonDecode(response.body);
         return data['id'];
       } else {
-        print("Nem sikerült hozzáadni: ${response.body}");
         return null;
       }
     } catch (e) {
-      print("Hiba: $e");
       return null;
     }
   }
@@ -617,17 +560,96 @@ class _AddMealPageState extends State<AddWorkoutPage> {
     }
   }
 
+  Widget _buildExerciseItem(
+    ExerciseDto exercise,
+    String langCode,
+    LanguageProvider lang,
+  ) {
+    final cleanName = stripHtmlTags(exercise.getName(langCode));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 45, 45, 45),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: primaryBlue.withOpacity(0.2),
+          highlightColor: primaryBlue.withOpacity(0.1),
+          onTap: () async {
+            await _addExerciseWrapper(exercise);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cleanName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)}',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    _showExerciseDetails(exercise);
+                  },
+                  icon: Icon(Icons.search, color: primaryBlue, size: 28),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
     final langCode = Provider.of<LanguageProvider>(context).languageCode;
+
     return FutureBuilder<List<UserWorkoutDto>>(
       future: futureExercises,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         } else if (snapshot.hasError) {
-          return Center(child: Text('Hiba: ${snapshot.error}'));
+          return Scaffold(
+            appBar: AppBar(backgroundColor: Colors.transparent),
+            body: Center(child: Text('Hiba: ${snapshot.error}')),
+          );
         }
 
         // ignore: deprecated_member_use
@@ -641,353 +663,217 @@ class _AddMealPageState extends State<AddWorkoutPage> {
             return false;
           },
           child: Scaffold(
-            body: SingleChildScrollView(
-              controller: _scrollController,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
-                    child: AppBar(
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: SizedBox(
-                                height: 48,
-                                child: TextField(
-                                  controller: _controller,
-                                  onChanged: (value) {
-                                    if (_debounce?.isActive ?? false) {
-                                      _debounce!.cancel();
-                                    }
-                                    _debounce = Timer(
-                                      const Duration(milliseconds: 600),
-                                      () {
-                                        _searchExercises(value);
-                                      },
-                                    );
-                                  },
-                                  cursorColor: Colors.white,
-                                  style: const TextStyle(
+            extendBodyBehindAppBar: true,
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Container(
+                margin: const EdgeInsets.all(5),
+                child: AppBar(
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(45, 45, 45, 0.5),
+                              ),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.arrow_back),
                                     color: Colors.white,
-                                    fontSize: 15,
-                                  ),
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: const Color.fromARGB(
-                                      255,
-                                      45,
-                                      45,
-                                      45,
+                                    padding: EdgeInsets.only(
+                                      left: 0,
+                                      top: 0,
+                                      bottom: 0,
+                                      right: 10,
                                     ),
-                                    hintText: lang.getText("search_hint"),
-                                    hintStyle: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
+                                    constraints: const BoxConstraints(),
+                                    style: IconButton.styleFrom(
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    onPressed: () {
+                                      if (widget.addToTemplate) {
+                                        Navigator.pop(context, templateWorkouts);
+                                      } else {
+                                        Navigator.pop(context, userWorkouts);
+                                      }
+                                    },
+                                  ),
+                                  Text(
+                                    lang.getText("add"),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             ),
                           ),
-
-                          const SizedBox(width: 6),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 85, 173, 78),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const CreateWorkoutPage(),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(
-                                CupertinoIcons.add_circled,
-                                size: 25,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                      backgroundColor: const Color.fromARGB(255, 58, 58, 58),
-                      iconTheme: const IconThemeData(color: Colors.white),
+                      IconButton(
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(
+                            50,
+                            50,
+                            146,
+                            255,
+                          ),
+                          disabledBackgroundColor: const Color.fromARGB(
+                            25,
+                            64,
+                            255,
+                            50,
+                          ),
+                          foregroundColor: Colors.white,
+                          disabledForegroundColor: Colors.white38,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          side: BorderSide(
+                            color: const Color.fromARGB(150, 50, 146, 255),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CreateWorkoutPage(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          CupertinoIcons.add_circled,
+                          size: 25,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
+                  iconTheme: const IconThemeData(color: Colors.white),
+                ),
+              ),
+            ),
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                SizedBox(height: MediaQuery.of(context).padding.top + 70),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: SizedBox(
+                    height: 48,
+                    child: TextField(
+                      controller: _controller,
+                      onChanged: (value) {
+                        if (_debounce?.isActive ?? false) {
+                          _debounce!.cancel();
+                        }
+                        _debounce = Timer(const Duration(milliseconds: 600), () {
+                          _searchExercises(value);
+                        });
+                      },
+                      cursorColor: Colors.white,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                      ),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 45, 45, 45),
+                        hintText: lang.getText("search_hint"),
+                        hintStyle: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        prefixIcon: Icon(Icons.search, color: Colors.white54),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        border: OutlineInputBorder(
+                          borderSide: const BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: primaryBlue,
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
                   ),
+                ),
 
-                  _buildFilterList(),
+                _buildFilterList(),
 
-                  !anyResults
+                Expanded(
+                  child: !anyResults
                       ? ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(bottom: 80),
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
-                            final exercise = searchResults[index];
-                            final cleanName = stripHtmlTags(
-                              exercise.getName(langCode),
-                            );
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 45, 45, 45),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.5),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () async {
-                                    await _addExerciseWrapper(exercise);
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                        255,
-                                        45,
-                                        45,
-                                        45,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  cleanName,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Text(
-                                                        '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)} | ${exercise.getPMuscles(langCode).join(", ")}',
-                                                        style: const TextStyle(
-                                                          color: Colors.white70,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          IconButton(
-                                            onPressed: () {
-                                              _showExerciseDetails(exercise);
-                                            },
-                                            icon: const Icon(
-                                              Icons.search,
-                                              color: Color.fromARGB(
-                                                255,
-                                                85,
-                                                173,
-                                                78,
-                                              ),
-                                              size: 28,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            return _buildExerciseItem(
+                              searchResults[index],
+                              langCode,
+                              lang,
                             );
                           },
                         )
                       : isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
                       : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(bottom: 80),
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
-                            final exercise = searchResults[index];
-                            final cleanName = stripHtmlTags(
-                              exercise.getName(langCode),
-                            );
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () async {
-                                  if (widget.addToTemplate) {
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
-                                    final userId = prefs.getInt("userId");
-                                    if (userId != null &&
-                                        widget.templateId != null) {
-                                      final newId = await addExerciseToTemplate(
-                                        widget.templateId!,
-                                        userId,
-                                        exercise,
-                                      );
-                                      if (newId != null) {
-                                        final mealWithId = exercise.copyWith(
-                                          id: newId,
-                                        );
-                                        setState(() {
-                                          templateWorkouts.add(mealWithId);
-                                        });
-                                      }
-                                    }
-                                  } else {
-                                    setState(() {
-                                      userWorkouts.add(exercise);
-                                    });
-                                  }
-                                  final cleanName = stripHtmlTags(
-                                    exercise.getName(langCode),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '$cleanName ${lang.getText("added_to_list")}',
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      255,
-                                      45,
-                                      45,
-                                      45,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.white24),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.5),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                cleanName,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      '${exercise.getCategory(langCode)} | ${exercise.getEquipment(langCode)} | ${exercise.getForce(langCode)} | ${exercise.getLevel(langCode)} | ${exercise.getMechanic(langCode)}',
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () {
-                                            _showExerciseDetails(exercise);
-                                          },
-                                          icon: const Icon(
-                                            Icons.search,
-                                            color: Color.fromARGB(
-                                              255,
-                                              85,
-                                              173,
-                                              78,
-                                            ),
-                                            size: 28,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            return _buildExerciseItem(
+                              searchResults[index],
+                              langCode,
+                              lang,
                             );
                           },
                         ),
-                ],
-              ),
+                ),
+              ],
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () => {
@@ -1000,7 +886,7 @@ class _AddMealPageState extends State<AddWorkoutPage> {
                     ),
                   },
               },
-              backgroundColor: const Color.fromRGBO(85, 173, 78, 1),
+              backgroundColor: primaryBlue,
               child: const Icon(
                 Icons.arrow_upward,
                 color: Colors.white,

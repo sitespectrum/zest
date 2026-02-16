@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:ui'; // BackdropFilter-hez
+import 'package:client/components/ui/custom_button.dart'; // CustomButton importálása
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -36,30 +39,11 @@ class _AddMealPageState extends State<AddMealPage> {
   Timer? _debounce;
   bool _isInit = true;
 
+  // Narancssárga szín definíciója az ételekhez (CustomMealPage alapján)
+  final Color primaryOrange = const Color.fromARGB(255, 255, 115, 69);
+
   List<MealDto> userMeals = [];
   List<MealDto> templateMeals = [];
-
-  void addMeal(MealDto meal) {
-    setState(() {
-      userMeals.add(meal);
-    });
-    final cleanName = stripHtmlTags(meal.name);
-    final lang = Provider.of<LanguageProvider>(context);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$cleanName ${lang.getText("added_to_list")}'),
-        showCloseIcon: true,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
-        duration: Duration(milliseconds: 1800),
-        animation: CurvedAnimation(
-          parent: kAlwaysCompleteAnimation,
-          curve: Curves.easeInOut,
-        ),
-      ),
-    );
-  }
 
   final ScrollController _scrollController = ScrollController();
   late Future<List<UserMealDto>> futureMeals;
@@ -82,6 +66,8 @@ class _AddMealPageState extends State<AddMealPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _controller.dispose();
+    quantitycontroller.dispose();
     super.dispose();
   }
 
@@ -112,7 +98,6 @@ class _AddMealPageState extends State<AddMealPage> {
 
       final units = List<Map<String, dynamic>>.from(data);
       return units;
-      // ignore: unused_catch_stack
     } catch (e, st) {
       return [];
     }
@@ -156,7 +141,6 @@ class _AddMealPageState extends State<AddMealPage> {
       );
 
       return [meal];
-      // ignore: unused_catch_stack
     } catch (e, st) {
       return [];
     }
@@ -202,7 +186,6 @@ class _AddMealPageState extends State<AddMealPage> {
       "unit": meal.unit,
       "baseWeight": meal.baseWeight,
     });
-    print("templateId: ${templateId}");
 
     try {
       final response = await http.post(
@@ -215,11 +198,9 @@ class _AddMealPageState extends State<AddMealPage> {
         final data = jsonDecode(response.body);
         return data['id'];
       } else {
-        print("Nem sikerült hozzáadni: ${response.body}");
         return null;
       }
     } catch (e) {
-      print("Hiba: $e");
       return null;
     }
   }
@@ -254,9 +235,11 @@ class _AddMealPageState extends State<AddMealPage> {
       }
     }
 
-    setState(() {
-      searchResults = topMeals;
-    });
+    if (mounted) {
+      setState(() {
+        searchResults = topMeals;
+      });
+    }
   }
 
   Future<void> _searchMeals(String query) async {
@@ -266,7 +249,7 @@ class _AddMealPageState extends State<AddMealPage> {
     ).languageCode;
     final q = query.trim();
     if (q.isEmpty) {
-      setState(() => searchResults = []);
+      loadTopMeals();
       return;
     }
 
@@ -287,17 +270,14 @@ class _AddMealPageState extends State<AddMealPage> {
         });
       }
       final response = await http.get(uri);
-      print("URI: ${uri}");
 
       if (response.statusCode != 200) {
-        print("Hiba: Státuszkód ${response.statusCode}");
         setState(() => searchResults = []);
         return;
       }
 
       final body = response.body.trim();
       if (body.isEmpty || body.startsWith("<")) {
-        print("Hiba: Érvénytelen válasz (üres vagy HTML).");
         setState(() => searchResults = []);
         return;
       }
@@ -316,11 +296,6 @@ class _AddMealPageState extends State<AddMealPage> {
           items = decoded['data'];
         else if (decoded['food_list'] is List)
           items = decoded['food_list'];
-        else {
-          print(
-            "Hiba: Nem találtam listát a JSON objektumban. Kulcsok: ${decoded.keys}",
-          );
-        }
       }
 
       final results = items
@@ -337,23 +312,284 @@ class _AddMealPageState extends State<AddMealPage> {
 
       setState(() => searchResults = results);
     } catch (e) {
-      print("Kritikus hiba a keresés közben: $e");
       setState(() => searchResults = []);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
+  // Segédfüggvény a listaelemek megjelenítéséhez
+  Widget _buildMealItem(MealDto meal, String langCode, LanguageProvider lang) {
+    final cleanName = stripHtmlTags(meal.name);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 45, 45, 45),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: primaryOrange.withOpacity(0.2),
+          highlightColor: primaryOrange.withOpacity(0.1),
+          onTap: () async {
+            // Itt jön a dialógus logika
+            await _showQuantityDialog(meal, lang);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  cleanName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(1)}g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(1)}g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(1)}g ${lang.getText("fat")}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showQuantityDialog(MealDto meal, LanguageProvider lang) async {
+    final units = await _fetchUnit(meal.foodId);
+    if (units.isEmpty) {
+      if (!mounted) return;
+      CustomSnackbar.show(
+        context,
+        lang.getText("no_units_available"),
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    String selectedUnit = (units.first["Name"]?.toString() ?? '').replaceFirst(
+      "UNIT_",
+      "",
+    );
+    double baseWeight =
+        double.tryParse(units.first["nWeight"]?.toString() ?? '1') ?? 1.0;
+    double multiplier = baseWeight / 100;
+
+    if (!mounted) return;
+
+    final updatedMeal = await showDialog<MealDto>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Dialog(
+              backgroundColor: const Color.fromARGB(255, 35, 35, 35),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      lang.getText("choose_quantity"),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.3,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 72, 72, 72),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        cursorColor: Colors.white,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
+                        controller: quantitycontroller,
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: units.map((unit) {
+                        final name = unit["Name"].replaceFirst("UNIT_", "");
+                        final weight = double.tryParse(unit["nWeight"]) ?? 1.0;
+                        final isSelected = name == selectedUnit;
+
+                        return ChoiceChip(
+                          label: Text(
+                            "$name (${weight.toStringAsFixed(0)}g/ml)",
+                            style: TextStyle(
+                              color: isSelected ? Colors.black : Colors.white,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: Colors.white,
+                          backgroundColor: const Color.fromARGB(
+                            255,
+                            60,
+                            60,
+                            60,
+                          ),
+                          onSelected: (selected) {
+                            if (selected) {
+                              setStateDialog(() {
+                                selectedUnit = name;
+                                baseWeight = weight;
+                                multiplier = baseWeight / 100;
+                              });
+                            }
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomButton(
+                            variant: CustomButtonVariant.secondary,
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              lang.getText("cancel"),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: CustomButton(
+                            variant: CustomButtonVariant.primaryMeal,
+                            onPressed: () {
+                              final quantity =
+                                  int.tryParse(quantitycontroller.text) ?? 1;
+                              final newMeal = MealDto(
+                                foodId: meal.foodId,
+                                name: meal.name,
+                                calories: (meal.calories * multiplier).round(),
+                                protein: meal.protein * multiplier,
+                                carbs: meal.carbs * multiplier,
+                                fat: meal.fat * multiplier,
+                                quantity: quantity,
+                                baseWeight: baseWeight,
+                                unit: selectedUnit,
+                                multiplier: multiplier,
+                              );
+                              Navigator.of(context).pop(newMeal);
+                            },
+                            child: Text(
+                              lang.getText("add"),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (updatedMeal != null) {
+      if (widget.addToTemplate) {
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getInt("userId");
+
+        if (userId != null && widget.templateId != null) {
+          final newId = await addFoodToTemplate(
+            widget.templateId!,
+            userId,
+            updatedMeal,
+          );
+
+          if (newId != null) {
+            final mealWithId = updatedMeal.copyWith(id: newId);
+            setState(() {
+              templateMeals.add(mealWithId);
+            });
+          }
+        }
+      } else {
+        setState(() {
+          userMeals.add(updatedMeal);
+        });
+      }
+
+      final cleanName = stripHtmlTags(updatedMeal.name);
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          '$cleanName ${lang.getText("added")}',
+          backgroundColor: primaryOrange,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
+
     return FutureBuilder<List<UserMealDto>>(
       future: futureMeals,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         } else if (snapshot.hasError) {
-          return Center(child: Text('Hiba: ${snapshot.error}'));
+          return Scaffold(
+            appBar: AppBar(backgroundColor: Colors.transparent),
+            body: Center(child: Text('Hiba: ${snapshot.error}')),
+          );
         }
 
         // ignore: deprecated_member_use
@@ -367,712 +603,254 @@ class _AddMealPageState extends State<AddMealPage> {
             return false;
           },
           child: Scaffold(
-            body: SingleChildScrollView(
-              controller: _scrollController,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(2, 6, 2, 0),
-                    child: AppBar(
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: SizedBox(
-                                height: 48,
-                                child: TextField(
-                                  controller: _controller,
-                                  onChanged: (value) {
-                                    if (_debounce?.isActive ?? false) {
-                                      _debounce!.cancel();
-                                    }
-                                    _debounce = Timer(
-                                      const Duration(milliseconds: 600),
-                                      () {
-                                        _searchMeals(value);
-                                      },
-                                    );
-                                  },
-                                  cursorColor: Colors.white,
-                                  style: const TextStyle(
+            extendBodyBehindAppBar: true,
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Container(
+                margin: const EdgeInsets.all(5),
+                child: AppBar(
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: 10.0,
+                              sigmaY: 10.0,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(45, 45, 45, 0.5),
+                              ),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.arrow_back),
                                     color: Colors.white,
-                                    fontSize: 15,
-                                  ),
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: const Color.fromARGB(
-                                      255,
-                                      45,
-                                      45,
-                                      45,
+                                    padding: EdgeInsets.only(
+                                      left: 0,
+                                      top: 0,
+                                      bottom: 0,
+                                      right: 10,
                                     ),
-                                    hintText: lang.getText("search_hint"),
-                                    hintStyle: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
+                                    constraints: const BoxConstraints(),
+                                    style: IconButton.styleFrom(
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    onPressed: () {
+                                      if (widget.addToTemplate) {
+                                        Navigator.pop(context, templateMeals);
+                                      } else {
+                                        Navigator.pop(context, userMeals);
+                                      }
+                                    },
+                                  ),
+                                  Text(
+                                    lang.getText("add"),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
+                  iconTheme: const IconThemeData(color: Colors.white),
+                ),
+              ),
+            ),
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                SizedBox(height: MediaQuery.of(context).padding.top + 70),
+
+                // Kereső és Barcode egy sorban
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: TextField(
+                            controller: _controller,
+                            onChanged: (value) {
+                              if (_debounce?.isActive ?? false) {
+                                _debounce!.cancel();
+                              }
+                              _debounce = Timer(
+                                const Duration(milliseconds: 600),
+                                () {
+                                  _searchMeals(value);
+                                },
+                              );
+                            },
+                            cursorColor: Colors.white,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color.fromARGB(255, 45, 45, 45),
+                              hintText: lang.getText("search_hint"),
+                              hintStyle: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Colors.white54,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              border: OutlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Colors.white24,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: primaryOrange,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Colors.white24,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Barcode scanner gomb
+                      IconButton(
+                        style: IconButton.styleFrom(
+                          backgroundColor: primaryOrange.withOpacity(0.2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: primaryOrange),
+                          ),
+                          padding: const EdgeInsets.all(12),
+                        ),
+                        onPressed: () {
+                          Future.microtask(() async {
+                            bool hasPopped = false;
+                            final scannedCode = await Navigator.of(context)
+                                .push<String>(
+                                  MaterialPageRoute(
+                                    builder: (context) => AiBarcodeScanner(
+                                      onDetect: (capture) {
+                                        if (hasPopped) return;
+                                        final code =
+                                            capture.barcodes.first.rawValue;
+                                        if (code != null) {
+                                          hasPopped = true;
+                                          Navigator.of(context).pop(code);
+                                        }
+                                      },
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
-                          ),
+                                );
 
-                          const SizedBox(width: 4),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 85, 173, 78),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                Future.microtask(() async {
-                                  bool hasPopped = false;
-                                  final scannedCode =
-                                      // ignore: use_build_context_synchronously
-                                      await Navigator.of(context).push<String>(
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AiBarcodeScanner(
-                                                onDetect: (capture) {
-                                                  if (hasPopped) return;
-                                                  final code = capture
-                                                      .barcodes
-                                                      .first
-                                                      .rawValue;
-                                                  if (code != null) {
-                                                    hasPopped = true;
-                                                    Navigator.of(
-                                                      context,
-                                                    ).pop(code);
-                                                  }
-                                                },
-                                              ),
-                                        ),
-                                      );
-
-                                  if (scannedCode != null &&
-                                      scannedCode.isNotEmpty) {
-                                    final results = await fetchMealsByBarcode(
-                                      scannedCode,
-                                    );
-                                    if (results.isNotEmpty) {
-                                      setState(() {
-                                        searchResults = results;
-                                        anyResults = true;
-                                      });
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        // ignore: use_build_context_synchronously
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            lang.getText("no_barcode_found"),
-                                          ),
-                                          backgroundColor: Colors.red,
-                                          behavior: SnackBarBehavior.floating,
-                                          margin: EdgeInsets.only(
-                                            bottom: 30,
-                                            left: 16,
-                                            right: 16,
-                                          ),
-                                          duration: Duration(
-                                            milliseconds: 1800,
-                                          ),
-                                          animation: CurvedAnimation(
-                                            parent: kAlwaysCompleteAnimation,
-                                            curve: Curves.easeInOut,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
+                            if (scannedCode != null && scannedCode.isNotEmpty) {
+                              final results = await fetchMealsByBarcode(
+                                scannedCode,
+                              );
+                              if (results.isNotEmpty) {
+                                setState(() {
+                                  searchResults = results;
+                                  anyResults = true;
                                 });
-                              },
-                              icon: const Icon(
-                                CupertinoIcons.barcode,
-                                size: 25,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                              } else {
+                                if (mounted) {
+                                  CustomSnackbar.show(
+                                    context,
+                                    lang.getText("no_meal_found_barcode"),
+                                    backgroundColor: Colors.red,
+                                  );
+                                }
+                              }
+                            }
+                          });
+                        },
+                        icon: const Icon(
+                          CupertinoIcons.barcode,
+                          size: 24,
+                          color: Colors.white,
+                        ),
                       ),
-                      backgroundColor: const Color.fromARGB(255, 58, 58, 58),
-                      iconTheme: const IconThemeData(color: Colors.white),
-                    ),
+                    ],
                   ),
+                ),
 
-                  !anyResults
+                Expanded(
+                  child: !anyResults
                       ? ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(bottom: 80),
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
-                            final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(meal.name);
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 45, 45, 45),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      // ignore: deprecated_member_use
-                                      color: Colors.black.withOpacity(0.5),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () async {
-                                    if (widget.addToTemplate) {
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      final userId = prefs.getInt("userId");
-                                      print("userId: ${userId}");
-                                      if (userId != null &&
-                                          widget.templateId != null) {
-                                        await addFoodToTemplate(
-                                          widget.templateId!,
-                                          userId,
-                                          meal,
-                                        );
-                                        print(widget.templateId);
-                                        setState(() {
-                                          templateMeals.add(meal);
-                                        });
-                                      }
-                                    } else {
-                                      setState(() {
-                                        userMeals.add(meal);
-                                      });
-                                    }
-                                    final cleanName = stripHtmlTags(meal.name);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '$cleanName ${lang.getText("added_to_list")}',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(
-                                        255,
-                                        45,
-                                        45,
-                                        45,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.white24),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          // ignore: deprecated_member_use
-                                          color: Colors.black.withOpacity(0.5),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            cleanName,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | ${lang.getText("portion")}: ${meal.quantity} ${meal.piece}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white70,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            return _buildMealItem(
+                              searchResults[index],
+                              Provider.of<LanguageProvider>(
+                                context,
+                                listen: false,
+                              ).languageCode,
+                              lang,
                             );
                           },
                         )
                       : isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
                       : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(bottom: 80),
                           itemCount: searchResults.length,
                           itemBuilder: (context, index) {
-                            final meal = searchResults[index];
-                            final cleanName = stripHtmlTags(meal.name);
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () async {
-                                  final units = await _fetchUnit(meal.foodId);
-                                  if (units.isEmpty) {
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          lang.getText("no_unit_found"),
-                                        ),
-                                        backgroundColor: Colors.red,
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
-                                        ),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  String selectedUnit =
-                                      (units.first["Name"]?.toString() ?? '')
-                                          .replaceFirst("UNIT_", "");
-                                  double baseWeight =
-                                      double.tryParse(
-                                        units.first["nWeight"]?.toString() ??
-                                            '1',
-                                      ) ??
-                                      1.0;
-                                  double multiplier = baseWeight / 100;
-
-                                  final updatedMeal = await showDialog<MealDto>(
-                                    // ignore: use_build_context_synchronously
-                                    context: context,
-                                    builder: (context) {
-                                      return StatefulBuilder(
-                                        builder: (context, setState) {
-                                          return Center(
-                                            child: SingleChildScrollView(
-                                              child: Dialog(
-                                                backgroundColor:
-                                                    const Color.fromARGB(
-                                                      255,
-                                                      35,
-                                                      35,
-                                                      35,
-                                                    ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    16,
-                                                  ),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        lang.getText(
-                                                          "choose_quantity",
-                                                        ),
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 20,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      Container(
-                                                        width:
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).size.width *
-                                                            0.3,
-                                                        height:
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).size.height *
-                                                            0.06,
-                                                        padding:
-                                                            const EdgeInsets.fromLTRB(
-                                                              0,
-                                                              0,
-                                                              0,
-                                                              18,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              const Color.fromARGB(
-                                                                255,
-                                                                72,
-                                                                72,
-                                                                72,
-                                                              ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        child: TextField(
-                                                          cursorColor:
-                                                              Colors.white,
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 20,
-                                                              ),
-                                                          controller:
-                                                              quantitycontroller,
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          decoration: InputDecoration(
-                                                            border: OutlineInputBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                            ),
-                                                            focusedBorder: OutlineInputBorder(
-                                                              borderSide:
-                                                                  const BorderSide(
-                                                                    color: Colors
-                                                                        .transparent,
-                                                                    width: 2,
-                                                                  ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                            ),
-                                                            enabledBorder: OutlineInputBorder(
-                                                              borderSide:
-                                                                  const BorderSide(
-                                                                    color: Colors
-                                                                        .transparent,
-                                                                    width: 1,
-                                                                  ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                          keyboardType:
-                                                              TextInputType
-                                                                  .number,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      Wrap(
-                                                        spacing: 8,
-                                                        runSpacing: 8,
-                                                        children: units.map((
-                                                          unit,
-                                                        ) {
-                                                          final name =
-                                                              unit["Name"]
-                                                                  .replaceFirst(
-                                                                    "UNIT_",
-                                                                    "",
-                                                                  );
-                                                          final weight =
-                                                              double.tryParse(
-                                                                unit["nWeight"],
-                                                              ) ??
-                                                              1.0;
-                                                          final isSelected =
-                                                              name ==
-                                                              selectedUnit;
-
-                                                          return ChoiceChip(
-                                                            label: Text(
-                                                              "$name (${weight.toStringAsFixed(0)}g/ml)",
-                                                              style: TextStyle(
-                                                                color:
-                                                                    isSelected
-                                                                    ? Colors
-                                                                          .black
-                                                                    : Colors
-                                                                          .white,
-                                                              ),
-                                                            ),
-                                                            selected:
-                                                                isSelected,
-                                                            selectedColor:
-                                                                Colors.white,
-                                                            backgroundColor:
-                                                                const Color.fromARGB(
-                                                                  255,
-                                                                  60,
-                                                                  60,
-                                                                  60,
-                                                                ),
-                                                            onSelected: (selected) {
-                                                              if (selected) {
-                                                                setState(() {
-                                                                  selectedUnit =
-                                                                      name;
-                                                                  baseWeight =
-                                                                      weight;
-                                                                  multiplier =
-                                                                      baseWeight /
-                                                                      100;
-                                                                });
-                                                              }
-                                                            },
-                                                          );
-                                                        }).toList(),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 20,
-                                                      ),
-                                                      ElevatedButton(
-                                                        onPressed: () {
-                                                          final quantity =
-                                                              int.tryParse(
-                                                                quantitycontroller
-                                                                    .text,
-                                                              ) ??
-                                                              1;
-                                                          final updatedMeal = MealDto(
-                                                            foodId: meal.foodId,
-                                                            name: meal.name,
-                                                            calories:
-                                                                (meal.calories *
-                                                                        multiplier)
-                                                                    .round(),
-                                                            protein:
-                                                                meal.protein *
-                                                                multiplier,
-                                                            carbs:
-                                                                meal.carbs *
-                                                                multiplier,
-                                                            fat:
-                                                                meal.fat *
-                                                                multiplier,
-                                                            quantity: quantity,
-                                                            baseWeight:
-                                                                baseWeight,
-                                                            unit: selectedUnit,
-                                                            multiplier:
-                                                                multiplier,
-                                                          );
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(updatedMeal);
-                                                        },
-                                                        style:
-                                                            ElevatedButton.styleFrom(
-                                                              backgroundColor:
-                                                                  Colors.white,
-                                                              foregroundColor:
-                                                                  Colors.black,
-                                                            ),
-                                                        child: Text(
-                                                          lang.getText("add"),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                  );
-                                  if (updatedMeal != null) {
-                                    if (widget.addToTemplate) {
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      final userId = prefs.getInt("userId");
-
-                                      if (userId != null &&
-                                          widget.templateId != null) {
-                                        final newId = await addFoodToTemplate(
-                                          widget.templateId!,
-                                          userId,
-                                          updatedMeal,
-                                        );
-
-                                        if (newId != null) {
-                                          final mealWithId = updatedMeal
-                                              .copyWith(id: newId);
-
-                                          setState(() {
-                                            templateMeals.add(mealWithId);
-                                          });
-                                        }
-                                      } else {
-                                        print(
-                                          "HIBA: UserId vagy TemplateId null! User: $userId, Template: ${widget.templateId}",
-                                        );
-                                      }
-                                    } else {
-                                      setState(() {
-                                        userMeals.add(updatedMeal);
-                                      });
-                                    }
-
-                                    final cleanName = stripHtmlTags(
-                                      updatedMeal.name,
-                                    );
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '$cleanName ${lang.getText("added_to_list")}',
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: EdgeInsets.only(
-                                          bottom: 30,
-                                          left: 16,
-                                          right: 16,
-                                        ),
-                                        duration: Duration(milliseconds: 1800),
-                                        animation: CurvedAnimation(
-                                          parent: kAlwaysCompleteAnimation,
-                                          curve: Curves.easeInOut,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      255,
-                                      45,
-                                      45,
-                                      45,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.white24),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        // ignore: deprecated_member_use
-                                        color: Colors.black.withOpacity(0.5),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          cleanName,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                '${meal.qCalories} kcal | ${meal.qProtein.toStringAsFixed(3)} g ${lang.getText("protein")} | ${meal.qCarbs.toStringAsFixed(3)} g ${lang.getText("carbs")} | ${meal.qFat.toStringAsFixed(3)} g ${lang.getText("fat")} | adag: ${meal.quantity} ${meal.piece}',
-                                                style: const TextStyle(
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            return _buildMealItem(
+                              searchResults[index],
+                              Provider.of<LanguageProvider>(
+                                context,
+                                listen: false,
+                              ).languageCode,
+                              lang,
                             );
                           },
                         ),
-                ],
-              ),
+                ),
+              ],
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () => {
@@ -1085,7 +863,7 @@ class _AddMealPageState extends State<AddMealPage> {
                     ),
                   },
               },
-              backgroundColor: const Color.fromRGBO(85, 173, 78, 1),
+              backgroundColor: primaryOrange,
               child: const Icon(
                 Icons.arrow_upward,
                 color: Colors.white,
