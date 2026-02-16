@@ -283,18 +283,43 @@ class _FriendsPageState extends State<FriendsPage>
         ),
         backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.green,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey,
-          tabs: [
-            Tab(text: lang.getText("my_friends")),
-            Tab(
-              text: "${lang.getText("requests")} (${pendingRequests.length})",
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(70),
+          child: Container(
+            margin: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(50, 64, 255, 50),
+              border: Border.all(
+                color: const Color.fromARGB(100, 64, 255, 50),
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(20),
             ),
-            Tab(text: lang.getText("search")),
-          ],
+            child: TabBar(
+              controller: _tabController,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+              splashFactory: NoSplash.splashFactory,
+              indicator: BoxDecoration(
+                color: const Color.fromARGB(100, 64, 255, 50),
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.all(4),
+              dividerHeight: 0,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: Colors.green,
+              tabs: [
+                Tab(text: lang.getText("my_friends")),
+                Tab(
+                  text:
+                      "${lang.getText("requests")} (${pendingRequests.length})",
+                ),
+                Tab(text: lang.getText("search")),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(

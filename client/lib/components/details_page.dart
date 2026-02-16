@@ -1,3 +1,8 @@
+import 'dart:ui';
+
+import 'package:client/components/ui/custom_button.dart';
+import 'package:client/components/ui/custom_card.dart';
+import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -48,16 +53,17 @@ class _DetailsPageState extends State<DetailsPage>
       initialDate: DateTime.now(),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
-      initialEntryMode: DatePickerEntryMode.input,
+      initialEntryMode: DatePickerEntryMode.calendar,
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
               primary: Colors.green,
               onPrimary: Colors.white,
-              surface: Color.fromARGB(255, 72, 72, 72),
+              surface: Color(0xFF272727),
               onSurface: Colors.white,
             ),
+            dialogBackgroundColor: const Color(0xFF272727),
           ),
           child: child!,
         );
@@ -67,7 +73,7 @@ class _DetailsPageState extends State<DetailsPage>
     if (picked != null) {
       setState(() {
         selectedBirth = picked;
-        birthcontroller.text = DateFormat('yyyy-MM-dd', 'hu').format(picked);
+        birthcontroller.text = DateFormat('yyyy-MM-dd').format(picked);
         _calcAge(picked);
       });
     }
@@ -88,19 +94,7 @@ class _DetailsPageState extends State<DetailsPage>
   Future<void> submitDetails() async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (selectedBirth == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(lang.getText("choose_date_of_birth")),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red,
-          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
-          duration: Duration(milliseconds: 1800),
-          animation: CurvedAnimation(
-            parent: kAlwaysCompleteAnimation,
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
+      _showErrorSnackBar(lang.getText("choose_date_of_birth"));
       return;
     }
 
@@ -111,19 +105,7 @@ class _DetailsPageState extends State<DetailsPage>
     final activity = activitycontroller.text;
 
     if (height == null || weight == null || gender.isEmpty || goal.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(lang.getText("choose_date_of_birth")),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
-          duration: Duration(milliseconds: 1800),
-          animation: CurvedAnimation(
-            parent: kAlwaysCompleteAnimation,
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
+      _showErrorSnackBar("Minden mező kitöltése kötelező!");
       return;
     }
 
@@ -135,23 +117,6 @@ class _DetailsPageState extends State<DetailsPage>
     double proteinGoal = 0.2 * calorieGoal / 4;
     double carbsGoal = 0.5 * calorieGoal / 4;
     double fatGoal = 0.3 * calorieGoal / 9;
-
-    if (selectedBirth == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(lang.getText("choose_date_of_birth")),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
-          duration: Duration(milliseconds: 1800),
-          animation: CurvedAnimation(
-            parent: kAlwaysCompleteAnimation,
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
-      return;
-    }
 
     final response = await http.post(
       Uri.parse("$apiUrl/api/auth/details"),
@@ -174,28 +139,109 @@ class _DetailsPageState extends State<DetailsPage>
     if (response.statusCode == 200 || response.statusCode == 201) {
       if (context.mounted) {
         showDialog(
-          // ignore: use_build_context_synchronously
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Siker"),
-            content: const Text("Sikeres regisztráció"),
+          builder: (_) => const AlertDialog(
+            backgroundColor: Color(0xFF272727),
+            title: Text("Siker", style: TextStyle(color: Colors.white)),
+            content: Text(
+              "Sikeres regisztráció",
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
         );
-        // ignore: use_build_context_synchronously
         Navigator.popUntil(context, (route) => route.isFirst);
       }
     } else {
       if (context.mounted) {
-        showDialog(
-          // ignore: use_build_context_synchronously
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Hiba"),
-            content: Text(response.body),
-          ),
-        );
+        _showErrorSnackBar("Hiba: ${response.body}");
       }
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.red,
+        margin: const EdgeInsets.only(bottom: 30, left: 16, right: 16),
+      ),
+    );
+  }
+
+  Widget _buildStyledField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      onTap: onTap,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        filled: true,
+        fillColor: const Color(0xFF272727),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(
+            color: Color.fromARGB(100, 64, 255, 50),
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white.withAlpha(20), width: 1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyledDropdown({
+    required String label,
+    required String? value,
+    required List<DropdownMenuItem<String>> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      dropdownColor: const Color(0xFF272727),
+      style: const TextStyle(color: Colors.white, fontSize: 16),
+      icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        filled: true,
+        fillColor: const Color(0xFF272727),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(
+            color: Color.fromARGB(100, 64, 255, 50),
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white.withAlpha(20), width: 1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
   }
 
   @override
@@ -213,794 +259,251 @@ class _DetailsPageState extends State<DetailsPage>
               PreferredSize(
                 preferredSize: const Size.fromHeight(60),
                 child: Container(
-                  margin: const EdgeInsets.all(6),
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 5,
+                  ),
                   child: AppBar(
-                    title: Text(
-                      lang.getText('my_details'),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
+                    title: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: ClipRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(45, 45, 45, 0.5),
+                            ),
+                            child: Text(
+                              lang.getText("my_details"),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     automaticallyImplyLeading: false,
-                    backgroundColor: Color.fromARGB(255, 58, 58, 58),
+                    backgroundColor: Colors.transparent,
                   ),
                 ),
               ),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.41,
-                        height: MediaQuery.of(context).size.height * 0.085,
-                        margin: const EdgeInsets.fromLTRB(20, 20, 5, 20),
-                        padding: const EdgeInsets.fromLTRB(10, 12, 8, 5),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 72, 72, 72),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            TextField(
-                              cursorColor: Colors.white,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                              ),
-                              controller: heightcontroller,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 0,
-                                  vertical: 0,
-                                ),
-                                suffixIcon: Padding(
-                                  padding: EdgeInsets.fromLTRB(10, 12, 10, 10),
-                                  child: const Text(
-                                    " cm",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Colors.transparent,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Colors.transparent,
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ],
-                        ),
-                      ),
+              const SizedBox(height: 10),
 
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.008,
-                        left: MediaQuery.of(context).size.width * 0.08,
-                        child: Text(
-                          lang.getText("height"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: CustomTextField(
+                        heightcontroller,
+                        lang.getText("height"),
+                        isNumber: true,
+                        isSuffix: true,
+                        suffix: " cm",
                       ),
-                    ],
-                  ),
-
-                  Stack(
-                    children: [
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.41,
-                        height: MediaQuery.of(context).size.height * 0.085,
-                        margin: const EdgeInsets.fromLTRB(5, 20, 20, 20),
-                        padding: const EdgeInsets.fromLTRB(10, 12, 8, 5),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 72, 72, 72),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            TextField(
-                              cursorColor: Colors.white,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                              ),
-                              controller: weightcontroller,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 0,
-                                  vertical: 0,
-                                ),
-                                suffixIcon: Padding(
-                                  padding: EdgeInsets.fromLTRB(12, 12, 10, 10),
-                                  child: const Text(
-                                    " kg",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Colors.transparent,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Colors.transparent,
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: CustomTextField(
+                        weightcontroller,
+                        lang.getText("weight"),
+                        isNumber: true,
+                        isSuffix: true,
+                        suffix: " kg",
                       ),
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.008,
-                        left: MediaQuery.of(context).size.width * 0.04,
-                        child: Text(
-                          lang.getText("weight"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.41,
-                        height: MediaQuery.of(context).size.height * 0.085,
-                        margin: const EdgeInsets.fromLTRB(20, 20, 5, 20),
-                        padding: const EdgeInsets.fromLTRB(0.5, 5, 0.5, 2),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 72, 72, 72),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              height:
-                                  MediaQuery.of(context).size.height * 0.075,
-                              child: TextField(
-                                readOnly: true,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                                controller: birthcontroller,
-                                decoration: InputDecoration(
-                                  filled: false,
-                                  prefixIcon: Icon(Icons.calendar_today),
-                                  prefixIconColor: Colors.white,
-                                  prefixIconConstraints: BoxConstraints(
-                                    minWidth: 35,
-                                    minHeight: 35,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                                onTap: () => {_selectDate()},
+              const SizedBox(height: 15),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildStyledField(
+                        controller: birthcontroller,
+                        label: lang.getText("born_in"),
+                        icon: Icons.calendar_today,
+                        onTap: _selectDate,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: _buildStyledDropdown(
+                        label: lang.getText("gender"),
+                        value: gendercontroller.text.isNotEmpty
+                            ? gendercontroller.text
+                            : null,
+                        items: [
+                          DropdownMenuItem(
+                            value: "Férfi",
+                            child: Text(lang.getText("male")),
+                          ),
+                          DropdownMenuItem(
+                            value: "Nő",
+                            child: Text(lang.getText("female")),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            gendercontroller.text = value ?? "";
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              CustomCard(
+                title: lang.getText("goals"),
+                child: Padding(
+                  padding: const EdgeInsets.all(0),
+                  child: Column(
+                    children: List.generate(_goals.length, (index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 15),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _gselectedIndex = index;
+                              goalcontroller.text = _goals[index];
+                              if (index == 0)
+                                IncreaseOrDecreaseCalories = 500;
+                              else if (index == 2)
+                                IncreaseOrDecreaseCalories = -500;
+                              else
+                                IncreaseOrDecreaseCalories = 0;
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: _gselectedIndex == index
+                                  ? const Color.fromARGB(50, 64, 255, 50)
+                                  : const Color.fromARGB(255, 58, 58, 58),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Color.fromARGB(100, 64, 255, 50),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.007,
-                        left: MediaQuery.of(context).size.width * 0.08,
-                        child: Text(
-                          lang.getText("born_in"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            child: Center(
+                              child: Text(
+                                [
+                                  lang.getText("bulking"),
+                                  lang.getText("level_maintenance"),
+                                  lang.getText("weight_loss"),
+                                ][index],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      );
+                    }),
                   ),
+                ),
+              ),
 
-                  Stack(
-                    children: [
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.41,
-                        height: MediaQuery.of(context).size.height * 0.085,
-                        margin: const EdgeInsets.fromLTRB(5, 20, 20, 20),
-                        padding: const EdgeInsets.fromLTRB(0.5, 5, 0.5, 2),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 72, 72, 72),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            DropdownButtonFormField<String>(
-                              initialValue: gendercontroller.text.isNotEmpty
-                                  ? gendercontroller.text
-                                  : null,
-                              decoration: InputDecoration(
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.transparent,
-                                    width: 0,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.transparent,
-                                    width: 0,
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: Color.fromARGB(255, 72, 72, 72),
+              CustomCard(
+                title: lang.getText("activity"),
+                child: Padding(
+                  padding: const EdgeInsets.all(0),
+                  child: Column(
+                    children: List.generate(_activity.length, (index) {
+                      final titles = [
+                        lang.getText("slightly_active"),
+                        lang.getText("moderately_active"),
+                        lang.getText("very_active"),
+                        lang.getText("extremely_active"),
+                      ];
+                      final descs = [
+                        lang.getText("slightly_active_desc"),
+                        lang.getText("moderately_active_desc"),
+                        lang.getText("very_active_desc"),
+                        lang.getText("extremely_active_desc"),
+                      ];
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 15),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _aselectedIndex = index;
+                              activitycontroller.text = _activity[index];
+                              multiplier = [1.375, 1.55, 1.725, 1.9][index];
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: _aselectedIndex == index
+                                  ? const Color.fromARGB(50, 64, 255, 50)
+                                  : const Color.fromARGB(255, 58, 58, 58),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Color.fromARGB(100, 64, 255, 50),
                               ),
-                              dropdownColor: const Color.fromARGB(
-                                255,
-                                72,
-                                72,
-                                72,
-                              ),
-                              style: const TextStyle(color: Colors.white),
-                              items: [
-                                DropdownMenuItem(
-                                  value: "Férfi",
-                                  child: Text(
-                                    lang.getText("male"),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                    ),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  titles[index],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                DropdownMenuItem(
-                                  value: "Nő",
-                                  child: Text(
-                                    lang.getText("female"),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                    ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  descs[index],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: _aselectedIndex == index
+                                        ? Colors.white
+                                        : Colors.grey,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
-                              onChanged: (value) {
-                                setState(() {
-                                  gendercontroller.text = value ?? "";
-                                });
-                              },
                             ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.008,
-                        left: MediaQuery.of(context).size.width * 0.04,
-                        child: Text(
-                          lang.getText("gender"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
+                      );
+                    }),
                   ),
-                ],
-              ),
-
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 72, 72, 72),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 15, 8, 15),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _gselectedIndex = 0;
-                                goalcontroller.text = _goals[_gselectedIndex];
-                                IncreaseOrDecreaseCalories = 500;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.height * 0.1,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: _gselectedIndex == 0
-                                    ? Color.fromARGB(255, 85, 173, 78)
-                                    : Color.fromARGB(255, 58, 58, 58),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Center(
-                                    child: Text(
-                                      lang.getText("bulking"),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize:
-                                            MediaQuery.of(context).size.height *
-                                            0.035,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _gselectedIndex = 1;
-                                goalcontroller.text = _goals[_gselectedIndex];
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.height * 0.1,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: _gselectedIndex == 1
-                                    ? Color.fromARGB(255, 85, 173, 78)
-                                    : Color.fromARGB(255, 58, 58, 58),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Center(
-                                    child: Text(
-                                      lang.getText("level_maintenance"),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize:
-                                            MediaQuery.of(context).size.height *
-                                            0.035,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _gselectedIndex = 2;
-                                goalcontroller.text = _goals[_gselectedIndex];
-                                IncreaseOrDecreaseCalories = -500;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.height * 0.1,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: _gselectedIndex == 2
-                                    ? Color.fromARGB(255, 85, 173, 78)
-                                    : Color.fromARGB(255, 58, 58, 58),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Center(
-                                    child: Text(
-                                      lang.getText("weight_loss"),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize:
-                                            MediaQuery.of(context).size.height *
-                                            0.035,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.007,
-                    left: MediaQuery.of(context).size.width * 0.08,
-                    child: Text(
-                      lang.getText("goals"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 72, 72, 72),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 15, 8, 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _aselectedIndex = 0;
-                                activitycontroller.text =
-                                    _activity[_aselectedIndex];
-                                multiplier = 1.375;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.height * 0.12,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: _aselectedIndex == 0
-                                    ? Color.fromARGB(255, 85, 173, 78)
-                                    : Color.fromARGB(255, 58, 58, 58),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        lang.getText("slightly_active"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.035,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        lang.getText("slightly_active_desc"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: _aselectedIndex == 0
-                                              ? Color.fromARGB(255, 58, 58, 58)
-                                              : Colors.grey,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.016,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _aselectedIndex = 1;
-                                activitycontroller.text =
-                                    _activity[_aselectedIndex];
-                                multiplier = 1.55;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.height * 0.12,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: _aselectedIndex == 1
-                                    ? Color.fromARGB(255, 85, 173, 78)
-                                    : Color.fromARGB(255, 58, 58, 58),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        lang.getText("moderately_active"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.035,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        lang.getText("moderately_active_desc"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: _aselectedIndex == 1
-                                              ? Color.fromARGB(255, 58, 58, 58)
-                                              : Colors.grey,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.016,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _aselectedIndex = 2;
-                                activitycontroller.text =
-                                    _activity[_aselectedIndex];
-                                multiplier = 1.725;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.height * 0.12,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: _aselectedIndex == 2
-                                    ? Color.fromARGB(255, 85, 173, 78)
-                                    : Color.fromARGB(255, 58, 58, 58),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        lang.getText("very_active"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.035,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        lang.getText("very_active_desc"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: _aselectedIndex == 2
-                                              ? Color.fromARGB(255, 58, 58, 58)
-                                              : Colors.grey,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.02,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _aselectedIndex = 3;
-                                activitycontroller.text =
-                                    _activity[_aselectedIndex];
-                                multiplier = 1.9;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: MediaQuery.of(context).size.height * 0.12,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: _aselectedIndex == 3
-                                    ? Color.fromARGB(255, 85, 173, 78)
-                                    : Color.fromARGB(255, 58, 58, 58),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        lang.getText("extremely_active"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.035,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        lang.getText("extremely_active_desc"),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: _aselectedIndex == 3
-                                              ? Color.fromARGB(255, 58, 58, 58)
-                                              : Colors.grey,
-                                          fontSize:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.016,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.007,
-                    left: MediaQuery.of(context).size.width * 0.08,
-                    child: Text(
-                      lang.getText("activity"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
         ),
 
         bottomNavigationBar: Padding(
-          padding: EdgeInsetsGeometry.fromLTRB(20, 20, 20, 20),
-          child: FilledButton(
+          padding: const EdgeInsets.all(20),
+          child: CustomButton(
             onPressed: () async {
               submitDetails();
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 85, 173, 78),
-              fixedSize: Size(
-                MediaQuery.of(context).size.width * 0.70,
-                MediaQuery.of(context).size.height * 0.04,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(11),
-              ),
-            ),
             child: Text(
               lang.getText("finish_register"),
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

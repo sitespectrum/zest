@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:client/components/ui/custom_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -31,71 +32,15 @@ class _LoginDrawerState extends State<LoginDrawer> {
           Column(
             spacing: 12,
             children: [
-              TextField(
-                cursorColor: Colors.white,
-                style: TextStyle(color: Colors.white, fontSize: 15),
-                controller: _userNameController,
-                decoration: InputDecoration(
-                  fillColor: const Color(0xFF272727),
-                  filled: true,
-                  labelText: lang.getText('username_and_email_hint'),
-                  labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: const Color.fromARGB(100, 64, 255, 50),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.white.withAlpha(20),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
+              CustomTextField(
+                _userNameController,
+                lang.getText("username_hint"),
+                isPassword: true,
               ),
 
-              TextField(
-                cursorColor: Colors.white,
-                style: TextStyle(color: Colors.white),
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  fillColor: const Color(0xFF272727),
-                  filled: true,
-                  labelText: lang.getText('password_hint'),
-                  labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: const Color.fromARGB(100, 64, 255, 50),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.white.withAlpha(20),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
+              CustomTextField(
+                _passwordController,
+                lang.getText("password_hint"),
               ),
             ],
           ),

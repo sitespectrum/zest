@@ -89,7 +89,6 @@ Widget customButton({
         child ??
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           spacing: 12,
           children: [
             if (icon != null) icon,
