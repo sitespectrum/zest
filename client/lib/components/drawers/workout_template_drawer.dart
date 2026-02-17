@@ -100,11 +100,7 @@ Widget workoutTemplateDrawer(
                           userWorkouts.add(exerciseCopy);
                         });
                     Navigator.pop(context, true);
-                    CustomSnackbar(
-                      message:
-                          "${template.customName} ${lang.getText("added_to_list")}",
-                      isError: false,
-                    );
+                    CustomSnackbar.show(context, lang.getText("template_loaded"), backgroundColor: Colors.green);
                   },
                   variant: CustomButtonVariant.primaryWorkout,
                   child: Text(

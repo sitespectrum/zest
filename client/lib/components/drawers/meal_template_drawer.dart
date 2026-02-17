@@ -175,21 +175,11 @@ Widget mealTemplateDrawer(
                                         refreshTrigger.value++;
 
                                         if (context.mounted) {
-                                          CustomSnackbar(
-                                            message: lang.getText(
-                                              "meal_deleted",
-                                            ),
-                                            isError: false,
-                                          );
+                                          CustomSnackbar.show(context, lang.getText("deletion_success"), backgroundColor: Colors.green);
                                         }
                                       } else {
                                         if (context.mounted) {
-                                          CustomSnackbar(
-                                            message: lang.getText(
-                                              "deletion_failed",
-                                            ),
-                                            isError: true,
-                                          );
+                                          CustomSnackbar.show(context, lang.getText("deletion_failed"), backgroundColor: Colors.red);
                                         }
                                       }
                                     },
@@ -228,12 +218,9 @@ Widget mealTemplateDrawer(
 
                         await saveTemplateAsUserMeal(meal, userId);
 
-                        CustomSnackbar(
-                          message: lang.getText("saved_successfully"),
-                          isError: false,
-                        );
+                        CustomSnackbar.show(context, lang.getText("save_success"), backgroundColor: Colors.green);
                       } catch (e) {
-                        CustomSnackbar(message: "Hiba: $e", isError: true);
+                        CustomSnackbar.show(context, lang.getText("save_failed"), backgroundColor: Colors.red);
                       }
                       if (_debounce?.isActive ?? false) {
                         _debounce!.cancel();
@@ -321,11 +308,7 @@ Widget mealTemplateDrawer(
                     onPressed: () {
                       userMeals.addAll(meal.meals);
                       Navigator.pop(context, true);
-                      CustomSnackbar(
-                        message:
-                            "${meal.customName} ${lang.getText("added_to_list")}",
-                        isError: false,
-                      );
+                      CustomSnackbar.show(context, lang.getText("save_success"), backgroundColor: Colors.green);
                     },
                     variant: CustomButtonVariant.primaryMeal,
                     iconData: Icons.skip_next,
