@@ -1066,7 +1066,7 @@ class _CMealPageState extends State<CMealPage> {
                                                                             .center,
                                                                     padding:
                                                                         const EdgeInsets.all(
-                                                                          12,
+                                                                          6,
                                                                         ),
                                                                     decoration: BoxDecoration(
                                                                       color: Colors
@@ -1134,10 +1134,12 @@ class _CMealPageState extends State<CMealPage> {
                                                                   spacing: 12,
                                                                   children: [
                                                                     CustomButton(
-                                                                      onPressed:
-                                                                          () async {
-                                                                            await _generateQrCodeOnly();
-                                                                          },
+                                                                      onPressed: () async {
+                                                                        await _generateQrCodeOnly();
+                                                                        setPopupState(
+                                                                          () {},
+                                                                        );
+                                                                      },
                                                                       variant:
                                                                           CustomButtonVariant
                                                                               .secondary,

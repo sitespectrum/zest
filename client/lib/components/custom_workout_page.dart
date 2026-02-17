@@ -157,6 +157,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     }
 
     try {
+      try {
+        await FlutterNfcKit.finish();
+        // ignore: empty_catches
+      } catch (e) {}
       final blePeripheral = FlutterBlePeripheral();
       await blePeripheral.stop();
 
@@ -263,16 +267,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
             ),
           );
         }
-
-        int addedCount = 0;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("$addedCount gyakorlat hozzáadva a listához!"),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
         await Future.delayed(Duration(milliseconds: 800));
 
         if (!mounted) return;
@@ -340,8 +334,12 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     );
 
     try {
+      try {
+        await FlutterNfcKit.finish();
+      } catch (_) {}
+
       await FlutterNfcKit.poll(
-        timeout: Duration(seconds: 30),
+        timeout: const Duration(seconds: 30),
         iosMultipleTagMessage: "Több címke",
         iosAlertMessage: "Érintsd oda",
       );
@@ -424,6 +422,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   @override
   void dispose() {
     FlutterBlePeripheral().stop();
+    FlutterNfcKit.finish();
     super.dispose();
   }
 
@@ -914,7 +913,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                             .center,
                                                                     padding:
                                                                         const EdgeInsets.all(
-                                                                          12,
+                                                                          6,
                                                                         ),
                                                                     decoration: BoxDecoration(
                                                                       color: Colors
