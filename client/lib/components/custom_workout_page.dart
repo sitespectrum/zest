@@ -6,6 +6,7 @@ import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:client/components/drawers/workout_details_drawer.dart';
 import 'package:client/components/drawers/workout_template_drawer.dart';
 import 'package:client/components/running_workout_page.dart';
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   String _statusText = "";
   bool _isNfcReading = false;
   String shareId = "";
+  Color workoutColorCode = const Color.fromARGB(150, 50, 146, 255);
 
   @override
   void initState() {
@@ -126,23 +128,17 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    CustomSnackbar.show(context, message, backgroundColor: Colors.red);
   }
 
   Future<void> startCloudNfcSharing(BuildContext context) async {
     String? id = await _uploadWorkoutToBackend();
-
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (id == null) return;
 
     setState(() {
       isNfcActive = true;
-      nfcStatus = "Megosztás indítása... (Kód: $id)";
+      nfcStatus = "${lang.getText("start_sharing")}... (ID: $id)";
     });
 
     Map<Permission, PermissionStatus> statuses = await [
@@ -152,15 +148,11 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     ].request();
 
     if (statuses.values.any((status) => status.isDenied)) {
-      setState(() => nfcStatus = "Hiányzó Bluetooth engedélyek!");
+      setState(() => nfcStatus = lang.getText("missing_bt"));
       return;
     }
 
     try {
-      try {
-        await FlutterNfcKit.finish();
-        // ignore: empty_catches
-      } catch (e) {}
       final blePeripheral = FlutterBlePeripheral();
       await blePeripheral.stop();
 
@@ -193,8 +185,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
               children: [
                 const Icon(Icons.nfc, size: 80, color: Colors.green),
                 const SizedBox(height: 20),
-                const Text(
-                  "NFC és Bluetooth Aktív",
+                Text(
+                  lang.getText("nfc_&_bt_active"),
                   style: TextStyle(color: Colors.white),
                 ),
                 Text("ID: $id", style: const TextStyle(color: Colors.grey)),
@@ -208,8 +200,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                     stopNfcSharing();
                     Navigator.pop(context);
                   },
-                  child: const Text(
-                    "Bezárás",
+                  child: Text(
+                    lang.getText("close"),
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -222,7 +214,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         );
       }
     } catch (e) {
-      _showError("Hiba: $e");
+      _showError(e.toString());
     }
   }
 
@@ -236,7 +228,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   Future<void> _fetchAndShowSharedWorkout(String shareId) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     setState(() {
-      _statusText = "Edzés betöltése...";
+      _statusText = lang.getText("loading_workout");
     });
 
     try {
@@ -258,13 +250,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
           setState(() {
             userWorkouts.addAll(newWorkouts);
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                "${newWorkouts.length} ${lang.getText("added_to_list")}",
-              ),
-              backgroundColor: Colors.green,
-            ),
+          CustomSnackbar.show(
+            context,
+            "${newWorkouts.length} ${lang.getText("meal_added_to_list")}",
+            backgroundColor: workoutColorCode,
           );
         }
         await Future.delayed(Duration(milliseconds: 800));
@@ -274,7 +263,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         Navigator.pop(context);
       }
     } catch (e) {
-      _showError("Hiba az edzés betöltésekor: $e");
+      _showError("${lang.getText("failed_to_fetch_meals")}: ${e.toString()}");
     } finally {
       if (mounted) {
         setState(() {
@@ -291,9 +280,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
       Permission.bluetoothConnect,
       Permission.location,
     ].request();
-
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (statuses.values.any((status) => status.isDenied)) {
-      _showError("Hiányzó Bluetooth engedélyek!");
+      _showError(lang.getText("missing_bt"));
       return;
     }
 
@@ -308,7 +297,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
             const Icon(Icons.nfc, size: 80, color: Colors.green),
             SizedBox(height: 20),
             Text(
-              "Érintsd a másik telefonhoz...",
+              lang.getText("touch_the_other_phone"),
               style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 20),
@@ -320,7 +309,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                   Navigator.pop(context);
                 },
                 child: Text(
-                  "Bezárás",
+                  lang.getText("close"),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -389,7 +378,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
               }
               return;
             } catch (e) {
-              print("Dekódolási hiba: $e");
+              print("${lang.getText("decoding_error")} $e");
             }
           }
         }
@@ -404,13 +393,13 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
       if (!found) {
         if (mounted) Navigator.pop(context);
-        _showError("Nem sikerült azonosítani a telefont.");
+        _showError(lang.getText("failed_to_identitify"));
       }
     } catch (e) {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
 
       if (!e.toString().contains("poll timeout")) {
-        _showError("Hiba: $e");
+        _showError("Hiba: ${e.toString()}");
       }
     }
   }
@@ -418,7 +407,6 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   @override
   void dispose() {
     FlutterBlePeripheral().stop();
-    FlutterNfcKit.finish();
     super.dispose();
   }
 
@@ -461,132 +449,96 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
         return newId;
       } else {
-        throw Exception("Szerver hiba: ${response.statusCode}");
+        throw Exception("${response.statusCode}");
       }
     } catch (e) {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
-      _showError("Feltöltési hiba: $e");
+      _showError("$e");
       return null;
     }
   }
 
-  Future<String?> _generateQrCodeOnly() async {
+  Future<void> _generateQrCodeOnly() async {
     String? id = await _uploadWorkoutToBackend();
-
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (id != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("QR kód legenerálva!"),
-          backgroundColor: Colors.green,
-        ),
+      CustomSnackbar.show(
+        context,
+        lang.getText("qr_success"),
+        backgroundColor: workoutColorCode,
       );
     }
-    return id;
   }
 
   void startScanning(BuildContext context) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
-    final String? scannedValue = await Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => AiBarcodeScanner(
-          appBarBuilder: (context, controller) => AppBar(
-            title: Text(lang.getText("scan")),
-            backgroundColor: Colors.transparent,
-            iconTheme: const IconThemeData(color: Colors.white),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.flash_on),
-                onPressed: () => controller.toggleTorch(),
-              ),
-              IconButton(
-                icon: const Icon(Icons.cameraswitch),
-                onPressed: () => controller.switchCamera(),
-              ),
-            ],
-          ),
+          onDetect: (BarcodeCapture capture) async {
+            String scannedValue = capture.barcodes.first.rawValue ?? "";
 
-          controller: MobileScannerController(
-            detectionSpeed: DetectionSpeed.noDuplicates,
-            returnImage: false,
-          ),
+            if (scannedValue.isEmpty) return;
 
-          onDetect: (BarcodeCapture capture) {
-            final String? code = capture.barcodes.first.rawValue;
-            if (code != null && code.isNotEmpty) {
-              Navigator.of(context).pop(code);
+            Navigator.of(context).pop();
+
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (c) => const Center(child: CircularProgressIndicator()),
+            );
+
+            try {
+              List<ExerciseDto> newWorkouts = [];
+
+              if (scannedValue.startsWith("[")) {
+                List<dynamic> decodedData = jsonDecode(scannedValue);
+                newWorkouts = decodedData
+                    .map((item) => ExerciseDto.fromJson(item))
+                    .toList();
+              } else {
+                final response = await http.get(
+                  Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
+                );
+
+                if (response.statusCode == 200) {
+                  List<dynamic> decodedData = jsonDecode(response.body);
+                  newWorkouts = decodedData
+                      .map((item) => ExerciseDto.fromJson(item))
+                      .toList();
+                } else {
+                  throw Exception(lang.getText("missing_error"));
+                }
+              }
+
+              Navigator.pop(context);
+
+              setState(() {
+                userWorkouts.addAll(newWorkouts);
+              });
+
+              CustomSnackbar.show(
+                context,
+                "${newWorkouts.length} ${lang.getText("meal_added_to_list")}",
+                backgroundColor: workoutColorCode,
+              );
+            } catch (e) {
+              Navigator.pop(context);
+              debugPrint("$e");
+              CustomSnackbar.show(
+                context,
+                "${lang.getText("error")}: ${e.toString()}",
+                backgroundColor: Colors.red,
+              );
             }
           },
+          controller: MobileScannerController(
+            detectionSpeed: DetectionSpeed.noDuplicates,
+          ),
         ),
       ),
     );
-
-    if (scannedValue == null || scannedValue.isEmpty) return;
-
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (c) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      List<ExerciseDto> newWorkouts = [];
-
-      if (scannedValue.startsWith("[")) {
-        List<dynamic> decodedData = jsonDecode(scannedValue);
-        newWorkouts = decodedData
-            .map((item) => ExerciseDto.fromJson(item))
-            .toList();
-      } else {
-        final response = await http.get(
-          Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
-        );
-
-        if (response.statusCode == 200) {
-          List<dynamic> decodedData = jsonDecode(response.body);
-          newWorkouts = decodedData
-              .map((item) => ExerciseDto.fromJson(item))
-              .toList();
-        } else {
-          throw Exception("Nem található vagy lejárt megosztás.");
-        }
-      }
-
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
-      setState(() {
-        userWorkouts.addAll(newWorkouts);
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "${newWorkouts.length} ${lang.getText("added_to_list")}",
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
-      debugPrint("Hiba az importálásnál: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Hiba: ${e.toString()}"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   @override
@@ -1526,21 +1478,13 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                     });
 
                                                     if (context.mounted) {
-                                                      ScaffoldMessenger.of(
+                                                      CustomSnackbar.show(
                                                         context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            lang.getText(
-                                                              "deleted_successfully",
-                                                            ),
-                                                          ),
-                                                          backgroundColor:
-                                                              Colors.green,
-                                                          behavior:
-                                                              SnackBarBehavior
-                                                                  .floating,
+                                                        lang.getText(
+                                                          "deleted_successfully",
                                                         ),
+                                                        backgroundColor:
+                                                            workoutColorCode,
                                                       );
                                                     }
                                                   }

@@ -170,7 +170,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: muscleFilters.length,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         itemBuilder: (context, index) {
           final filterName = muscleFilters[index];
           final isSelected = selectedFilter == filterName;
@@ -266,7 +266,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     if (mounted) {
       CustomSnackbar.show(
         context,
-        '$cleanName ${lang.getText("added")}',
+        '$cleanName ${lang.getText("added_to_list")}',
         backgroundColor: primaryBlue,
       );
     }
@@ -568,7 +568,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     final cleanName = stripHtmlTags(exercise.getName(langCode));
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Container(
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 45, 45, 45),
@@ -667,7 +667,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(60),
               child: Container(
-                margin: const EdgeInsets.all(5),
+                margin: const EdgeInsets.all(0),
                 child: AppBar(
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -676,7 +676,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                         borderRadius: BorderRadius.circular(20),
                         child: ClipRect(
                           child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                            filter: ImageFilter.blur(
+                              sigmaX: 10.0,
+                              sigmaY: 10.0,
+                            ),
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -700,14 +703,17 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                     ),
                                     onPressed: () {
                                       if (widget.addToTemplate) {
-                                        Navigator.pop(context, templateWorkouts);
+                                        Navigator.pop(
+                                          context,
+                                          templateWorkouts,
+                                        );
                                       } else {
                                         Navigator.pop(context, userWorkouts);
                                       }
                                     },
                                   ),
                                   Text(
-                                    lang.getText("add"),
+                                    lang.getText("new_workout"),
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 24,
@@ -777,7 +783,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 20,
                     vertical: 8,
                   ),
                   child: SizedBox(
@@ -788,15 +794,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                         if (_debounce?.isActive ?? false) {
                           _debounce!.cancel();
                         }
-                        _debounce = Timer(const Duration(milliseconds: 600), () {
-                          _searchExercises(value);
-                        });
+                        _debounce = Timer(
+                          const Duration(milliseconds: 600),
+                          () {
+                            _searchExercises(value);
+                          },
+                        );
                       },
                       cursorColor: Colors.white,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color.fromARGB(255, 45, 45, 45),

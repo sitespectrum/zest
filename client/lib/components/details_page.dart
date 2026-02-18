@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_card.dart';
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +106,7 @@ class _DetailsPageState extends State<DetailsPage>
     final activity = activitycontroller.text;
 
     if (height == null || weight == null || gender.isEmpty || goal.isEmpty) {
-      _showErrorSnackBar("Minden mező kitöltése kötelező!");
+      _showErrorSnackBar(lang.getText("all_fields_are_required"));
       return;
     }
 
@@ -153,20 +154,13 @@ class _DetailsPageState extends State<DetailsPage>
       }
     } else {
       if (context.mounted) {
-        _showErrorSnackBar("Hiba: ${response.body}");
+        _showErrorSnackBar("${lang.getText("error")}: ${response.body}");
       }
     }
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.red,
-        margin: const EdgeInsets.only(bottom: 30, left: 16, right: 16),
-      ),
-    );
+    CustomSnackbar.show(context, message, backgroundColor: Colors.red);
   }
 
   Widget _buildStyledField({

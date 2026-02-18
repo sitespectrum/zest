@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:client/components/ui/custom_button.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/components/custom_workout_page.dart';
 import 'package:client/constants.dart';
@@ -245,15 +246,9 @@ class _WorkoutPageState extends State<WorkoutPage>
                             builder: (context, setStateDialog) {
                               return Dialog(
                                 insetPadding: const EdgeInsets.all(15),
-                                backgroundColor: const Color.fromARGB(
-                                  255,
-                                  40,
-                                  40,
-                                  40,
-                                ),
+                                backgroundColor: const Color(0xFF272727),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  side: const BorderSide(color: Colors.white24),
                                 ),
                                 child: SizedBox(
                                   height:
@@ -504,7 +499,7 @@ class _WorkoutPageState extends State<WorkoutPage>
                                                           ),
                                                   ),
                                                   const SizedBox(height: 12),
-                                                  ElevatedButton.icon(
+                                                  CustomButton(
                                                     onPressed: () async {
                                                       await Navigator.of(
                                                         context,
@@ -517,6 +512,7 @@ class _WorkoutPageState extends State<WorkoutPage>
                                                               ),
                                                         ),
                                                       );
+
                                                       setState(() {
                                                         selectedDay =
                                                             DateTime.now();
@@ -530,18 +526,9 @@ class _WorkoutPageState extends State<WorkoutPage>
                                                       Icons.add,
                                                       color: Colors.white,
                                                     ),
-                                                    label: Text(
-                                                      lang.getText(
-                                                        "add_new_workout",
-                                                      ),
+                                                    title: lang.getText(
+                                                      "add_new_meal",
                                                     ),
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.green,
-                                                          foregroundColor:
-                                                              Colors.white,
-                                                        ),
                                                   ),
                                                 ],
                                               ),
@@ -551,31 +538,17 @@ class _WorkoutPageState extends State<WorkoutPage>
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.only(
-                                          bottom: 12,
+                                          bottom: 17,
+                                          left: 17,
+                                          right: 17,
                                         ),
-                                        child: FilledButton(
+                                        child: CustomButton(
                                           onPressed: () =>
                                               Navigator.pop(context),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  30,
-                                                  30,
-                                                  30,
-                                                ),
-                                            side: const BorderSide(
-                                              color: Colors.white24,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            lang.getText("close"),
-                                            style: TextStyle(color: Colors.red),
-                                          ),
+                                          variant:
+                                              CustomButtonVariant.secondary,
+                                          title: lang.getText("close"),
+                                          iconData: Icons.close,
                                         ),
                                       ),
                                     ],

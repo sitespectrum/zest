@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -74,13 +75,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
   }
 
   void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    CustomSnackbar.show(context, message, backgroundColor: Colors.green);
   }
 
   Future<void> importWorkout(dynamic workout, LanguageProvider lang) async {

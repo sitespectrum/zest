@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/constants.dart';
@@ -88,11 +89,10 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
         selectedEquipment == null ||
         selectedForce == null ||
         selectedPrimaryMuscle == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(lang.getText("fill_all_fields") ?? "Hiányzó adatok!"),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackbar.show(
+        context,
+        lang.getText("fill_all_fields"),
+        backgroundColor: Colors.red,
       );
       return;
     }
@@ -115,26 +115,25 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
 
       if (response.statusCode == 200) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(lang.getText("saved_successfully")),
-              backgroundColor: Colors.green,
-            ),
+          CustomSnackbar.show(
+            context,
+            lang.getText("saved_successfully"),
+            backgroundColor: const Color.fromARGB(150, 50, 146, 255),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Hiba történt: ${response.statusCode}")),
+          CustomSnackbar.show(
+            context,
+            "${lang.getText("error")}: ${response.statusCode}",
+            backgroundColor: Colors.red,
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Hálózati hiba: $e")));
+        CustomSnackbar.show(context, e.toString(), backgroundColor: Colors.red);
       }
     }
   }
@@ -426,7 +425,9 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: CustomButton(
-            onPressed: saveNewExercise,
+            onPressed: () {
+              saveNewExercise();
+            },
             title: lang.getText("save"),
             iconData: Icons.save,
             variant: CustomButtonVariant.primaryWorkout,

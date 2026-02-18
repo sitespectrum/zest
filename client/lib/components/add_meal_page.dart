@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:ui'; // BackdropFilter-hez
-import 'package:client/components/ui/custom_button.dart'; // CustomButton importálása
+import 'dart:ui';
+import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:flutter/cupertino.dart';
@@ -318,7 +318,6 @@ class _AddMealPageState extends State<AddMealPage> {
     }
   }
 
-  // Segédfüggvény a listaelemek megjelenítéséhez
   Widget _buildMealItem(MealDto meal, String langCode, LanguageProvider lang) {
     final cleanName = stripHtmlTags(meal.name);
 
@@ -342,7 +341,6 @@ class _AddMealPageState extends State<AddMealPage> {
           splashColor: primaryOrange.withOpacity(0.2),
           highlightColor: primaryOrange.withOpacity(0.1),
           onTap: () async {
-            // Itt jön a dialógus logika
             await _showQuantityDialog(meal, lang);
           },
           child: Padding(
@@ -607,7 +605,7 @@ class _AddMealPageState extends State<AddMealPage> {
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(60),
               child: Container(
-                margin: const EdgeInsets.all(5),
+                margin: const EdgeInsets.all(0),
                 child: AppBar(
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -677,7 +675,6 @@ class _AddMealPageState extends State<AddMealPage> {
               children: <Widget>[
                 SizedBox(height: MediaQuery.of(context).padding.top + 70),
 
-                // Kereső és Barcode egy sorban
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
