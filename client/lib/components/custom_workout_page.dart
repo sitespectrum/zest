@@ -334,12 +334,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     );
 
     try {
-      try {
-        await FlutterNfcKit.finish();
-      } catch (_) {}
-
       await FlutterNfcKit.poll(
-        timeout: const Duration(seconds: 30),
+        timeout: Duration(seconds: 30),
         iosMultipleTagMessage: "Több címke",
         iosAlertMessage: "Érintsd oda",
       );
@@ -491,81 +487,106 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   void startScanning(BuildContext context) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
-    await Navigator.of(context).push(
+    final String? scannedValue = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => AiBarcodeScanner(
-          onDetect: (BarcodeCapture capture) async {
-            String scannedValue = capture.barcodes.first.rawValue ?? "";
+          appBarBuilder: (context, controller) => AppBar(
+            title: Text(lang.getText("scan")),
+            backgroundColor: Colors.transparent,
+            iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.flash_on),
+                onPressed: () => controller.toggleTorch(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.cameraswitch),
+                onPressed: () => controller.switchCamera(),
+              ),
+            ],
+          ),
 
-            if (scannedValue.isEmpty) return;
-
-            Navigator.of(context).pop();
-
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (c) => const Center(child: CircularProgressIndicator()),
-            );
-
-            try {
-              List<ExerciseDto> newWorkouts = [];
-
-              if (scannedValue.startsWith("[")) {
-                List<dynamic> decodedData = jsonDecode(scannedValue);
-                newWorkouts = decodedData
-                    .map((item) => ExerciseDto.fromJson(item))
-                    .toList();
-              } else {
-                final response = await http.get(
-                  Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
-                );
-
-                if (response.statusCode == 200) {
-                  List<dynamic> decodedData = jsonDecode(response.body);
-                  newWorkouts = decodedData
-                      .map((item) => ExerciseDto.fromJson(item))
-                      .toList();
-                } else {
-                  throw Exception("Nem található vagy lejárt megosztás.");
-                }
-              }
-
-              Navigator.pop(context);
-
-              setState(() {
-                userWorkouts.addAll(newWorkouts);
-              });
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    "${newWorkouts.length} ${lang.getText("added_to_list")}",
-                  ),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            } catch (e) {
-              if (context.mounted) {
-                Navigator.pop(context);
-                debugPrint("Hiba az importálásnál: $e");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Hiba: ${e.toString()}"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            }
-          },
           controller: MobileScannerController(
             detectionSpeed: DetectionSpeed.noDuplicates,
-            autoStart: true,
-            formats: [BarcodeFormat.qrCode],
             returnImage: false,
           ),
+
+          onDetect: (BarcodeCapture capture) {
+            final String? code = capture.barcodes.first.rawValue;
+            if (code != null && code.isNotEmpty) {
+              Navigator.of(context).pop(code);
+            }
+          },
         ),
       ),
     );
+
+    if (scannedValue == null || scannedValue.isEmpty) return;
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      List<ExerciseDto> newWorkouts = [];
+
+      if (scannedValue.startsWith("[")) {
+        List<dynamic> decodedData = jsonDecode(scannedValue);
+        newWorkouts = decodedData
+            .map((item) => ExerciseDto.fromJson(item))
+            .toList();
+      } else {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
+        );
+
+        if (response.statusCode == 200) {
+          List<dynamic> decodedData = jsonDecode(response.body);
+          newWorkouts = decodedData
+              .map((item) => ExerciseDto.fromJson(item))
+              .toList();
+        } else {
+          throw Exception("Nem található vagy lejárt megosztás.");
+        }
+      }
+
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      setState(() {
+        userWorkouts.addAll(newWorkouts);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "${newWorkouts.length} ${lang.getText("added_to_list")}",
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      debugPrint("Hiba az importálásnál: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Hiba: ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
