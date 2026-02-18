@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:client/components/drawers/meal_template_drawer.dart';
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
@@ -45,6 +46,7 @@ class _CMealPageState extends State<CMealPage> {
   String _statusText = "";
   bool _isNfcReading = false;
   String shareId = "";
+  Color mealColorCode = const Color.fromRGBO(255, 156, 122, 1);
   Future<void> saveUserMeals(
     List<MealDto> meals,
     String mealName,
@@ -285,12 +287,12 @@ class _CMealPageState extends State<CMealPage> {
 
   Future<void> startCloudNfcSharing(BuildContext context) async {
     String? id = await _uploadWorkoutToBackend();
-
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (id == null) return;
 
     setState(() {
       isNfcActive = true;
-      nfcStatus = "Megosztás indítása... (Kód: $id)";
+      nfcStatus = "${lang.getText("start_sharing")}... (ID: $id)";
     });
 
     Map<Permission, PermissionStatus> statuses = await [
@@ -300,7 +302,7 @@ class _CMealPageState extends State<CMealPage> {
     ].request();
 
     if (statuses.values.any((status) => status.isDenied)) {
-      setState(() => nfcStatus = "Hiányzó Bluetooth engedélyek!");
+      setState(() => nfcStatus = lang.getText("missing_bt"));
       return;
     }
 
@@ -337,8 +339,8 @@ class _CMealPageState extends State<CMealPage> {
               children: [
                 const Icon(Icons.nfc, size: 80, color: Colors.green),
                 const SizedBox(height: 20),
-                const Text(
-                  "NFC és Bluetooth Aktív",
+                Text(
+                  lang.getText("nfc_&_bt_active"),
                   style: TextStyle(color: Colors.white),
                 ),
                 Text("ID: $id", style: const TextStyle(color: Colors.grey)),
@@ -352,8 +354,8 @@ class _CMealPageState extends State<CMealPage> {
                     stopNfcSharing();
                     Navigator.pop(context);
                   },
-                  child: const Text(
-                    "Bezárás",
+                  child: Text(
+                    lang.getText("close"),
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -366,7 +368,7 @@ class _CMealPageState extends State<CMealPage> {
         );
       }
     } catch (e) {
-      _showError("Hiba: $e");
+      _showError(e.toString());
     }
   }
 
@@ -380,7 +382,7 @@ class _CMealPageState extends State<CMealPage> {
   Future<void> _fetchAndShowSharedWorkout(String shareId) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     setState(() {
-      _statusText = "Edzés betöltése...";
+      _statusText = lang.getText("loading_workout");
     });
 
     try {
@@ -402,25 +404,12 @@ class _CMealPageState extends State<CMealPage> {
           setState(() {
             userMeals.addAll(newWorkouts);
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                "${newWorkouts.length} ${lang.getText("added_to_list")}",
-              ),
-              backgroundColor: Colors.green,
-            ),
+          CustomSnackbar.show(
+            context,
+            "${newWorkouts.length} ${lang.getText("meal_added_to_list")}",
+            backgroundColor: mealColorCode,
           );
         }
-
-        int addedCount = 0;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("$addedCount gyakorlat hozzáadva a listához!"),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
         await Future.delayed(Duration(milliseconds: 800));
 
         if (!mounted) return;
@@ -428,7 +417,7 @@ class _CMealPageState extends State<CMealPage> {
         Navigator.pop(context);
       }
     } catch (e) {
-      _showError("Hiba az edzés betöltésekor: $e");
+      _showError("${lang.getText("failed_to_fetch_meals")}: ${e.toString()}");
     } finally {
       if (mounted) {
         setState(() {
@@ -445,9 +434,9 @@ class _CMealPageState extends State<CMealPage> {
       Permission.bluetoothConnect,
       Permission.location,
     ].request();
-
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (statuses.values.any((status) => status.isDenied)) {
-      _showError("Hiányzó Bluetooth engedélyek!");
+      _showError(lang.getText("missing_bt"));
       return;
     }
 
@@ -462,7 +451,7 @@ class _CMealPageState extends State<CMealPage> {
             const Icon(Icons.nfc, size: 80, color: Colors.green),
             SizedBox(height: 20),
             Text(
-              "Érintsd a másik telefonhoz...",
+              lang.getText("touch_the_other_phone"),
               style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 20),
@@ -474,7 +463,7 @@ class _CMealPageState extends State<CMealPage> {
                   Navigator.pop(context);
                 },
                 child: Text(
-                  "Bezárás",
+                  lang.getText("close"),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -543,7 +532,7 @@ class _CMealPageState extends State<CMealPage> {
               }
               return;
             } catch (e) {
-              print("Dekódolási hiba: $e");
+              print("${lang.getText("decoding_error")} $e");
             }
           }
         }
@@ -558,13 +547,13 @@ class _CMealPageState extends State<CMealPage> {
 
       if (!found) {
         if (mounted) Navigator.pop(context);
-        _showError("Nem sikerült azonosítani a telefont.");
+        _showError(lang.getText("failed_to_identitify"));
       }
     } catch (e) {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
 
       if (!e.toString().contains("poll timeout")) {
-        _showError("Hiba: $e");
+        _showError("Hiba: ${e.toString()}");
       }
     }
   }
@@ -614,24 +603,23 @@ class _CMealPageState extends State<CMealPage> {
 
         return newId;
       } else {
-        throw Exception("Szerver hiba: ${response.statusCode}");
+        throw Exception("${response.statusCode}");
       }
     } catch (e) {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
-      _showError("Feltöltési hiba: $e");
+      _showError("$e");
       return null;
     }
   }
 
   Future<void> _generateQrCodeOnly() async {
     String? id = await _uploadWorkoutToBackend();
-
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (id != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("QR kód legenerálva!"),
-          backgroundColor: Colors.green,
-        ),
+      CustomSnackbar.show(
+        context,
+        lang.getText("qr_success"),
+        backgroundColor: mealColorCode,
       );
     }
   }
@@ -674,7 +662,7 @@ class _CMealPageState extends State<CMealPage> {
                       .map((item) => MealDto.fromJson(item))
                       .toList();
                 } else {
-                  throw Exception("Nem található vagy lejárt megosztás.");
+                  throw Exception(lang.getText("missing_error"));
                 }
               }
 
@@ -684,22 +672,18 @@ class _CMealPageState extends State<CMealPage> {
                 userMeals.addAll(newMeals);
               });
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    "${newMeals.length} ${lang.getText("added_to_list")}",
-                  ),
-                  backgroundColor: Colors.green,
-                ),
+              CustomSnackbar.show(
+                context,
+                "${newMeals.length} ${lang.getText("meal_added_to_list")}",
+                backgroundColor: mealColorCode,
               );
             } catch (e) {
               Navigator.pop(context);
-              debugPrint("Hiba az importálásnál: $e");
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Hiba: ${e.toString()}"),
-                  backgroundColor: Colors.red,
-                ),
+              debugPrint("$e");
+              CustomSnackbar.show(
+                context,
+                "${lang.getText("error")}: ${e.toString()}",
+                backgroundColor: Colors.red,
               );
             }
           },
@@ -713,13 +697,7 @@ class _CMealPageState extends State<CMealPage> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    CustomSnackbar.show(context, message, backgroundColor: Colors.red);
   }
 
   @override
@@ -1590,8 +1568,8 @@ class _CMealPageState extends State<CMealPage> {
                         final meal = meals[index];
 
                         return GestureDetector(
-                          onTap: () {
-                            showModalBottomSheet(
+                          onTap: () async {
+                            final result = await showModalBottomSheet<bool>(
                               context: context,
                               builder: (context) {
                                 return StatefulBuilder(
@@ -1608,6 +1586,8 @@ class _CMealPageState extends State<CMealPage> {
                             );
                             setState(() {
                               showdelete = false;
+
+                              if (result == true) {}
                             });
                           },
                           child: Padding(
@@ -1782,56 +1762,13 @@ class _CMealPageState extends State<CMealPage> {
                                                 });
 
                                                 if (context.mounted) {
-                                                  ScaffoldMessenger.of(
+                                                  CustomSnackbar.show(
                                                     context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        lang.getText(
-                                                          "deleted_successfully",
-                                                        ),
-                                                        style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      showCloseIcon: true,
-                                                      closeIconColor:
-                                                          Colors.white70,
-                                                      behavior: SnackBarBehavior
-                                                          .floating,
-                                                      backgroundColor:
-                                                          const Color.fromARGB(
-                                                            255,
-                                                            45,
-                                                            45,
-                                                            45,
-                                                          ),
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              12,
-                                                            ),
-                                                        side: const BorderSide(
-                                                          color: Colors.white24,
-                                                          width: 1,
-                                                        ),
-                                                      ),
-                                                      margin:
-                                                          const EdgeInsets.only(
-                                                            bottom: 30,
-                                                            left: 16,
-                                                            right: 16,
-                                                          ),
-                                                      duration: const Duration(
-                                                        milliseconds: 1800,
-                                                      ),
-                                                      animation: CurvedAnimation(
-                                                        parent:
-                                                            kAlwaysCompleteAnimation,
-                                                        curve: Curves.easeInOut,
-                                                      ),
+                                                    lang.getText(
+                                                      "deleted_successfully",
                                                     ),
+                                                    backgroundColor:
+                                                        mealColorCode,
                                                   );
                                                 }
                                               }
@@ -1897,12 +1834,10 @@ class _CMealPageState extends State<CMealPage> {
                     variant: CustomButtonVariant.primaryMeal,
                     onPressed: () async {
                       if (userMeals.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(lang.getText("no_meals_selected")),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.red,
-                          ),
+                        CustomSnackbar.show(
+                          context,
+                          lang.getText("no_meals_selected"),
+                          backgroundColor: Colors.red,
                         );
                         return;
                       }
@@ -2045,60 +1980,20 @@ class _CMealPageState extends State<CMealPage> {
                                               );
 
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(
+                                                CustomSnackbar.show(
                                                   context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      lang.getText(
-                                                        "saved_successfully",
-                                                      ),
-                                                    ),
-                                                    showCloseIcon: true,
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    margin:
-                                                        const EdgeInsets.only(
-                                                          bottom: 30,
-                                                          left: 16,
-                                                          right: 16,
-                                                        ),
-                                                    duration: const Duration(
-                                                      milliseconds: 1800,
-                                                    ),
-                                                    animation: CurvedAnimation(
-                                                      parent:
-                                                          kAlwaysCompleteAnimation,
-                                                      curve: Curves.easeInOut,
-                                                    ),
+                                                  lang.getText(
+                                                    "saved_successfully",
                                                   ),
+                                                  backgroundColor:
+                                                      mealColorCode,
                                                 );
                                               }
                                             } catch (e) {
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(
+                                                CustomSnackbar.show(
                                                   context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text("Hiba: $e"),
-                                                    backgroundColor: Colors.red,
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    margin:
-                                                        const EdgeInsets.only(
-                                                          bottom: 30,
-                                                          left: 16,
-                                                          right: 16,
-                                                        ),
-                                                    duration: const Duration(
-                                                      milliseconds: 1800,
-                                                    ),
-                                                    animation: CurvedAnimation(
-                                                      parent:
-                                                          kAlwaysCompleteAnimation,
-                                                      curve: Curves.easeInOut,
-                                                    ),
-                                                  ),
+                                                  "${lang.getText("error")} : ${e.toString()}",
                                                 );
                                               }
                                               return;
@@ -2167,19 +2062,12 @@ class _CMealPageState extends State<CMealPage> {
                                             if (mealnamecontroller.text
                                                 .trim()
                                                 .isEmpty) {
-                                              ScaffoldMessenger.of(
+                                              CustomSnackbar.show(
                                                 context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    lang.getText(
-                                                      "name_the_template",
-                                                    ),
-                                                  ),
-                                                  behavior:
-                                                      SnackBarBehavior.floating,
-                                                  backgroundColor: Colors.red,
+                                                lang.getText(
+                                                  "name_the_template",
                                                 ),
+                                                backgroundColor: Colors.red,
                                               );
                                               return;
                                             }
@@ -2201,19 +2089,12 @@ class _CMealPageState extends State<CMealPage> {
 
                                             if (isDuplicate) {
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(
+                                                CustomSnackbar.show(
                                                   context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      lang.getText(
-                                                        'duplicate_template',
-                                                      ),
-                                                    ),
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    backgroundColor: Colors.red,
+                                                  lang.getText(
+                                                    "duplicate_template",
                                                   ),
+                                                  backgroundColor: Colors.red,
                                                 );
                                               }
                                               return;
@@ -2240,59 +2121,20 @@ class _CMealPageState extends State<CMealPage> {
                                               );
 
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(
+                                                CustomSnackbar.show(
                                                   context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      lang.getText(
-                                                        "saved_successfully",
-                                                      ),
-                                                    ),
-                                                    showCloseIcon: true,
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    margin:
-                                                        const EdgeInsets.only(
-                                                          bottom: 30,
-                                                          left: 16,
-                                                          right: 16,
-                                                        ),
-                                                    duration: const Duration(
-                                                      milliseconds: 1800,
-                                                    ),
-                                                    animation: CurvedAnimation(
-                                                      parent:
-                                                          kAlwaysCompleteAnimation,
-                                                      curve: Curves.easeInOut,
-                                                    ),
+                                                  lang.getText(
+                                                    "saved_successfully",
                                                   ),
+                                                  backgroundColor:
+                                                      mealColorCode,
                                                 );
                                               }
                                             } catch (e) {
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(
+                                                CustomSnackbar.show(
                                                   context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text("Hiba: $e"),
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    margin:
-                                                        const EdgeInsets.only(
-                                                          bottom: 30,
-                                                          left: 16,
-                                                          right: 16,
-                                                        ),
-                                                    duration: const Duration(
-                                                      milliseconds: 1800,
-                                                    ),
-                                                    animation: CurvedAnimation(
-                                                      parent:
-                                                          kAlwaysCompleteAnimation,
-                                                      curve: Curves.easeInOut,
-                                                    ),
-                                                  ),
+                                                  "${lang.getText("error")}: ${e.toString()}",
                                                 );
                                               }
                                               return;

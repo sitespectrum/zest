@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -31,47 +32,6 @@ class _FriendsPageState extends State<FriendsPage>
     _tabController = TabController(length: 3, vsync: this);
     fetchFriends();
     fetchRequests();
-  }
-
-  void _showSnackBar(
-    String message, {
-    bool isError = false,
-    bool isSuccess = false,
-  }) {
-    Color backgroundColor = const Color.fromARGB(255, 45, 45, 45);
-    Color iconColor = Colors.white;
-
-    if (isSuccess) {
-      backgroundColor = Colors.green.shade800;
-      iconColor = Colors.white;
-    } else if (isError) {
-      backgroundColor = Colors.red.shade900;
-      iconColor = Colors.white;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isSuccess
-                  ? Icons.check_circle
-                  : (isError ? Icons.error : Icons.info),
-              color: iconColor,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(message, style: const TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
-      ),
-    );
   }
 
   Future<String?> _getToken() async {
@@ -163,15 +123,20 @@ class _FriendsPageState extends State<FriendsPage>
     );
 
     if (response.statusCode == 200) {
-      _showSnackBar(lang.getText("request_sent"), isSuccess: true);
+      CustomSnackbar.show(
+        context,
+        lang.getText("request_sent"),
+        backgroundColor: Colors.green,
+      );
 
       setState(() {
         searchResults.removeWhere((u) => u['id'] == userId);
       });
     } else {
-      _showSnackBar(
+      CustomSnackbar.show(
+        context,
         "${lang.getText("error_occurred")}: ${response.body}",
-        isError: true,
+        backgroundColor: Colors.red,
       );
     }
   }
@@ -195,9 +160,17 @@ class _FriendsPageState extends State<FriendsPage>
       if (accept) fetchFriends();
 
       if (accept) {
-        _showSnackBar(lang.getText("friend_added"), isSuccess: true);
+        CustomSnackbar.show(
+          context,
+          lang.getText("friend_added"),
+          backgroundColor: Colors.green,
+        );
       } else {
-        _showSnackBar(lang.getText("request_declined"), isError: false);
+        CustomSnackbar.show(
+          context,
+          lang.getText("request_declined"),
+          backgroundColor: Colors.red,
+        );
       }
     }
   }
@@ -217,15 +190,24 @@ class _FriendsPageState extends State<FriendsPage>
         setState(() {
           friends.removeWhere((f) => f['id'] == friendId);
         });
-        _showSnackBar(
+        CustomSnackbar.show(
+          context,
           lang.getText("friend_deleted_successfully"),
-          isSuccess: true,
+          backgroundColor: Colors.green,
         );
       } else {
-        _showSnackBar(lang.getText("error_occurred"), isError: true);
+        CustomSnackbar.show(
+          context,
+          lang.getText("error_occurred"),
+          backgroundColor: Colors.red,
+        );
       }
     } catch (e) {
-      _showSnackBar(lang.getText("error_occurred"), isError: true);
+      CustomSnackbar.show(
+        context,
+        lang.getText("error_occurred"),
+        backgroundColor: Colors.red,
+      );
     }
   }
 

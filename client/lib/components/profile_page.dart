@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/components/utils/keyboard_aware_drawer.dart';
 import 'package:client/providers/language_provider.dart';
@@ -480,18 +481,10 @@ class _ProfilePageState extends State<ProfilePage>
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(lang.getText("data_successfully_updated")),
-            showCloseIcon: true,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(bottom: 30, left: 16, right: 16),
-            duration: Duration(milliseconds: 1800),
-            animation: CurvedAnimation(
-              parent: kAlwaysCompleteAnimation,
-              curve: Curves.easeInOut,
-            ),
-          ),
+        CustomSnackbar.show(
+          context,
+          lang.getText("data_successfully_updated"),
+          backgroundColor: Colors.green,
         );
       }
       return true;

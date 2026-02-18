@@ -35,12 +35,12 @@ class _LoginDrawerState extends State<LoginDrawer> {
               CustomTextField(
                 _userNameController,
                 lang.getText("username_hint"),
-                isPassword: true,
               ),
 
               CustomTextField(
                 _passwordController,
                 lang.getText("password_hint"),
+                isPassword: true,
               ),
             ],
           ),
