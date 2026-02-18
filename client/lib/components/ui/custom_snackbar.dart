@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
 class CustomSnackbar {
-  static void show(BuildContext context, String message, {Color? backgroundColor}) {
+  static void show(
+    BuildContext context,
+    String message, {
+    Color? backgroundColor,
+  }) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(color: Colors.white),
-              ),
+              child: Text(message, style: const TextStyle(color: Colors.white)),
             ),
             IconButton(
               icon: const Icon(Icons.close, color: Colors.white70),
@@ -21,7 +22,8 @@ class CustomSnackbar {
             ),
           ],
         ),
-        backgroundColor: backgroundColor ?? const Color.fromARGB(255, 45, 45, 45),
+        backgroundColor:
+            backgroundColor ?? const Color.fromARGB(255, 45, 45, 45),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
