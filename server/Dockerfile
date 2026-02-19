@@ -14,6 +14,9 @@ RUN dotnet publish -c Release -o /app
 RUN dotnet tool install --global dotnet-ef --version 9.0.0-preview.3.24172.4
 ENV PATH="$PATH:/root/.dotnet/tools"
 
+RUN mkdir -p /app/db
+RUN touch /app/db/zest.db
+
 RUN dotnet ef database update
 
 # Build the runtime image
