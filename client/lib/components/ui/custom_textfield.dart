@@ -19,6 +19,7 @@ Widget customTextField(
   VoidCallback? onTap,
   IconData? prefixIcon,
   bool isCreateWorkout = false,
+  bool isCustomMeal = false,
 }) {
   final lang = Provider.of<LanguageProvider>(context);
   return TextField(
@@ -55,6 +56,8 @@ Widget customTextField(
         borderSide: BorderSide(
           color: isCreateWorkout
               ? const Color.fromARGB(150, 50, 146, 255)
+              : isCustomMeal
+              ? const Color.fromARGB(255, 255, 115, 69)
               : const Color.fromARGB(100, 64, 255, 50),
           width: 2,
         ),

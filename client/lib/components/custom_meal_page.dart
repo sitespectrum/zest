@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'package:client/components/drawers/meal_template_drawer.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
+import 'package:client/components/ui/custom_textfield.dart';
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
@@ -1852,9 +1853,8 @@ class _CMealPageState extends State<CMealPage> {
                             child: Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 40, 40, 40),
+                                color: const Color.fromRGBO(45, 45, 45, 1),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.white24),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(20),
@@ -1869,195 +1869,101 @@ class _CMealPageState extends State<CMealPage> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    Stack(
-                                      children: [
-                                        Container(
-                                          width: double.infinity,
-                                          height: null,
-                                          margin: const EdgeInsets.fromLTRB(
-                                            0,
-                                            20,
-                                            0,
-                                            20,
-                                          ),
-                                          padding: const EdgeInsets.fromLTRB(
-                                            0,
-                                            0,
-                                            5,
-                                            5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color.fromARGB(
-                                              255,
-                                              72,
-                                              72,
-                                              72,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          child: TextField(
-                                            cursorColor: Colors.white,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                            ),
-                                            controller: mealnamecontroller,
-                                            decoration: InputDecoration(
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.transparent,
-                                                  width: 2,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.transparent,
-                                                  width: 1,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                            keyboardType: TextInputType.text,
-                                          ),
-                                        ),
-
-                                        Positioned(
-                                          top:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.height *
-                                              0.01,
-                                          left:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.width *
-                                              0.04,
-                                          child: Text(
-                                            lang.getText("sample_name"),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    SizedBox(height: 30),
+                                    CustomTextField(
+                                      mealnamecontroller,
+                                      lang.getText("sample_name"),
+                                      isCustomMeal: true,
                                     ),
-
+                                    SizedBox(height: 30),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        FilledButton(
-                                          onPressed: () async {
-                                            try {
-                                              final prefs =
-                                                  await SharedPreferences.getInstance();
-                                              final userId = prefs.getInt(
-                                                'userId',
-                                              );
-                                              if (userId == null) {
-                                                throw Exception(
-                                                  lang.getText(
-                                                    "no_userId_found",
-                                                  ),
+                                        Expanded(
+                                          child: CustomButton(
+                                            onPressed: () async {
+                                              try {
+                                                final prefs =
+                                                    await SharedPreferences.getInstance();
+                                                final userId = prefs.getInt(
+                                                  'userId',
                                                 );
-                                              }
-
-                                              await saveUserMeals(
-                                                userMeals,
-                                                _mealtypes[mealindex],
-                                                userId,
-                                              );
-
-                                              if (context.mounted) {
-                                                CustomSnackbar.show(
-                                                  context,
-                                                  lang.getText(
-                                                    "saved_successfully",
-                                                  ),
-                                                  backgroundColor:
-                                                      mealColorCode,
-                                                );
-                                              }
-                                            } catch (e) {
-                                              if (context.mounted) {
-                                                CustomSnackbar.show(
-                                                  context,
-                                                  "${lang.getText("error")} : ${e.toString()}",
-                                                );
-                                              }
-                                              return;
-                                            }
-                                            if (_debounce?.isActive ?? false) {
-                                              _debounce!.cancel();
-                                            }
-                                            _debounce = Timer(
-                                              const Duration(
-                                                milliseconds: 1500,
-                                              ),
-                                              () {
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).hideCurrentSnackBar();
-                                                  Navigator.push<List<MealDto>>(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const Pages(),
+                                                if (userId == null) {
+                                                  throw Exception(
+                                                    lang.getText(
+                                                      "no_userId_found",
                                                     ),
                                                   );
                                                 }
-                                              },
-                                            );
-                                          },
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  85,
-                                                  173,
-                                                  78,
+
+                                                await saveUserMeals(
+                                                  userMeals,
+                                                  _mealtypes[mealindex],
+                                                  userId,
+                                                );
+
+                                                if (context.mounted) {
+                                                  CustomSnackbar.show(
+                                                    context,
+                                                    lang.getText(
+                                                      "saved_successfully",
+                                                    ),
+                                                    backgroundColor:
+                                                        mealColorCode,
+                                                  );
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  CustomSnackbar.show(
+                                                    context,
+                                                    "${lang.getText("error")} : ${e.toString()}",
+                                                  );
+                                                }
+                                                return;
+                                              }
+                                              if (_debounce?.isActive ??
+                                                  false) {
+                                                _debounce!.cancel();
+                                              }
+                                              _debounce = Timer(
+                                                const Duration(
+                                                  milliseconds: 1500,
                                                 ),
-                                            fixedSize: Size(
-                                              MediaQuery.of(
-                                                    context,
-                                                  ).size.width *
-                                                  0.36,
-                                              MediaQuery.of(
-                                                    context,
-                                                  ).size.height *
-                                                  0.07,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(11),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            lang.getText("save_without_sample"),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 17,
-                                              fontWeight: FontWeight.bold,
+                                                () {
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).hideCurrentSnackBar();
+                                                    Navigator.push<
+                                                      List<MealDto>
+                                                    >(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            const Pages(),
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                              );
+                                            },
+                                            variant:
+                                                CustomButtonVariant.secondary,
+                                            child: Text(
+                                              lang.getText(
+                                                "save_without_sample",
+                                              ),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ),
-
-                                        FilledButton(
+                                        SizedBox(width: 5),
+                                        CustomButton(
                                           onPressed: () async {
                                             if (mealnamecontroller.text
                                                 .trim()
@@ -2162,29 +2068,8 @@ class _CMealPageState extends State<CMealPage> {
                                               },
                                             );
                                           },
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  85,
-                                                  173,
-                                                  78,
-                                                ),
-                                            fixedSize: Size(
-                                              MediaQuery.of(
-                                                    context,
-                                                  ).size.width *
-                                                  0.36,
-                                              MediaQuery.of(
-                                                    context,
-                                                  ).size.height *
-                                                  0.07,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(11),
-                                            ),
-                                          ),
+                                          variant:
+                                              CustomButtonVariant.primaryMeal,
                                           child: Text(
                                             lang.getText("save"),
                                             style: const TextStyle(

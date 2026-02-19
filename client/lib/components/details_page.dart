@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_card.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
