@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
+import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/pages.dart';
@@ -422,9 +423,8 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 40, 40, 40),
+                                color: const Color.fromRGBO(45, 45, 45, 1),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.white24),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -575,53 +575,49 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   const SizedBox(height: 8),
-                                                  ...ex.sets
-                                                      .where(
-                                                        (s) => s.isCompleted,
-                                                      )
-                                                      .map((set) {
-                                                        final isCardio =
-                                                            ex.category
+                                                  ...ex.sets.where((s) => s.isCompleted).map((
+                                                    set,
+                                                  ) {
+                                                    final isCardio =
+                                                        ex.category
+                                                            ?.toLowerCase() ==
+                                                        'cardio';
+                                                    final isBodyweight =
+                                                        ex.equipment
                                                                 ?.toLowerCase() ==
-                                                            'cardio';
-                                                        final isBodyweight =
-                                                            ex.equipment
-                                                                    ?.toLowerCase() ==
-                                                                'body only' ||
-                                                            ex.equipment
-                                                                    ?.toLowerCase() ==
-                                                                'none';
+                                                            'body only' ||
+                                                        ex.equipment
+                                                                ?.toLowerCase() ==
+                                                            'none';
 
-                                                        String textToShow = "";
+                                                    String textToShow = "";
 
-                                                        if (isCardio) {
-                                                          textToShow =
-                                                              "${set.weight} km | ${set.reps} ${lang.getText("min")}";
-                                                        } else if (isBodyweight) {
-                                                          textToShow =
-                                                              "${set.reps} ${lang.getText("reps")}";
-                                                        } else {
-                                                          textToShow =
-                                                              "${set.weight} kg x ${set.reps}";
-                                                        }
+                                                    if (isCardio) {
+                                                      textToShow =
+                                                          "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+                                                    } else if (isBodyweight) {
+                                                      textToShow =
+                                                          "${set.reps} ${lang.getText("reps")}";
+                                                    } else {
+                                                      textToShow =
+                                                          "${set.weight} kg x ${set.reps}";
+                                                    }
 
-                                                        return Padding(
-                                                          padding:
-                                                              const EdgeInsets.only(
-                                                                left: 10.0,
-                                                                bottom: 8.0,
-                                                              ),
-                                                          child: Text(
-                                                            textToShow,
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                  fontSize: 13,
-                                                                ),
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            left: 10.0,
+                                                            bottom: 8.0,
                                                           ),
-                                                        );
-                                                      }).toList(),
+                                                      child: Text(
+                                                        textToShow,
+                                                        style: const TextStyle(
+                                                          color: Colors.white70,
+                                                          fontSize: 13,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }).toList(),
                                                 ],
                                               ),
                                           ],
@@ -633,8 +629,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                   Positioned(
                                     child: Center(
                                       child: CustomButton(
-                                        variant:
-                                            CustomButtonVariant.primaryWorkout,
+                                        variant: CustomButtonVariant.secondary,
                                         onPressed: () async {
                                           Navigator.pop(context);
                                           if (_debounce?.isActive ?? false) {
@@ -657,34 +652,12 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                             totalVolume,
                                           );
                                         },
-                                        child: Text(
-                                          lang.getText("save_without_sample"),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                        iconData: Icons.close,
+                                        title: lang.getText("close"),
                                       ),
                                     ),
                                   ),
                                   SizedBox(height: 10),
-                                  Container(
-                                    width: double.infinity,
-                                    child: CustomButton(
-                                      variant: CustomButtonVariant.secondary,
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                        lang.getText("close"),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -725,9 +698,8 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 40, 40, 40),
+                color: const Color.fromARGB(255, 45, 45, 45),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white24),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -742,62 +714,18 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    SizedBox(height: 30),
                     Stack(
                       children: [
-                        Container(
-                          width: double.infinity,
-                          height: null,
-                          margin: const EdgeInsets.fromLTRB(0, 20, 0, 20),
-                          padding: const EdgeInsets.fromLTRB(0, 0, 5, 5),
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 72, 72, 72),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: TextField(
-                            cursorColor: Colors.white,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                            ),
-                            controller: workoutcontroller,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: const BorderSide(
-                                  color: Colors.transparent,
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: const BorderSide(
-                                  color: Colors.transparent,
-                                  width: 1,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            keyboardType: TextInputType.text,
-                          ),
-                        ),
-
-                        Positioned(
-                          top: MediaQuery.of(context).size.height * 0.01,
-                          left: MediaQuery.of(context).size.width * 0.04,
-                          child: Text(
-                            lang.getText("sample_name"),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        customTextField(
+                          context,
+                          workoutcontroller,
+                          lang.getText("sample_name"),
+                          isCreateWorkout: true,
                         ),
                       ],
                     ),
-
+                    SizedBox(height: 30),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -942,23 +870,6 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                           ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      child: CustomButton(
-                        variant: CustomButtonVariant.secondary,
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          lang.getText("close"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -1110,9 +1021,7 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
             child: const Text("Mégse", style: TextStyle(color: Colors.grey)),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: primaryBlue,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: primaryBlue),
             onPressed: () {
               setState(() {
                 widget.exercise.sets = item.sets

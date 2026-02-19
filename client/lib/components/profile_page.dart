@@ -112,7 +112,7 @@ class _ProfilePageState extends State<ProfilePage>
               colorScheme: const ColorScheme.dark(
                 primary: Color.fromARGB(255, 85, 173, 78),
                 onPrimary: Colors.white,
-                surface: Color(0xFF272727),
+                surface: Color.fromRGBO(39, 39, 39, 1),
                 onSurface: Colors.white,
               ),
               dialogBackgroundColor: const Color(0xFF272727),
