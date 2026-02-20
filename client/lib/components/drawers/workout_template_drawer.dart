@@ -20,6 +20,7 @@ Widget workoutTemplateDrawer(
 ) {
   final lang = Provider.of<LanguageProvider>(context, listen: false);
   final langCode = Provider.of<LanguageProvider>(context).languageCode;
+  Color workoutColorCode = const Color.fromARGB(150, 50, 146, 255);
   return CustomDrawer(
     child: Container(
       width: double.infinity,
@@ -100,7 +101,11 @@ Widget workoutTemplateDrawer(
                           userWorkouts.add(exerciseCopy);
                         });
                     Navigator.pop(context, true);
-                    CustomSnackbar.show(context, lang.getText("template_loaded"), backgroundColor: Colors.green);
+                    CustomSnackbar.show(
+                      context,
+                      lang.getText("template_loaded"),
+                      backgroundColor: workoutColorCode,
+                    );
                   },
                   variant: CustomButtonVariant.primaryWorkout,
                   child: Text(

@@ -27,8 +27,7 @@ class RunningWorkoutPage extends StatefulWidget {
 final workoutcontroller = TextEditingController();
 
 class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
-  final Color primaryBlue = const Color.fromARGB(255, 50, 146, 255);
-
+  Color workoutColorCode = const Color.fromARGB(150, 50, 146, 255);
   Future<void> saveUserExercises(
     List<ExerciseDto> exercises,
     String workoutName,
@@ -554,7 +553,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                             Text(
                                               ex.getName(lang.languageCode),
                                               style: TextStyle(
-                                                color: primaryBlue,
+                                                color: workoutColorCode,
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -756,7 +755,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                 CustomSnackbar.show(
                                   context,
                                   lang.getText("saved_successfully"),
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: workoutColorCode,
                                 );
                               } catch (e) {
                                 CustomSnackbar.show(
@@ -831,7 +830,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                 CustomSnackbar.show(
                                   context,
                                   lang.getText("saved_successfully"),
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: workoutColorCode,
                                 );
                               } catch (e) {
                                 CustomSnackbar.show(

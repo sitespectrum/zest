@@ -628,72 +628,84 @@ class _CMealPageState extends State<CMealPage> {
   void startScanning(BuildContext context) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
-    await Navigator.of(context).push(
+    final String? scannedCode = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (context) => AiBarcodeScanner(
-          onDetect: (BarcodeCapture capture) async {
-            String scannedValue = capture.barcodes.first.rawValue ?? "";
+        builder: (context) {
+          bool hasScanned = false;
 
-            if (scannedValue.isEmpty) return;
+          return AiBarcodeScanner(
+            onDetect: (BarcodeCapture capture) {
+              if (hasScanned) return;
 
-            Navigator.of(context).pop();
+              String scannedValue = capture.barcodes.first.rawValue ?? "";
+              if (scannedValue.isNotEmpty) {
+                hasScanned = true;
 
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (c) => const Center(child: CircularProgressIndicator()),
-            );
-
-            try {
-              List<MealDto> newMeals = [];
-
-              if (scannedValue.startsWith("[")) {
-                List<dynamic> decodedData = jsonDecode(scannedValue);
-                newMeals = decodedData
-                    .map((item) => MealDto.fromJson(item))
-                    .toList();
-              } else {
-                final response = await http.get(
-                  Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
-                );
-
-                if (response.statusCode == 200) {
-                  List<dynamic> decodedData = jsonDecode(response.body);
-                  newMeals = decodedData
-                      .map((item) => MealDto.fromJson(item))
-                      .toList();
-                } else {
-                  throw Exception(lang.getText("missing_error"));
-                }
+                Navigator.of(context).pop(scannedValue);
               }
-
-              Navigator.pop(context);
-
-              setState(() {
-                userMeals.addAll(newMeals);
-              });
-
-              CustomSnackbar.show(
-                context,
-                "${newMeals.length} ${lang.getText("meal_added_to_list")}",
-                backgroundColor: mealColorCode,
-              );
-            } catch (e) {
-              Navigator.pop(context);
-              debugPrint("$e");
-              CustomSnackbar.show(
-                context,
-                "${lang.getText("error")}: ${e.toString()}",
-                backgroundColor: Colors.red,
-              );
-            }
-          },
-          controller: MobileScannerController(
-            detectionSpeed: DetectionSpeed.noDuplicates,
-          ),
-        ),
+            },
+            controller: MobileScannerController(
+              detectionSpeed: DetectionSpeed.noDuplicates,
+            ),
+          );
+        },
       ),
     );
+
+    if (scannedCode == null || scannedCode.isEmpty) return;
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      List<MealDto> newMeals = [];
+
+      if (scannedCode.startsWith("[")) {
+        List<dynamic> decodedData = jsonDecode(scannedCode);
+        newMeals = decodedData.map((item) => MealDto.fromJson(item)).toList();
+      } else {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/Share/workout-$scannedCode"),
+        );
+
+        if (response.statusCode == 200) {
+          List<dynamic> decodedData = jsonDecode(response.body);
+          newMeals = decodedData.map((item) => MealDto.fromJson(item)).toList();
+        } else {
+          throw Exception(lang.getText("missing_error"));
+        }
+      }
+
+      if (context.mounted) Navigator.pop(context);
+
+      setState(() {
+        userMeals.addAll(newMeals);
+      });
+
+      if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          "${newMeals.length} ${lang.getText("meal_added_to_list")}",
+          backgroundColor: mealColorCode,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+      debugPrint("$e");
+
+      if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          "${lang.getText("error")}: ${e.toString()}",
+          backgroundColor: Colors.red,
+        );
+      }
+    }
   }
 
   void _showError(String message) {
