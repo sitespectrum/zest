@@ -56,9 +56,7 @@ class _FriendsPageState extends State<FriendsPage>
           });
         }
       }
-    } catch (e) {
-      // Hiba kezelés
-    }
+    } catch (e) {}
   }
 
   Future<void> fetchRequests() async {
@@ -78,9 +76,7 @@ class _FriendsPageState extends State<FriendsPage>
           });
         }
       }
-    } catch (e) {
-      // Hiba kezelése
-    }
+    } catch (e) {}
   }
 
   Future<void> searchUsers(String query) async {
