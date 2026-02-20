@@ -172,7 +172,7 @@ class LanguageProvider with ChangeNotifier {
       "deleted_successfully": "Sikeresen törölve!",
       'save_as_workout': 'Mentés edzésként',
       'load_template': 'Sablon betöltése',
-      'add_new_workout': 'Űj edzés hozzáadása',
+      'add_new_workout': 'Új edzés hozzáadása',
       'share': 'Megosztás',
       'share_via_NFC': 'Megosztás NFC-n keresztül',
       'recive_workout': 'Edzés fogadása',

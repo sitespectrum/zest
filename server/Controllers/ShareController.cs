@@ -22,11 +22,11 @@ public class ShareController : ControllerBase
     {
         try
         {
-            string shareId = Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
+            string shareId = "W-" + Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
 
             while (await _context.SharedWorkouts.AnyAsync(s => s.Id == shareId))
             {
-                shareId = Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
+                shareId = "W-" + Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
             }
 
             var share = new SharedWorkouts
@@ -72,11 +72,11 @@ public class ShareController : ControllerBase
     {
         try
         {
-            string shareId = Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
+            string shareId = "M-" + Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
 
             while (await _context.SharedWorkouts.AnyAsync(s => s.Id == shareId))
             {
-                shareId = Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
+                shareId = "M-" + Guid.NewGuid().ToString().Substring(0, 5).ToUpper();
             }
 
             var share = new SharedWorkouts

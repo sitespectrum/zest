@@ -625,35 +625,33 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 10),
-                                  Positioned(
-                                    child: Center(
-                                      child: CustomButton(
-                                        variant: CustomButtonVariant.secondary,
-                                        onPressed: () async {
-                                          Navigator.pop(context);
-                                          if (_debounce?.isActive ?? false) {
-                                            _debounce!.cancel();
-                                          }
-                                          _debounce = Timer(
-                                            const Duration(milliseconds: 1500),
-                                            () {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).hideCurrentSnackBar();
-                                            },
-                                          );
-                                          _showSaveDialog(
-                                            context,
-                                            lang,
-                                            workoutProvider,
-                                            defWorkoutNameB,
-                                            burntCalories,
-                                            totalVolume,
-                                          );
-                                        },
-                                        iconData: Icons.close,
-                                        title: lang.getText("close"),
-                                      ),
+                                  Center(
+                                    child: CustomButton(
+                                      variant: CustomButtonVariant.secondary,
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+                                        if (_debounce?.isActive ?? false) {
+                                          _debounce!.cancel();
+                                        }
+                                        _debounce = Timer(
+                                          const Duration(milliseconds: 1500),
+                                          () {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).hideCurrentSnackBar();
+                                          },
+                                        );
+                                        _showSaveDialog(
+                                          context,
+                                          lang,
+                                          workoutProvider,
+                                          defWorkoutNameB,
+                                          burntCalories,
+                                          totalVolume,
+                                        );
+                                      },
+                                      iconData: Icons.close,
+                                      title: lang.getText("close"),
                                     ),
                                   ),
                                   SizedBox(height: 10),

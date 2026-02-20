@@ -287,7 +287,7 @@ class _CMealPageState extends State<CMealPage> {
   }
 
   Future<void> startCloudNfcSharing(BuildContext context) async {
-    String? id = await _uploadWorkoutToBackend();
+    String? id = await _uploadMealToBackend();
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (id == null) return;
 
@@ -380,10 +380,10 @@ class _CMealPageState extends State<CMealPage> {
     print("Megosztás (NFC + BLE) leállítva.");
   }
 
-  Future<void> _fetchAndShowSharedWorkout(String shareId) async {
+  Future<void> _fetchAndShowSharedMeal(String shareId) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     setState(() {
-      _statusText = lang.getText("loading_workout");
+      _statusText = lang.getText("loading_meal");
     });
 
     try {
@@ -391,23 +391,23 @@ class _CMealPageState extends State<CMealPage> {
       final token = prefs.getString('jwt_token');
 
       final response = await http.get(
-        Uri.parse("$apiUrl/api/Share/workout-$shareId"),
+        Uri.parse("$apiUrl/api/Share/meal-$shareId"),
         headers: {"Authorization": "Bearer $token"},
       );
 
       if (response.statusCode == 200) {
         List<dynamic> decodedData = jsonDecode(response.body);
-        List<MealDto> newWorkouts = decodedData
+        List<MealDto> newMeals = decodedData
             .map((item) => MealDto.fromJson(item))
             .toList();
 
         if (mounted) {
           setState(() {
-            userMeals.addAll(newWorkouts);
+            userMeals.addAll(newMeals);
           });
           CustomSnackbar.show(
             context,
-            "${newWorkouts.length} ${lang.getText("meal_added_to_list")}",
+            "${newMeals.length} ${lang.getText("meal_added_to_list")}",
             backgroundColor: mealColorCode,
           );
         }
@@ -529,7 +529,7 @@ class _CMealPageState extends State<CMealPage> {
 
                 if (mounted) Navigator.pop(context);
 
-                await _fetchAndShowSharedWorkout(id);
+                await _fetchAndShowSharedMeal(id);
               }
               return;
             } catch (e) {
@@ -565,7 +565,7 @@ class _CMealPageState extends State<CMealPage> {
     super.dispose();
   }
 
-  Future<String?> _uploadWorkoutToBackend() async {
+  Future<String?> _uploadMealToBackend() async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -581,7 +581,7 @@ class _CMealPageState extends State<CMealPage> {
           .toList();
 
       final response = await http.post(
-        Uri.parse("$apiUrl/api/Share/uploadWorkout"),
+        Uri.parse("$apiUrl/api/Share/uploadMeal"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -614,7 +614,7 @@ class _CMealPageState extends State<CMealPage> {
   }
 
   Future<void> _generateQrCodeOnly() async {
-    String? id = await _uploadWorkoutToBackend();
+    String? id = await _uploadMealToBackend();
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     if (id != null) {
       CustomSnackbar.show(
@@ -670,7 +670,7 @@ class _CMealPageState extends State<CMealPage> {
         newMeals = decodedData.map((item) => MealDto.fromJson(item)).toList();
       } else {
         final response = await http.get(
-          Uri.parse("$apiUrl/api/Share/workout-$scannedCode"),
+          Uri.parse("$apiUrl/api/Share/meal-$scannedCode"),
         );
 
         if (response.statusCode == 200) {
@@ -1538,7 +1538,7 @@ class _CMealPageState extends State<CMealPage> {
               CustomCard(
                 title: lang.getText("my_templates"),
                 iconData: Icons.folder_copy_outlined,
-                height: 370,
+                height: 220,
                 child: FutureBuilder<List<CustomUserMealDto>>(
                   future: futureCustomMeals,
                   builder: (context, snapshot) {
