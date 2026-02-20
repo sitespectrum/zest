@@ -527,7 +527,7 @@ class _WorkoutPageState extends State<WorkoutPage>
                                                       color: Colors.white,
                                                     ),
                                                     title: lang.getText(
-                                                      "add_new_meal",
+                                                      "add_new_workout",
                                                     ),
                                                   ),
                                                 ],
