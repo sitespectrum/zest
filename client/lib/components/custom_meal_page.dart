@@ -523,6 +523,11 @@ class _CMealPageState extends State<CMealPage> {
               String id = utf8.decode(manufacturerData[0xFFFF]!);
               print(">>> MEGVAN AZ ID BLUETOOTH-ON: $id");
 
+              if (id.contains('W-')) {
+                found = false;
+                return;
+              }
+
               if (!found) {
                 found = true;
                 FlutterBluePlus.stopScan();

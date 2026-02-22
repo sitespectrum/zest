@@ -226,45 +226,69 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
             PreferredSize(
               preferredSize: const Size.fromHeight(60),
               child: Container(
-                margin: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 5,
-                  left: 5,
-                  right: 5,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: ClipRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(45, 45, 45, 0.5),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              lang.getText(
-                                "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}",
+                margin: const EdgeInsets.all(3),
+                child: AppBar(
+                  backgroundColor: Colors.transparent,
+                  automaticallyImplyLeading: false,
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: 10.0,
+                                sigmaY: 10.0,
                               ),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(45, 45, 45, 0.5),
+                                ),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back),
+                                      color: Colors.white,
+                                      padding: EdgeInsets.only(
+                                        left: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        right: 10,
+                                      ),
+                                      constraints: const BoxConstraints(),
+                                      style: IconButton.styleFrom(
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.maybePop(context),
+                                    ),
+                                    Text(
+                                      lang.getText(
+                                        "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}",
+                                      ),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
             Center(
               child: Text(
                 workoutProvider.formattedTime,
@@ -276,9 +300,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                 ),
               ),
             ),
-
             SizedBox(height: 20),
-
             AnimatedContainer(
               duration: const Duration(milliseconds: 100),
               curve: Curves.easeOut,
@@ -891,7 +913,7 @@ Widget _buildStatCell(
         style: TextStyle(
           color: isHeader ? Colors.white : color,
           fontWeight: FontWeight.bold,
-          fontSize: isHeader ? 16 : 14,
+          fontSize: isHeader ? 16 : 12,
         ),
       ),
     ),
@@ -1079,8 +1101,7 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 45, 45, 45),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white24),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.5),
@@ -1100,12 +1121,11 @@ class _ExerciseTrackerCardState extends State<ExerciseTrackerCard>
                 height: 200,
                 clipBehavior: Clip.hardEdge,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
+                  borderRadius: BorderRadius.circular(14),
                   color: Colors.black12,
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   child: widget.exercise.images.isNotEmpty
                       ? Image.network(
                           "https://raw.githubusercontent.com/sitespectrum/zest_exercises/main/exercises/${widget.exercise.images[0]}",

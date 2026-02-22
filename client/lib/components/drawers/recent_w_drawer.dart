@@ -19,6 +19,7 @@ Widget recentWDrawer(
   WorkoutProvider workoutProvider,
 ) {
   final lang = Provider.of<LanguageProvider>(context, listen: false);
+  final langCode = Provider.of<LanguageProvider>(context).languageCode;
   double calculatedVolume = 0;
   double calculatedDistance = 0;
 
@@ -133,7 +134,9 @@ Widget recentWDrawer(
                   calculatedDistance > 0
                       ? "${calculatedDistance.toStringAsFixed(1)} km"
                       : "${calculatedVolume.toInt()} kg",
-                  calculatedDistance > 0 ? "Distance" : "Volume",
+                  calculatedDistance > 0
+                      ? lang.getText("duration")
+                      : lang.getText("volume"),
                 ),
                 _buildStatItem(
                   Icons.timer,
@@ -218,7 +221,7 @@ Widget recentWDrawer(
                           ),
                         ),
                         child: Text(
-                          exercise.exercise?.name ?? "Unknown",
+                          exercise.exercise?.getName(langCode) ?? "Unknown",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
