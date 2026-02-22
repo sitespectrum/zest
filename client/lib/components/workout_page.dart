@@ -47,6 +47,7 @@ class _WorkoutPageState extends State<WorkoutPage>
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   late Future<List<UserWorkoutDto>> _futureWorkouts;
+  bool _isDrawerOpen = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -235,8 +236,9 @@ class _WorkoutPageState extends State<WorkoutPage>
                       if (!context.mounted) return;
 
                       DateTime tempSelectedDay = _selectedDay ?? DateTime.now();
-
-                      showDialog(
+                      if (_isDrawerOpen) return;
+                      _isDrawerOpen = true;
+                      await showDialog(
                         context: context,
                         builder: (context) {
                           final PageController controller = PageController(
@@ -559,6 +561,7 @@ class _WorkoutPageState extends State<WorkoutPage>
                           );
                         },
                       );
+                      _isDrawerOpen = false;
                     },
                   ),
                 ),

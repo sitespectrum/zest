@@ -104,6 +104,7 @@ class _HomePageState extends State<HomePage>
   late Future<double> _todaycalories;
   late Future<double> _calorieGoal;
   late Future<List<UserWorkoutDto>> _futureWorkouts;
+  bool _isDrawerOpen = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -377,6 +378,8 @@ class _HomePageState extends State<HomePage>
                           : GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onTap: () async {
+                                if (_isDrawerOpen) return;
+                                _isDrawerOpen = true;
                                 int currentWorkoutNum = 1;
                                 try {
                                   final prefs =
@@ -411,6 +414,7 @@ class _HomePageState extends State<HomePage>
                                     );
                                   },
                                 );
+                                _isDrawerOpen = false;
                               },
                               child: Row(
                                 mainAxisAlignment:
