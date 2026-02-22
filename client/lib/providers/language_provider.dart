@@ -233,6 +233,7 @@ class LanguageProvider with ChangeNotifier {
       'decoding_error': 'Dekódolási hiba',
       'missing_error': 'Nem található vagy lejárt megosztás',
       'template_loaded': 'Sablon betöltve!',
+      'no_history': 'Nincsenek előzmények',
     },
     'en': {
       'register_button_main': "Register",
@@ -425,6 +426,7 @@ class LanguageProvider with ChangeNotifier {
       'decoding_error': 'Decoding error',
       'missing_error': 'Share missing or not found',
       'template_loaded': 'Template loaded!',
+      'no_history': 'No history',
     },
   };
 }

@@ -368,6 +368,11 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
               String id = utf8.decode(manufacturerData[0xFFFF]!);
               print(">>> MEGVAN AZ ID BLUETOOTH-ON: $id");
 
+              if (id.contains('M-')) {
+                found = false;
+                return;
+              }
+
               if (!found) {
                 found = true;
                 FlutterBluePlus.stopScan();
