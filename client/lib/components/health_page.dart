@@ -98,6 +98,7 @@ class _HealthPageState extends State<HealthPage>
   Map<String, double>? nutrients;
   Map<String, double>? macros;
   late Future<List<UserMealDto>> _futureMeals;
+  bool _isDrawerOpen = false;
 
   @override
   bool get wantKeepAlive => false;
@@ -333,8 +334,9 @@ class _HealthPageState extends State<HealthPage>
 
                         DateTime tempSelectedDay =
                             _selectedDay ?? DateTime.now();
-
-                        showDialog(
+                        if (_isDrawerOpen) return;
+                        _isDrawerOpen = true;
+                        await showDialog(
                           context: context,
                           builder: (context) {
                             final PageController controller = PageController(
@@ -596,6 +598,7 @@ class _HealthPageState extends State<HealthPage>
                             );
                           },
                         );
+                        _isDrawerOpen = false;
                       },
                     ),
                   ),
