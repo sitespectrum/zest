@@ -234,6 +234,9 @@ class LanguageProvider with ChangeNotifier {
       'missing_error': 'Nem található vagy lejárt megosztás',
       'template_loaded': 'Sablon betöltve!',
       'no_history': 'Nincsenek előzmények',
+      'shared_workout': 'Közös edzés',
+      'host': 'Létrehozás',
+      'join': 'Csatlakozás',
     },
     'en': {
       'register_button_main': "Register",
@@ -427,6 +430,9 @@ class LanguageProvider with ChangeNotifier {
       'missing_error': 'Share missing or not found',
       'template_loaded': 'Template loaded!',
       'no_history': 'No history',
+      'shared_workout': 'Shared workout',
+      'host': 'Host',
+      'join': 'Join',
     },
   };
 }
