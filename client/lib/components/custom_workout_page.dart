@@ -22,6 +22,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'add_workout_page.dart';
+import 'package:client/components/drawers/host_guest_drawer.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/providers/workout_provider.dart';
 import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
@@ -637,17 +638,25 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            side: BorderSide(
-                              color: const Color.fromARGB(150, 50, 146, 255),
+                            side: const BorderSide(
+                              color: Color.fromARGB(150, 50, 146, 255),
                             ),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
                             ),
                           ),
-                          onPressed: () {},
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              elevation: 0,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => const HostGuestDrawer(),
+                            );
+                          },
                           icon: const Icon(
-                            CupertinoIcons.link,
+                            Icons.link_rounded,
                             size: 25,
                             color: Colors.white,
                           ),
