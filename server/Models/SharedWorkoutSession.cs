@@ -9,6 +9,7 @@ public class SharedWorkoutSession
     public string? SessionId { get; set; }
     public int HostId { get; set; }
     [ForeignKey("HostId")]
+    public User? Host { get; set; }
     public Status Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsPublic { get; set; }

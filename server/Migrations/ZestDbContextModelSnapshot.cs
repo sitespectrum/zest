@@ -388,6 +388,8 @@ namespace server.Migrations
 
                     b.HasKey("SessionId");
 
+                    b.HasIndex("HostId");
+
                     b.ToTable("SharedWorkoutSessions");
                 });
 
@@ -607,6 +609,17 @@ namespace server.Migrations
                     b.Navigation("Exercise");
 
                     b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.SharedWorkoutSession", b =>
+                {
+                    b.HasOne("Zest.Api.Models.User", "Host")
+                        .WithMany()
+                        .HasForeignKey("HostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Host");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.WorkoutExercise", b =>
