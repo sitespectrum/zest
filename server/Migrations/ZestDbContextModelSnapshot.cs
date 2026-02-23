@@ -293,6 +293,34 @@ namespace server.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("Zest.Api.Models.SessionParticipants", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReady")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SessionParticipants");
+                });
+
             modelBuilder.Entity("Zest.Api.Models.SharedMeals", b =>
                 {
                     b.Property<string>("Id")
@@ -308,6 +336,59 @@ namespace server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SharedMeals");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.SharedSessionExercises", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ExerciseId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("SharedSessionExercises");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.SharedWorkoutSession", b =>
+                {
+                    b.Property<string>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("SessionId");
+
+                    b.ToTable("SharedWorkoutSessions");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.SharedWorkouts", b =>
@@ -490,6 +571,44 @@ namespace server.Migrations
                     b.Navigation("UserMeal");
                 });
 
+            modelBuilder.Entity("Zest.Api.Models.SessionParticipants", b =>
+                {
+                    b.HasOne("Zest.Api.Models.SharedWorkoutSession", "Session")
+                        .WithMany("Participants")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Zest.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Session");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.SharedSessionExercises", b =>
+                {
+                    b.HasOne("Zest.Api.Models.Exercise", "Exercise")
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Zest.Api.Models.SharedWorkoutSession", "Session")
+                        .WithMany("Exercises")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exercise");
+
+                    b.Navigation("Session");
+                });
+
             modelBuilder.Entity("Zest.Api.Models.WorkoutExercise", b =>
                 {
                     b.HasOne("Zest.Api.Models.Exercise", "Exercise")
@@ -528,6 +647,13 @@ namespace server.Migrations
             modelBuilder.Entity("UserWorkouts", b =>
                 {
                     b.Navigation("Exercises");
+                });
+
+            modelBuilder.Entity("Zest.Api.Models.SharedWorkoutSession", b =>
+                {
+                    b.Navigation("Exercises");
+
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("Zest.Api.Models.User", b =>

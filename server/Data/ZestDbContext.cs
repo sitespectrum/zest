@@ -20,6 +20,9 @@ public class ZestDbContext : DbContext
     public DbSet<SharedWorkouts> SharedWorkouts { get; set; }
     public DbSet<SharedMeals> SharedMeals { get; set; }
     public DbSet<Friendship> Friendships { get; set; }
+    public DbSet<SharedWorkoutSession> SharedWorkoutSessions { get; set; }
+    public DbSet<SessionParticipants> SessionParticipants { get; set; }
+    public DbSet<SharedSessionExercises> SharedSessionExercises { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

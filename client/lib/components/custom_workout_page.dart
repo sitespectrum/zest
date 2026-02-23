@@ -615,7 +615,44 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                             ),
                           ),
                         ),
+
                         SizedBox(width: 8),
+
+                        IconButton(
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(
+                              50,
+                              50,
+                              146,
+                              255,
+                            ),
+                            disabledBackgroundColor: const Color.fromARGB(
+                              25,
+                              64,
+                              255,
+                              50,
+                            ),
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: Colors.white38,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(
+                              color: const Color.fromARGB(150, 50, 146, 255),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed: () {},
+                          icon: const Icon(
+                            CupertinoIcons.link,
+                            size: 25,
+                            color: Colors.white,
+                          ),
+                        ),
+
                         IconButton(
                           style: IconButton.styleFrom(
                             backgroundColor: const Color.fromARGB(
