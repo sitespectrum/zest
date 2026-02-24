@@ -31,6 +31,7 @@ public class WorkoutSessionController : ControllerBase
             {
                 SessionId = s.SessionId,
                 HostName = s.Host?.UserName ?? "Ismeretlen",
+                Name = s.Name,
                 Latitude = s.Latitude,
                 Longitude = s.Longitude,
                 ParticipantCount = s.Participants.Count,
