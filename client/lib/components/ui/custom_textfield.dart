@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 part 'custom_textfield.g.dart';
 
@@ -20,6 +21,8 @@ Widget customTextField(
   IconData? prefixIcon,
   bool isCreateWorkout = false,
   bool isCustomMeal = false,
+  bool isUpperCase = false,
+  String? fixedPrefix,
 }) {
   final lang = Provider.of<LanguageProvider>(context);
   return TextField(
@@ -29,6 +32,16 @@ Widget customTextField(
     controller: controller,
     obscureText: isPassword,
     keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+    textCapitalization: isUpperCase 
+        ? TextCapitalization.characters 
+        : TextCapitalization.none,
+    inputFormatters: isUpperCase
+        ? [
+            TextInputFormatter.withFunction((oldValue, newValue) {
+              return newValue.copyWith(text: newValue.text.toUpperCase());
+            })
+          ]
+        : null,
     decoration: InputDecoration(
       fillColor: const Color(0xFF272727),
       filled: true,
@@ -41,6 +54,12 @@ Widget customTextField(
       floatingLabelStyle: const TextStyle(
         color: Colors.white,
         fontWeight: FontWeight.bold,
+      ),
+      prefixText: fixedPrefix, 
+      prefixStyle: const TextStyle(
+        color: Colors.white, 
+        fontSize: 16, 
+        fontWeight: FontWeight.normal
       ),
       prefixIcon: prefixIcon != null
           ? Icon(prefixIcon, color: Colors.white70)
