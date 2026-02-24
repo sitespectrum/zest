@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/providers/language_provider.dart';
+import 'package:client/components/drawers/join_session_drawer.dart';
 
 part "host_guest_drawer.g.dart";
 
@@ -51,6 +52,12 @@ Widget hostGuestDrawer(BuildContext context) {
                 child: CustomButton(
                   onPressed: () {
                     Navigator.pop(context);
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const JoinSessionDrawer(),
+                    );
                   },
                   title: lang.getText("join"),
                   iconData: Icons.link_rounded,

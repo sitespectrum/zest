@@ -237,6 +237,8 @@ class LanguageProvider with ChangeNotifier {
       'shared_workout': 'Közös edzés',
       'host': 'Létrehozás',
       'join': 'Csatlakozás',
+      'unknown': 'Ismeretlen',
+      'nearby': 'Közelben',
     },
     'en': {
       'register_button_main': "Register",
@@ -433,6 +435,8 @@ class LanguageProvider with ChangeNotifier {
       'shared_workout': 'Shared workout',
       'host': 'Host',
       'join': 'Join',
+      'unknown': 'Unknown',
+      'nearby': 'Nearby',
     },
   };
 }
