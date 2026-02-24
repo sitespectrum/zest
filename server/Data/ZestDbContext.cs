@@ -67,6 +67,30 @@ public class ZestDbContext : DbContext
                 v => v.ToString(),
                 v => Enum.Parse<Activity>(v));
 
+        modelBuilder.Entity<SharedWorkoutSession>()
+            .Property(s => s.Status)
+            .HasConversion(
+                v => v.ToString(),
+                v => Enum.Parse<Status>(v));
+
+        modelBuilder.Entity<SessionParticipants>()
+            .Property(p => p.Role)
+            .HasConversion(
+                v => v.ToString(),
+                v => Enum.Parse<Role>(v));
+
+        modelBuilder.Entity<SessionParticipants>()
+            .HasOne(p => p.Session)
+            .WithMany(s => s.Participants)
+            .HasForeignKey(p => p.SessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SessionParticipants>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<UserMeal>()
             .HasOne(um => um.User)
             .WithMany(u => u.UserMeals)
