@@ -1034,6 +1034,8 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                                                             context,
                                                                           );
                                                                         },
+                                                                        variant:
+                                                                            CustomButtonVariant.primaryWorkout,
                                                                         title: lang.getText(
                                                                           "scan",
                                                                         ),

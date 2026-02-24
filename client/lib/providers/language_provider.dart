@@ -237,6 +237,10 @@ class LanguageProvider with ChangeNotifier {
       'shared_workout': 'Közös edzés',
       'host': 'Létrehozás',
       'join': 'Csatlakozás',
+      'create': 'Létrehozás',
+      'jam_name': 'Jam neve',
+      'public' : 'Nyílvános',
+      'private' : 'Privát',
     },
     'en': {
       'register_button_main': "Register",
@@ -433,6 +437,10 @@ class LanguageProvider with ChangeNotifier {
       'shared_workout': 'Shared workout',
       'host': 'Host',
       'join': 'Join',
+      'create': 'Create',
+      'jam_name': 'Jam name',
+      'public' : 'Public',
+      'private' : 'Private',
     },
   };
 }

@@ -1,3 +1,4 @@
+import 'package:client/components/drawers/host_session_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
@@ -15,9 +16,7 @@ Widget hostGuestDrawer(BuildContext context) {
   return Container(
     decoration: const BoxDecoration(
       color: Color.fromARGB(255, 30, 30, 30),
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(24),
-      ),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     child: CustomDrawer(
       child: Column(
@@ -25,14 +24,14 @@ Widget hostGuestDrawer(BuildContext context) {
         spacing: 24,
         children: [
           Text(
-            lang.getText("shared_workout"), 
+            lang.getText("shared_workout"),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
-          
+
           Flex(
             direction: Axis.horizontal,
             spacing: 16,
@@ -41,6 +40,13 @@ Widget hostGuestDrawer(BuildContext context) {
                 child: CustomButton(
                   onPressed: () {
                     Navigator.pop(context);
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      elevation: 0,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const HostSessionDrawer(),
+                    );
                   },
                   title: lang.getText("host"),
                   iconData: Icons.wifi_tethering_rounded,
