@@ -239,6 +239,10 @@ class LanguageProvider with ChangeNotifier {
       'join': 'Csatlakozás',
       'unknown': 'Ismeretlen',
       'nearby': 'Közelben',
+      'create': 'Létrehozás',
+      'jam_name': 'Jam neve',
+      'public' : 'Nyílvános',
+      'private' : 'Privát',
     },
     'en': {
       'register_button_main': "Register",
@@ -437,6 +441,10 @@ class LanguageProvider with ChangeNotifier {
       'join': 'Join',
       'unknown': 'Unknown',
       'nearby': 'Nearby',
+      'create': 'Create',
+      'jam_name': 'Jam name',
+      'public' : 'Public',
+      'private' : 'Private',
     },
   };
 }
