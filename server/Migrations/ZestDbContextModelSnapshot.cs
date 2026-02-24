@@ -302,8 +302,9 @@ namespace server.Migrations
                     b.Property<bool>("IsReady")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SessionId")
                         .IsRequired()
@@ -387,8 +388,9 @@ namespace server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasKey("SessionId");
 
@@ -588,7 +590,7 @@ namespace server.Migrations
                     b.HasOne("Zest.Api.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Session");
