@@ -206,7 +206,7 @@ Widget joinSessionDrawer(BuildContext context) {
                                     color: Colors.green,
                                   ),
                                   title: Text(
-                                    session['hostName'] ??
+                                    session['name'] ??
                                         lang.getText("unknown"),
                                     style: const TextStyle(
                                       color: Colors.white,

@@ -13,6 +13,7 @@ import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 part "host_session_drawer.g.dart";
 
@@ -56,6 +57,26 @@ Widget hostSessionDrawer(BuildContext context) {
 
     isLoading.value = true;
     try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        CustomSnackbar.show(
+          context,
+          "A helymeghatározás szükséges a megosztáshoz!",
+          backgroundColor: Colors.red,
+        );
+        isLoading.value = false;
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('jwt_token');
 
@@ -68,8 +89,8 @@ Widget hostSessionDrawer(BuildContext context) {
         body: jsonEncode({
           "name": nameController.text.trim(),
           "isPublic": isPublic.value,
-          "latitude": 0.0,
-          "longitude": 0.0,
+          "latitude": position.latitude,
+          "longitude": position.longitude,
         }),
       );
 
