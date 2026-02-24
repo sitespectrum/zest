@@ -59,6 +59,7 @@ public class WorkoutSessionController : ControllerBase
         var newSession = new SharedWorkoutSession
         {
             SessionId = sessionId,
+            Name = request.Name,
             HostId = userId,
             Status = Status.Lobby,
             IsPublic = request.IsPublic,
@@ -137,6 +138,7 @@ public class WorkoutSessionController : ControllerBase
 
 public class CreateSessionRequest
 {
+    public string Name { get; set; } = string.Empty;
     public bool IsPublic { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
