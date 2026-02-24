@@ -11,7 +11,7 @@ using Zest.Api.Data;
 namespace server.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    [Migration("20260224103026_JamName")]
+    [Migration("20260224104508_JamName")]
     partial class JamName
     {
         /// <inheritdoc />
