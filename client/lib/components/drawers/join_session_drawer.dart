@@ -89,7 +89,6 @@ Widget joinSessionDrawer(BuildContext context) {
           "Sikeres csatlakozás!",
           backgroundColor: Colors.green,
         );
-        // későbbi navigáció
       } else {
         CustomSnackbar.show(
           context,
@@ -323,74 +322,82 @@ Widget joinSessionDrawer(BuildContext context) {
                             style: TextStyle(color: Colors.white54),
                           ),
                         )
-                      : ListView.builder(
-                          itemCount: nearbySessions.value.length,
-                          itemBuilder: (context, index) {
-                            final session = nearbySessions.value[index];
-                            return GestureDetector(
-                              onTap: () {
-                                controller.text = session['sessionId']
-                                    .toString()
-                                    .replaceFirst("ZJ-", "");
-                                tabController.animateTo(1);
-                              },
-                              child: Card(
-                                color: Colors.white.withOpacity(0.05),
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ListTile(
-                                  leading: const Icon(
-                                    Icons.fitness_center,
-                                    color: Colors.green,
+                      : RefreshIndicator(
+                          onRefresh: fetchNearbySessions,
+                          color: Colors.green,
+                          backgroundColor: const Color(0xFF272727),
+                          child: ListView.builder(
+                            itemCount: nearbySessions.value.length,
+                            itemBuilder: (context, index) {
+                              final session = nearbySessions.value[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  controller.text = session['sessionId']
+                                      .toString()
+                                      .replaceFirst("ZJ-", "");
+                                  tabController.animateTo(1);
+                                },
+                                child: Card(
+                                  color: Colors.white.withOpacity(0.05),
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 8,
                                   ),
-                                  title: Text(
-                                    session['name'] ?? lang.getText("unknown"),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: ListTile(
+                                    leading: const Icon(
+                                      Icons.fitness_center,
+                                      color: Colors.green,
+                                    ),
+                                    title: Text(
+                                      session['name'] ??
+                                          lang.getText("unknown"),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          "${session['distanceKm']} km",
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.circle,
+                                          size: 4,
+                                          color: Colors.white30,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.people_rounded,
+                                          size: 18,
+                                          color: Colors.white70,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "${session['participantCount']}",
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.white54,
+                                      size: 16,
                                     ),
                                   ),
-                                  subtitle: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        "${session['distanceKm']} km",
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.circle,
-                                        size: 4,
-                                        color: Colors.white30,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.people_rounded,
-                                        size: 18,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "${session['participantCount']}",
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  trailing: const Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: Colors.white54,
-                                    size: 16,
-                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
 
                   Padding(
