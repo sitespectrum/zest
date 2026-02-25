@@ -328,9 +328,14 @@ class _FriendsPageState extends State<FriendsPage>
           color: const Color.fromARGB(255, 45, 45, 45),
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: ListTile(
-            leading: const CircleAvatar(
+            leading: CircleAvatar(
               backgroundColor: Colors.green,
-              child: Icon(Icons.person, color: Colors.white),
+              backgroundImage: (friend['profilePicture'] != null && friend['profilePicture'].toString().isNotEmpty)
+                  ? MemoryImage(base64Decode(friend['profilePicture']))
+                  : null,
+              child: (friend['profilePicture'] == null || friend['profilePicture'].toString().isEmpty)
+                  ? const Icon(Icons.person, color: Colors.white)
+                  : null,
             ),
             title: Text(
               friend['userName'],
@@ -351,6 +356,7 @@ class _FriendsPageState extends State<FriendsPage>
                         builder: (context) => FriendProfilePage(
                           friendId: friend['id'],
                           friendName: friend['userName'],
+                          friendImage: friend['profilePicture'],
                         ),
                       ),
                     );
@@ -389,9 +395,21 @@ class _FriendsPageState extends State<FriendsPage>
           color: const Color.fromARGB(255, 45, 45, 45),
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.green,
+              backgroundImage: (req['profilePicture'] != null && req['profilePicture'].toString().isNotEmpty)
+                  ? MemoryImage(base64Decode(req['profilePicture']))
+                  : null,
+              child: (req['profilePicture'] == null || req['profilePicture'].toString().isEmpty)
+                  ? const Icon(Icons.person, color: Colors.white)
+                  : null,
+            ),
             title: Text(
               req['userName'],
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             subtitle: Text(
               lang.getText("friend_request_subtitle"),
@@ -455,9 +473,14 @@ class _FriendsPageState extends State<FriendsPage>
                   itemBuilder: (context, index) {
                     final user = searchResults[index];
                     return ListTile(
-                      leading: const Icon(
-                        Icons.person_add_alt,
-                        color: Colors.white,
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green,
+                        backgroundImage: (user['profilePicture'] != null && user['profilePicture'].toString().isNotEmpty)
+                            ? MemoryImage(base64Decode(user['profilePicture']))
+                            : null,
+                        child: (user['profilePicture'] == null || user['profilePicture'].toString().isEmpty)
+                            ? const Icon(Icons.person_add_alt, color: Colors.white) 
+                            : null,
                       ),
                       title: Text(
                         user['userName'],

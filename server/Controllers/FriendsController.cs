@@ -41,7 +41,7 @@ public class FriendsController : ControllerBase
 
         var users = await _context.Users
             .Where(u => u.UserName.Contains(query) && !excludedUserIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.UserName, u.Email })
+            .Select(u => new { u.Id, u.UserName, u.Email, u.ProfilePicture })
             .Take(10)
             .ToListAsync();
 
@@ -91,16 +91,16 @@ public class FriendsController : ControllerBase
             var notificationData = new
             {
                 app_id = actualAppId,
-                include_aliases = new 
-                { 
-                    external_id = new[] { targetUserId.ToString() } 
+                include_aliases = new
+                {
+                    external_id = new[] { targetUserId.ToString() }
                 },
 
                 target_channel = "push",
 
                 headings = new { en = "New Friend Request", hu = "Új barátkérelem" },
                 contents = new { en = $"{requesterName} sent you a friend request!", hu = $"{requesterName} barátnak jelölt téged!" },
-                
+
                 android_accent_color = "FF55AD4E",
                 small_icon = "ic_stat_onesignal_default"
             };
@@ -108,7 +108,7 @@ public class FriendsController : ControllerBase
             var request = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
             request.Headers.Add("Authorization", $"Basic {restApiKey}");
             request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            
+
             var jsonContent = JsonSerializer.Serialize(notificationData);
             request.Content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
@@ -141,7 +141,8 @@ public class FriendsController : ControllerBase
             {
                 RequestId = f.Id,
                 UserId = f.Requester.Id,
-                UserName = f.Requester.UserName
+                UserName = f.Requester.UserName,
+                ProfilePicture = f.Requester.ProfilePicture
             })
             .ToListAsync();
 
@@ -163,7 +164,8 @@ public class FriendsController : ControllerBase
         var result = friends.Select(f => new
         {
             Id = f.RequesterId == currentUserId ? f.Addressee.Id : f.Requester.Id,
-            UserName = f.RequesterId == currentUserId ? f.Addressee.UserName : f.Requester.UserName
+            UserName = f.RequesterId == currentUserId ? f.Addressee.UserName : f.Requester.UserName,
+            ProfilePicture = f.RequesterId == currentUserId ? f.Addressee.ProfilePicture : f.Requester.ProfilePicture
         });
 
         return Ok(result);
