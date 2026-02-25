@@ -243,6 +243,8 @@ class LanguageProvider with ChangeNotifier {
       'jam_name': 'Jam neve',
       'public' : 'Nyílvános',
       'private' : 'Privát',
+      'stop_session' : 'Esemény leállítása',
+      'leave_session' : 'Kilépés az eseményből',
     },
     'en': {
       'register_button_main': "Register",
@@ -445,6 +447,8 @@ class LanguageProvider with ChangeNotifier {
       'jam_name': 'Jam name',
       'public' : 'Public',
       'private' : 'Private',
+      'stop_session' : 'Stop session',
+      'leave_session' : 'Leave session',
     },
   };
 }
