@@ -14,9 +14,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:client/main.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import 'friends_page.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
-import '../utils/scroll_behavior.dart';
+import 'package:client/utils/scroll_behavior.dart';
 
 class ProfilePage extends StatefulWidget {
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
@@ -68,6 +69,45 @@ class _ProfilePageState extends State<ProfilePage>
       }
     } catch (e) {
       debugPrint("Hiba az adatok letöltésekor: $e");
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    
+    if (image == null) return;
+
+    try {
+      List<int> imageBytes = await image.readAsBytes();
+      String base64Image = base64Encode(imageBytes);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/auth/uploadImage"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(base64Image),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          if (userData != null) {
+            userData!['profilePicture'] = base64Image;
+          }
+        });
+        if (mounted) {
+          CustomSnackbar.show(context, "Profilkép frissítve!", backgroundColor: Colors.green);
+        }
+      } else {
+        debugPrint("Hiba a feltöltéskor: ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("Hiba: $e");
     }
   }
 
@@ -768,18 +808,86 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
                     ),
+                    if (userData != null) 
+                      Center(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: _pickAndUploadImage,
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: const Color.fromARGB(255, 85, 173, 78),
+                                        width: 3,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 5),
+                                        ),
+                                      ],
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 60,
+                                      backgroundColor: const Color(0xFF272727),
+                                      backgroundImage: (userData!['profilePicture'] != null && 
+                                                        userData!['profilePicture'].toString().isNotEmpty)
+                                          ? MemoryImage(base64Decode(userData!['profilePicture']))
+                                          : null,
+                                      child: (userData!['profilePicture'] == null || 
+                                              userData!['profilePicture'].toString().isEmpty)
+                                          ? const Icon(
+                                              Icons.person,
+                                              size: 60,
+                                              color: Colors.white54,
+                                            )
+                                          : null,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: const BoxDecoration(
+                                        color: Color.fromARGB(255, 85, 173, 78),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.camera_alt,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            Text(
+                              username ?? "Felhasználó",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
                     if (userData != null) ...[
                       CustomCard(
                         title: lang.getText("personal_details"),
                         iconData: Icons.person,
                         child: Column(
                           children: [
-                            _buildInfoRow(
-                              Icons.person_outline,
-                              lang.getText("user"),
-                              username ?? "",
-                            ),
-                            const Divider(color: Colors.white12),
                             _buildInfoRow(
                               Icons.height,
                               lang.getText("height"),

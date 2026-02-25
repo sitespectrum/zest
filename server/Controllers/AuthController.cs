@@ -82,7 +82,8 @@ public class AuthController : ControllerBase
             user.CalorieGoal,
             user.ProteinGoal,
             user.FatGoal,
-            user.CarbsGoal
+            user.CarbsGoal,
+            user.ProfilePicture
         });
     }
 
@@ -249,6 +250,26 @@ public class AuthController : ControllerBase
             token = newAccessToken,
             refreshToken = newRefreshToken
         });
+    }
+
+    [HttpPost("uploadImage")]
+    [Authorize]
+    public async Task<IActionResult> UploadImage([FromBody] string base64Image)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (userIdClaim == null) return Unauthorized("Nincs token.");
+
+        var userId = int.Parse(userIdClaim);
+
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null) return NotFound("Felhasználó nem található.");
+
+        user.ProfilePicture = base64Image;
+
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new { message = "Profilkép sikeresen frissítve!" });
     }
 
     private string GenerateRefreshToken()
