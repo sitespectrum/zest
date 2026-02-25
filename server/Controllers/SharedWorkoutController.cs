@@ -147,6 +147,27 @@ public class WorkoutSessionController : ControllerBase
         }
     }
 
+    [HttpDelete("{sessionId}")]
+    public async Task<IActionResult> DeleteSession(string sessionId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out int userId)) return Unauthorized("Érvénytelen felhasználó.");
+
+        var session = await _context.SharedWorkoutSessions
+            .Include(s => s.Participants)
+            .FirstOrDefaultAsync(s => s.SessionId == sessionId.ToUpper());
+
+        if (session == null) return NotFound("A szoba nem található.");
+        if (session.HostId != userId) return StatusCode(403, "Csak a létrehozó törölheti az edzést.");
+
+        _context.SessionParticipants.RemoveRange(session.Participants);
+        _context.SharedWorkoutSessions.Remove(session);
+        
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Edzés sikeresen leállítva és törölve." });
+    }
+
     private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {
         var R = 6371d;

@@ -51,7 +51,6 @@ Widget hostSessionDrawer(BuildContext context) {
       if (response.statusCode == 200) {
         participants.value = jsonDecode(response.body);
       } else {
-        // Ha hiba van a szerveren (500), azt kiírjuk piros sávban, hogy lásd mi a baj!
         if (context.mounted) {
           CustomSnackbar.show(
             context,
@@ -75,6 +74,54 @@ Widget hostSessionDrawer(BuildContext context) {
     }
     return () => timer?.cancel();
   }, [isSessionCreated.value, shareId.value]);
+
+  Future<void> stopSession() async {
+    if (shareId.value.isEmpty) return;
+
+    isLoading.value = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      final response = await http.delete(
+        Uri.parse("$apiUrl/api/WorkoutSession/${shareId.value}"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        if (isNfcActive.value) {
+          await NfcHce.removeApduResponse(0);
+        }
+
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            lang.getText("session_stopped"),
+            backgroundColor: Colors.green,
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            "Szerver hiba a törlésnél: ${response.body}",
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          "Hiba a leállításkor: $e",
+          backgroundColor: Colors.red,
+        );
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   useEffect(() {
     void listener() {
@@ -274,6 +321,9 @@ Widget hostSessionDrawer(BuildContext context) {
                                     spacing: 12,
                                     children: [
                                       Container(
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                            0.2,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF272727),
                                           borderRadius: BorderRadius.circular(
@@ -365,7 +415,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                       const Spacer(),
 
                                       CustomButton(
-                                        onPressed: () {},
+                                        onPressed: stopSession,
                                         variant:
                                             CustomButtonVariant.primaryWorkout,
                                         title: lang.getText("stop_session"),
