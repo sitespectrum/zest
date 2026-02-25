@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:client/constants.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:functional_widget_annotation/functional_widget_annotation.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -100,6 +103,142 @@ Widget joinSessionDrawer(BuildContext context) {
         "Hálózati hiba: $e",
         backgroundColor: Colors.red,
       );
+    }
+  }
+
+  Future<void> startQrScanning() async {
+    bool hasScanned = false;
+
+    final String? scannedCode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) {
+          return AiBarcodeScanner(
+            onDetect: (BarcodeCapture capture) {
+              if (hasScanned) return;
+
+              String scannedValue = capture.barcodes.first.rawValue ?? "";
+              if (scannedValue.isNotEmpty) {
+                hasScanned = true;
+                Navigator.of(context).pop(scannedValue);
+              }
+            },
+            controller: MobileScannerController(
+              detectionSpeed: DetectionSpeed.noDuplicates,
+            ),
+          );
+        },
+      ),
+    );
+
+    if (scannedCode != null && scannedCode.isNotEmpty && context.mounted) {
+      controller.text = scannedCode;
+      await joinSession(scannedCode);
+    }
+  }
+
+  Future<void> startNfcScanning() async {
+    try {
+      var availability = await FlutterNfcKit.nfcAvailability;
+      if (availability != NFCAvailability.available) {
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            lang.getText("nfc_not_supported"),
+            backgroundColor: Colors.red,
+          );
+        }
+        return;
+      }
+
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (c) => AlertDialog(
+            backgroundColor: Color.fromARGB(255, 30, 30, 30),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.nfc, size: 80, color: Colors.green),
+                SizedBox(height: 20),
+                Text(
+                  lang.getText("touch_the_other_phone"),
+                  style: TextStyle(color: Colors.white),
+                ),
+                SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: CustomButton(
+                    onPressed: () {
+                      FlutterBluePlus.stopScan();
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      lang.getText("close"),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      var tag = await FlutterNfcKit.poll(
+        timeout: const Duration(seconds: 15),
+        iosMultipleTagMessage: "Több NFC kártya észlelve.",
+        iosAlertMessage: "Érintsd a telefonod a másik készülékhez.",
+      );
+
+      String scannedCode = "";
+
+      if (tag.ndefAvailable == true) {
+        var records = await FlutterNfcKit.readNDEFRecords();
+        if (records.isNotEmpty) {
+          var payload = records.first.payload;
+          if (payload != null) {
+            scannedCode = utf8.decode(payload as List<int>);
+          }
+        }
+      } else {
+        String response =
+            await FlutterNfcKit.transceive("00A4040007F0394148148100")
+                as String;
+
+        List<int> bytes = [];
+        for (int i = 0; i < response.length; i += 2) {
+          bytes.add(int.parse(response.substring(i, i + 2), radix: 16));
+        }
+        scannedCode = utf8.decode(bytes).replaceAll(RegExp(r'\x00'), '');
+      }
+
+      await FlutterNfcKit.finish();
+
+      if (scannedCode.isNotEmpty && context.mounted) {
+        controller.text = scannedCode;
+        await joinSession(scannedCode);
+      } else if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          "Nem található adat az NFC jelben.",
+          backgroundColor: Colors.orange,
+        );
+      }
+    } catch (e) {
+      await FlutterNfcKit.finish(
+        iosErrorMessage: "Hiba történt az olvasás során.",
+      );
+      if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          "Hiba az NFC olvasásakor: $e",
+          backgroundColor: Colors.red,
+        );
+      }
     }
   }
 
@@ -207,7 +346,7 @@ Widget joinSessionDrawer(BuildContext context) {
                                     color: Colors.green,
                                   ),
                                   title: Text(
-                                    session['name'] ?? "Névtelen edzés",
+                                    session['name'] ?? lang.getText("unknown"),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -259,96 +398,80 @@ Widget joinSessionDrawer(BuildContext context) {
                     child: Column(
                       spacing: 24,
                       children: [
-                        Flex(
-                          direction: Axis.horizontal,
-                          spacing: 24,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              flex: 1,
                               child: AspectRatio(
                                 aspectRatio: 1,
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      50,
-                                      50,
-                                      146,
-                                      255,
-                                    ),
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: const Color.fromARGB(
-                                        150,
+                                  ),
+                                  child: IconButton(
+                                    style: IconButton.styleFrom(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      backgroundColor: const Color.fromARGB(
+                                        65,
                                         50,
-                                        146,
+                                        142,
                                         255,
                                       ),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(
-                                        Icons.nfc,
-                                        color: Colors.white,
-                                        size: 36,
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        "NFC",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                      side: const BorderSide(
+                                        color: Color.fromARGB(
+                                          100,
+                                          50,
+                                          142,
+                                          255,
                                         ),
                                       ),
-                                    ],
+                                    ),
+                                    onPressed: startNfcScanning,
+                                    icon: const Icon(Icons.contactless_rounded),
+                                    color: Colors.white70,
+                                    iconSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.25,
                                   ),
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 12),
                             Expanded(
-                              flex: 1,
                               child: AspectRatio(
                                 aspectRatio: 1,
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      50,
-                                      50,
-                                      146,
-                                      255,
-                                    ),
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: const Color.fromARGB(
-                                        180,
+                                  ),
+                                  child: IconButton(
+                                    style: IconButton.styleFrom(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      backgroundColor: const Color.fromARGB(
+                                        65,
                                         50,
-                                        146,
+                                        142,
                                         255,
                                       ),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(
-                                        Icons.qr_code,
-                                        color: Colors.white,
-                                        size: 36,
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        "QR",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                      side: const BorderSide(
+                                        color: Color.fromARGB(
+                                          100,
+                                          50,
+                                          142,
+                                          255,
                                         ),
                                       ),
-                                    ],
+                                    ),
+                                    onPressed: startQrScanning,
+                                    icon: const Icon(Icons.qr_code_rounded),
+                                    color: Colors.white70,
+                                    iconSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.25,
                                   ),
                                 ),
                               ),

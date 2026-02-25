@@ -117,6 +117,36 @@ public class WorkoutSessionController : ControllerBase
         return Ok(new { Message = "Sikeres csatlakozás!", SessionId = session.SessionId });
     }
 
+    [HttpGet("{sessionId}/participants")]
+    public async Task<IActionResult> GetParticipants(string sessionId)
+    {
+        try
+        {
+            var participants = await _context.SessionParticipants
+                .Include(p => p.User)
+                .Where(p => p.SessionId == sessionId.ToUpper())
+                .ToListAsync();
+
+            if (!participants.Any())
+            {
+                return Ok(new List<object>());
+            }
+
+            var result = participants.Select(p => new
+            {
+                userName = p.User != null ? p.User.UserName : "Ismeretlen",
+                role = p.Role.ToString(),
+                isReady = p.IsReady
+            });
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.InnerException != null ? ex.InnerException.Message : ex.Message);
+        }
+    }
+
     private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {
         var R = 6371d;
