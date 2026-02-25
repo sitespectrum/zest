@@ -54,6 +54,7 @@ Widget joinSessionDrawer(BuildContext context) {
 
       if (response.statusCode == 200) {
         nearbySessions.value = jsonDecode(response.body);
+        debugPrint("Szerver válasza: ${response.body}");
       }
     } catch (e) {
       debugPrint("Hiba a közeli edzések lekérésekor: $e");
@@ -206,8 +207,7 @@ Widget joinSessionDrawer(BuildContext context) {
                                     color: Colors.green,
                                   ),
                                   title: Text(
-                                    session['name'] ??
-                                        lang.getText("unknown"),
+                                    session['name'] ?? "Névtelen edzés",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
