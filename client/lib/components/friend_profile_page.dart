@@ -10,11 +10,13 @@ import 'package:client/providers/language_provider.dart';
 class FriendProfilePage extends StatefulWidget {
   final int friendId;
   final String friendName;
+  final String? friendImage;
 
   const FriendProfilePage({
     super.key,
     required this.friendId,
     required this.friendName,
+    this.friendImage,
   });
 
   @override
@@ -188,9 +190,24 @@ class _FriendProfilePageState extends State<FriendProfilePage>
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 30, 30, 30),
       appBar: AppBar(
-        title: Text(
-          widget.friendName,
-          style: const TextStyle(color: Colors.white),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.green,
+              backgroundImage: (widget.friendImage != null && widget.friendImage!.isNotEmpty)
+                  ? MemoryImage(base64Decode(widget.friendImage!))
+                  : null,
+              child: (widget.friendImage == null || widget.friendImage!.isEmpty)
+                  ? const Icon(Icons.person, size: 20, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              widget.friendName,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
         ),
         backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
