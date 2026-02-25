@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:nfc_host_card_emulation/nfc_host_card_emulation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:client/constants.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
@@ -28,7 +30,52 @@ Widget hostSessionDrawer(BuildContext context) {
   final isSessionCreated = useState<bool>(false);
   final isLoading = useState<bool>(false);
 
+  final isNfcActive = useState<bool>(false);
+
+  final isCreated = useState<bool>(false);
+
+  final participants = useState<List<dynamic>>([]);
+
   final tabController = useTabController(initialLength: 2);
+
+  Future<void> fetchParticipants() async {
+    if (shareId.value.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/WorkoutSession/${shareId.value}/participants"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        participants.value = jsonDecode(response.body);
+      } else {
+        // Ha hiba van a szerveren (500), azt kiírjuk piros sávban, hogy lásd mi a baj!
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            "Szerver hiba a lekérésnél: ${response.body}",
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Hiba a résztvevők lekérésekor: $e");
+    }
+  }
+
+  useEffect(() {
+    Timer? timer;
+    if (isSessionCreated.value && shareId.value.isNotEmpty) {
+      fetchParticipants();
+      timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        fetchParticipants();
+      });
+    }
+    return () => timer?.cancel();
+  }, [isSessionCreated.value, shareId.value]);
+
   useEffect(() {
     void listener() {
       if (tabController.index == 1 && !isSessionCreated.value) {
@@ -54,7 +101,7 @@ Widget hostSessionDrawer(BuildContext context) {
       );
       return;
     }
-
+    isCreated.value = true;
     isLoading.value = true;
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -99,8 +146,6 @@ Widget hostSessionDrawer(BuildContext context) {
         shareId.value = data['sessionId'];
         sessionController.text = shareId.value;
         isSessionCreated.value = true;
-
-        // Automatikus átváltás a QR kód / NFC fülre!
         tabController.animateTo(1);
       } else {
         throw Exception("Szerver hiba: ${response.statusCode}");
@@ -113,6 +158,45 @@ Widget hostSessionDrawer(BuildContext context) {
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> toggleNfc() async {
+    if (shareId.value.isEmpty) return;
+
+    if (isNfcActive.value) {
+      isNfcActive.value = false;
+      await NfcHce.removeApduResponse(0);
+      if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          lang.getText("nfc_stopped"),
+          backgroundColor: Colors.orange,
+        );
+      }
+    } else {
+      isNfcActive.value = true;
+      final nfcState = await NfcHce.checkDeviceNfcState();
+
+      if (nfcState == NfcState.enabled) {
+        await NfcHce.addApduResponse(0, utf8.encode(shareId.value));
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            lang.getText("nfc_started"),
+            backgroundColor: Colors.green,
+          );
+        }
+      } else {
+        isNfcActive.value = false;
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            lang.getText("nfc_not_supported"),
+            backgroundColor: Colors.red,
+          );
+        }
+      }
     }
   }
 
@@ -180,126 +264,254 @@ Widget hostSessionDrawer(BuildContext context) {
                         controller: tabController,
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 0,
-                              vertical: 5,
-                            ),
-                            child: Column(
-                              spacing: 12,
-                              children: [
-                                CustomTextField(
-                                  nameController,
-                                  lang.getText("jam_name"),
-                                  isCreateWorkout: true,
-                                ),
-                                Container(
-                                  height: 45,
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.6,
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                      50,
-                                      50,
-                                      146,
-                                      255,
-                                    ),
-                                    border: Border.all(
-                                      color: const Color.fromARGB(
-                                        100,
-                                        50,
-                                        146,
-                                        255,
-                                      ),
-                                      width: 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
+                          isCreated.value
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 0,
+                                    vertical: 5,
                                   ),
-                                  child: Row(
+                                  child: Column(
+                                    spacing: 12,
                                     children: [
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => isPublic.value = true,
-                                          behavior: HitTestBehavior.opaque,
-                                          child: AnimatedContainer(
-                                            duration: const Duration(
-                                              milliseconds: 200,
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF272727),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white24,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: participants.value.isEmpty
+                                            ? const Center(
+                                                child: Text(
+                                                  "Még senki sem csatlakozott...",
+                                                  style: TextStyle(
+                                                    color: Colors.white54,
+                                                  ),
+                                                ),
+                                              )
+                                            : RefreshIndicator(
+                                                onRefresh: fetchParticipants,
+                                                color: Colors.green,
+                                                backgroundColor: const Color(
+                                                  0xFF272727,
+                                                ),
+                                                child: ListView.builder(
+                                                  padding: const EdgeInsets.all(
+                                                    8,
+                                                  ),
+                                                  itemCount:
+                                                      participants.value.length,
+                                                  itemBuilder: (context, index) {
+                                                    final p = participants
+                                                        .value[index];
+                                                    final isHost =
+                                                        p['role'] == "Host" ||
+                                                        p['role'] == 0;
+
+                                                    return ListTile(
+                                                      dense: true,
+                                                      leading: Icon(
+                                                        isHost
+                                                            ? Icons.star
+                                                            : Icons.person,
+                                                        color: isHost
+                                                            ? Colors.amber
+                                                            : Colors.blueAccent,
+                                                      ),
+                                                      title: Text(
+                                                        p['userName'] ??
+                                                            'Ismeretlen',
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      subtitle: Text(
+                                                        isHost
+                                                            ? 'Host'
+                                                            : 'Vendég',
+                                                        style: const TextStyle(
+                                                          color: Colors.white54,
+                                                        ),
+                                                      ),
+                                                      trailing: isHost
+                                                          ? null
+                                                          : Icon(
+                                                              p['isReady'] ==
+                                                                      true
+                                                                  ? Icons
+                                                                        .check_circle
+                                                                  : Icons
+                                                                        .hourglass_empty,
+                                                              color:
+                                                                  p['isReady'] ==
+                                                                      true
+                                                                  ? Colors.green
+                                                                  : Colors
+                                                                        .orange,
+                                                              size: 20,
+                                                            ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                      ),
+
+                                      const Spacer(),
+
+                                      CustomButton(
+                                        onPressed: () {},
+                                        variant:
+                                            CustomButtonVariant.primaryWorkout,
+                                        title: lang.getText("stop_session"),
+                                        iconData: Icons.stop,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 0,
+                                    vertical: 5,
+                                  ),
+                                  child: Column(
+                                    spacing: 12,
+                                    children: [
+                                      CustomTextField(
+                                        nameController,
+                                        lang.getText("jam_name"),
+                                        isCreateWorkout: true,
+                                      ),
+                                      Container(
+                                        height: 45,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                            0.6,
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromARGB(
+                                            50,
+                                            50,
+                                            146,
+                                            255,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color.fromARGB(
+                                              100,
+                                              50,
+                                              146,
+                                              255,
                                             ),
-                                            margin: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: isPublic.value
-                                                  ? const Color.fromARGB(
-                                                      100,
-                                                      50,
-                                                      146,
-                                                      255,
-                                                    )
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              lang.getText("public"),
-                                              style: TextStyle(
-                                                color: isPublic.value
-                                                    ? Colors.white
-                                                    : Colors.grey,
-                                                fontWeight: FontWeight.bold,
+                                            width: 1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    isPublic.value = true,
+                                                behavior:
+                                                    HitTestBehavior.opaque,
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(
+                                                    milliseconds: 200,
+                                                  ),
+                                                  margin: const EdgeInsets.all(
+                                                    4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: isPublic.value
+                                                        ? const Color.fromARGB(
+                                                            100,
+                                                            50,
+                                                            146,
+                                                            255,
+                                                          )
+                                                        : Colors.transparent,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                  alignment: Alignment.center,
+                                                  child: Text(
+                                                    lang.getText("public"),
+                                                    style: TextStyle(
+                                                      color: isPublic.value
+                                                          ? Colors.white
+                                                          : Colors.grey,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            Expanded(
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    isPublic.value = false,
+                                                behavior:
+                                                    HitTestBehavior.opaque,
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(
+                                                    milliseconds: 200,
+                                                  ),
+                                                  margin: const EdgeInsets.all(
+                                                    4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: !isPublic.value
+                                                        ? const Color.fromARGB(
+                                                            100,
+                                                            50,
+                                                            146,
+                                                            255,
+                                                          )
+                                                        : Colors.transparent,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                  alignment: Alignment.center,
+                                                  child: Text(
+                                                    lang.getText("private"),
+                                                    style: TextStyle(
+                                                      color: !isPublic.value
+                                                          ? Colors.white
+                                                          : Colors.grey,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () => isPublic.value = false,
-                                          behavior: HitTestBehavior.opaque,
-                                          child: AnimatedContainer(
-                                            duration: const Duration(
-                                              milliseconds: 200,
-                                            ),
-                                            margin: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: !isPublic.value
-                                                  ? const Color.fromARGB(
-                                                      100,
-                                                      50,
-                                                      146,
-                                                      255,
-                                                    )
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              lang.getText("private"),
-                                              style: TextStyle(
-                                                color: !isPublic.value
-                                                    ? Colors.white
-                                                    : Colors.grey,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+
+                                      const Spacer(),
+
+                                      CustomButton(
+                                        onPressed: createSession,
+                                        variant:
+                                            CustomButtonVariant.primaryWorkout,
+                                        title: lang.getText("create"),
+                                        iconData: Icons.cast,
                                       ),
                                     ],
                                   ),
                                 ),
-
-                                const Spacer(),
-
-                                CustomButton(
-                                  onPressed: createSession,
-                                  variant: CustomButtonVariant.primaryWorkout,
-                                  title: lang.getText("create"),
-                                  iconData: Icons.cast,
-                                ),
-                              ],
-                            ),
-                          ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 5,
@@ -344,7 +556,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                                 ),
                                               ),
                                             ),
-                                            onPressed: () {},
+                                            onPressed: toggleNfc,
                                             icon: const Icon(
                                               Icons.contactless_rounded,
                                             ),
