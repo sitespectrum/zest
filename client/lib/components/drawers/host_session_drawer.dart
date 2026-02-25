@@ -414,12 +414,32 @@ Widget hostSessionDrawer(BuildContext context) {
 
                                       const Spacer(),
 
-                                      CustomButton(
-                                        onPressed: stopSession,
-                                        variant:
-                                            CustomButtonVariant.primaryWorkout,
-                                        title: lang.getText("stop_session"),
-                                        iconData: Icons.stop,
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: CustomButton(
+                                              onPressed: stopSession,
+                                              variant: CustomButtonVariant
+                                                  .primaryWorkout,
+                                              title: lang.getText(
+                                                "stop_session",
+                                              ),
+                                              iconData: Icons.stop,
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Expanded(
+                                            child: CustomButton(
+                                              onPressed: stopSession,
+                                              variant: CustomButtonVariant
+                                                  .primaryWorkout,
+                                              title: lang.getText("start"),
+                                              iconData: Icons.skip_next,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
