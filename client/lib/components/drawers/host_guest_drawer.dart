@@ -7,12 +7,48 @@ import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/components/drawers/join_session_drawer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part "host_guest_drawer.g.dart";
 
 @hwidget
 Widget hostGuestDrawer(BuildContext context) {
   final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+  final hasActiveSession = useState<bool>(false);
+  final isLoaded = useState<bool>(false);
+
+  useEffect(() {
+    Future<void> checkActiveSession() async {
+      final prefs = await SharedPreferences.getInstance();
+      final savedId = prefs.getString('active_session_id');
+
+      if (savedId != null && savedId.isNotEmpty) {
+        hasActiveSession.value = true;
+      }
+      isLoaded.value = true;
+    }
+
+    checkActiveSession();
+    return null;
+  }, []);
+
+  if (!isLoaded.value) {
+    return Container(
+      height: 200,
+      decoration: const BoxDecoration(
+        color: Color.fromARGB(255, 30, 30, 30),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      ),
+    );
+  }
+
+  if (hasActiveSession.value) {
+    return const HostSessionDrawer();
+  }
 
   return Container(
     decoration: const BoxDecoration(

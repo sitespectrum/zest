@@ -184,7 +184,7 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: const Color.fromRGBO(85, 173, 78, 0.5),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Color.fromRGBO(78, 156, 71, 255)),
+                  border: Border.all(color: Color(0xFF4E9C47)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
