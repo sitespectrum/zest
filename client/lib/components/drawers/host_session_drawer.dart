@@ -35,6 +35,7 @@ Widget hostSessionDrawer(BuildContext context) {
   final isHost = useState<bool>(true);
 
   final participants = useState<List<dynamic>>([]);
+  final lastResponse = useState<String>("");
   final tabController = useTabController(initialLength: 2);
 
   Future<void> fetchParticipants() async {
@@ -49,7 +50,10 @@ Widget hostSessionDrawer(BuildContext context) {
 
       if (response.statusCode == 200) {
         if (context.mounted) {
-          participants.value = jsonDecode(response.body);
+          if (lastResponse.value != response.body) {
+            lastResponse.value = response.body;
+            participants.value = jsonDecode(response.body);
+          }
         }
       } else {
         if (context.mounted) {
@@ -64,6 +68,17 @@ Widget hostSessionDrawer(BuildContext context) {
       debugPrint("Hiba a résztvevők lekérésekor: $e");
     }
   }
+
+  useEffect(() {
+    Timer? timer;
+    if (isSessionCreated.value && shareId.value.isNotEmpty) {
+      fetchParticipants();
+      timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        fetchParticipants();
+      });
+    }
+    return () => timer?.cancel();
+  }, [isSessionCreated.value, shareId.value]);
 
   Future<void> stopSession() async {
     if (shareId.value.isEmpty) return;
@@ -420,18 +435,33 @@ Widget hostSessionDrawer(BuildContext context) {
                                                             .trim()
                                                             .isNotEmpty;
 
-                                                    String cleanBase64 = "";
+                                                    Uint8List? imageBytes;
                                                     if (hasProfilePic) {
-                                                      cleanBase64 =
-                                                          profilePicData
-                                                              .toString();
-                                                      if (cleanBase64.contains(
-                                                        ',',
-                                                      )) {
+                                                      try {
+                                                        String cleanBase64 =
+                                                            profilePicData
+                                                                .toString();
+                                                        if (cleanBase64
+                                                            .contains(',')) {
+                                                          cleanBase64 =
+                                                              cleanBase64
+                                                                  .split(',')
+                                                                  .last;
+                                                        }
                                                         cleanBase64 =
                                                             cleanBase64
-                                                                .split(',')
-                                                                .last;
+                                                                .replaceAll(
+                                                                  RegExp(
+                                                                    r'\s+',
+                                                                  ),
+                                                                  '',
+                                                                );
+                                                        imageBytes =
+                                                            base64Decode(
+                                                              cleanBase64,
+                                                            );
+                                                      } catch (e) {
+                                                        imageBytes = null;
                                                       }
                                                     }
 
@@ -569,15 +599,15 @@ Widget hostSessionDrawer(BuildContext context) {
                                                             backgroundColor:
                                                                 Colors.green,
                                                             backgroundImage:
-                                                                hasProfilePic
+                                                                imageBytes !=
+                                                                    null
                                                                 ? MemoryImage(
-                                                                    base64Decode(
-                                                                      cleanBase64,
-                                                                    ),
+                                                                    imageBytes,
                                                                   )
                                                                 : null,
                                                             child:
-                                                                !hasProfilePic
+                                                                imageBytes ==
+                                                                    null
                                                                 ? Icon(
                                                                     isHost
                                                                         ? Icons
@@ -618,8 +648,6 @@ Widget hostSessionDrawer(BuildContext context) {
                                               ),
                                       ),
                                     ),
-
-                                    const Spacer(),
 
                                     Row(
                                       mainAxisAlignment:
