@@ -136,7 +136,8 @@ public class WorkoutSessionController : ControllerBase
             {
                 userName = p.User != null ? p.User.UserName : "Ismeretlen",
                 role = p.Role.ToString(),
-                isReady = p.IsReady
+                isReady = p.IsReady,
+                profilePicture = p.User?.ProfilePicture
             });
 
             return Ok(result);
@@ -162,7 +163,7 @@ public class WorkoutSessionController : ControllerBase
 
         _context.SessionParticipants.RemoveRange(session.Participants);
         _context.SharedWorkoutSessions.Remove(session);
-        
+
         await _context.SaveChangesAsync();
 
         return Ok(new { Message = "Edzés sikeresen leállítva és törölve." });
