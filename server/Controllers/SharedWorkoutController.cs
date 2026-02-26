@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Zest.Api.Data;
 using Zest.Api.Models;
+using ZestApi.Services;
 
 namespace ZestApi.Controllers;
 
@@ -11,10 +12,12 @@ namespace ZestApi.Controllers;
 public class WorkoutSessionController : ControllerBase
 {
     private readonly ZestDbContext _context;
+    private readonly WebSocketHandler _wsHandler;
 
-    public WorkoutSessionController(ZestDbContext context)
+    public WorkoutSessionController(ZestDbContext context, WebSocketHandler wsHandler)
     {
         _context = context;
+        _wsHandler = wsHandler;
     }
 
     [HttpGet("nearby")]
@@ -117,6 +120,30 @@ public class WorkoutSessionController : ControllerBase
         return Ok(new { Message = "Sikeres csatlakozás!", SessionId = session.SessionId });
     }
 
+    [HttpPost("leave")]
+    public async Task<IActionResult> LeaveSession([FromBody] LeaveSessionDto request)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userIdString == null) return Unauthorized();
+        var userId = int.Parse(userIdString);
+
+        var session = await _context.SharedWorkoutSessions
+            .Include(s => s.Participants)
+            .FirstOrDefaultAsync(s => s.SessionId == request.SessionId.ToUpper());
+
+        if (session == null) return NotFound("A szoba nem található.");
+
+        var participant = session.Participants.FirstOrDefault(p => p.UserId == userId);
+
+        if (participant != null)
+        {
+            _context.SessionParticipants.Remove(participant);
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new { Message = "Sikeresen kiléptél a szobából." });
+    }
+
     [HttpGet("{sessionId}/participants")]
     public async Task<IActionResult> GetParticipants(string sessionId)
     {
@@ -166,7 +193,31 @@ public class WorkoutSessionController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        var endMessage = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            type = "session-ended"
+        });
+
+        await _wsHandler.BroadcastToSession(sessionId.ToUpper(), endMessage);
+
         return Ok(new { Message = "Edzés sikeresen leállítva és törölve." });
+    }
+
+
+
+    [HttpGet("ws/{sessionId}")]
+    public async Task ConnectWebSocket(string sessionId)
+    {
+        if (HttpContext.WebSockets.IsWebSocketRequest)
+        {
+            using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+
+            await _wsHandler.HandleConnection(sessionId.ToUpper(), webSocket);
+        }
+        else
+        {
+            HttpContext.Response.StatusCode = 400;
+        }
     }
 
     private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
@@ -198,6 +249,11 @@ public class CreateSessionRequest
 }
 
 public class JoinSessionRequest
+{
+    public string SessionId { get; set; } = string.Empty;
+}
+
+public class LeaveSessionDto
 {
     public string SessionId { get; set; } = string.Empty;
 }
