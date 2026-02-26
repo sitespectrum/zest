@@ -83,12 +83,16 @@ Widget joinSessionDrawer(BuildContext context) {
       );
 
       if (response.statusCode == 200) {
-        Navigator.pop(context);
-        CustomSnackbar.show(
-          context,
-          "Sikeres csatlakozás!",
-          backgroundColor: Colors.green,
-        );
+        await prefs.setString('active_session_id', sessionId);
+        await prefs.setBool('is_host', false);
+        if (context.mounted) {
+          Navigator.pop(context);
+          CustomSnackbar.show(
+            context,
+            "Sikeres csatlakozás!",
+            backgroundColor: Colors.green,
+          );
+        }
       } else {
         CustomSnackbar.show(
           context,
