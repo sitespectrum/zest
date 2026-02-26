@@ -245,6 +245,7 @@ class LanguageProvider with ChangeNotifier {
       'private': 'Privát',
       'stop_session': 'Leállítás',
       'leave_session': 'Kilépés az eseményből',
+      'invite': 'Meghívás',
     },
     'en': {
       'register_button_main': "Register",
@@ -449,6 +450,7 @@ class LanguageProvider with ChangeNotifier {
       'private': 'Private',
       'stop_session': 'Stop session',
       'leave_session': 'Leave session',
+      'invite': 'Invite',
     },
   };
 }

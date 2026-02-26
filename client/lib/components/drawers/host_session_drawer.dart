@@ -33,6 +33,7 @@ Widget hostSessionDrawer(BuildContext context) {
   final isNfcActive = useState<bool>(false);
 
   final isCreated = useState<bool>(false);
+  final isHost = useState<bool>(true);
 
   final participants = useState<List<dynamic>>([]);
 
@@ -49,7 +50,9 @@ Widget hostSessionDrawer(BuildContext context) {
       );
 
       if (response.statusCode == 200) {
-        participants.value = jsonDecode(response.body);
+        if (context.mounted) {
+          participants.value = jsonDecode(response.body);
+        }
       } else {
         if (context.mounted) {
           CustomSnackbar.show(
@@ -127,6 +130,39 @@ Widget hostSessionDrawer(BuildContext context) {
     }
   }
 
+  Future<void> leaveSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getString('active_session_id');
+    final token = prefs.getString('jwt_token');
+
+    if (savedId != null && savedId.isNotEmpty && token != null) {
+      try {
+        await http.post(
+          Uri.parse('$apiUrl/api/WorkoutSession/leave'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'SessionId': savedId}),
+        );
+      } catch (e) {
+        debugPrint("Hiba a szerver felé történő kilépéskor: $e");
+      }
+    }
+
+    await prefs.remove('active_session_id');
+    await prefs.remove('is_host');
+
+    if (context.mounted) {
+      CustomSnackbar.show(
+        context,
+        "Kiléptél a sessionből.",
+        backgroundColor: Colors.blue,
+      );
+      Navigator.pop(context);
+    }
+  }
+
   useEffect(() {
     Future<void> loadSavedSession() async {
       final prefs = await SharedPreferences.getInstance();
@@ -137,6 +173,7 @@ Widget hostSessionDrawer(BuildContext context) {
         sessionController.text = savedId;
         isCreated.value = true;
         isSessionCreated.value = true;
+        isHost.value = prefs.getBool('is_host') ?? false;
         tabController.animateTo(0);
       }
     }
@@ -219,6 +256,7 @@ Widget hostSessionDrawer(BuildContext context) {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('active_session_id', shareId.value);
+        await prefs.setBool('is_host', true);
 
         isCreated.value = true;
         isSessionCreated.value = true;
@@ -451,25 +489,33 @@ Widget hostSessionDrawer(BuildContext context) {
                                         children: [
                                           Expanded(
                                             child: CustomButton(
-                                              onPressed: stopSession,
+                                              onPressed: isHost.value
+                                                  ? stopSession
+                                                  : leaveSession,
                                               variant: CustomButtonVariant
                                                   .primaryWorkout,
-                                              title: lang.getText(
-                                                "stop_session",
+                                              title: isHost.value
+                                                  ? lang.getText("stop_session")
+                                                  : "Kilépés",
+                                              iconData: isHost.value
+                                                  ? Icons.stop
+                                                  : Icons.exit_to_app,
+                                            ),
+                                          ),
+
+                                          if (isHost.value) ...[
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: CustomButton(
+                                                onPressed: () {},
+                                                variant: CustomButtonVariant
+                                                    .primaryWorkout,
+                                                title: lang.getText("invite"),
+                                                iconData:
+                                                    Icons.person_add_alt_1,
                                               ),
-                                              iconData: Icons.stop,
                                             ),
-                                          ),
-                                          SizedBox(width: 10),
-                                          Expanded(
-                                            child: CustomButton(
-                                              onPressed: () {},
-                                              variant: CustomButtonVariant
-                                                  .primaryWorkout,
-                                              title: lang.getText("start"),
-                                              iconData: Icons.skip_next,
-                                            ),
-                                          ),
+                                          ],
                                         ],
                                       ),
                                     ],

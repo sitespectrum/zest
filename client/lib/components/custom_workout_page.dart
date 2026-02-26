@@ -31,6 +31,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:client/components/ui/custom_card.dart';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
+import 'package:client/services/websocket_service.dart';
 
 class CWorkoutPage extends StatefulWidget {
   final DateTime selectedDay;
@@ -53,6 +54,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   String shareId = "";
   Color workoutColorCode = const Color.fromARGB(150, 50, 146, 255);
 
+  final WebSocketService _wsService = WebSocketService();
+  String? currentSessionId;
+  bool isOnlineMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +72,75 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
         });
       }
     });
+    _checkAndConnectSession();
+  }
+
+  Future<void> _checkAndConnectSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getString('active_session_id');
+
+    if (savedId != null && savedId.isNotEmpty) {
+      setState(() {
+        currentSessionId = savedId;
+        isOnlineMode = true;
+      });
+
+      _wsService.connect(savedId);
+
+      _wsService.onMessageReceived = (data) {
+        if (data['type'] == 'session-ended') {
+          SharedPreferences.getInstance().then((prefs) {
+            prefs.remove('active_session_id');
+            prefs.remove('is_host');
+
+            if (mounted) {
+              setState(() {
+                currentSessionId = null;
+                isOnlineMode = false;
+              });
+
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+
+              CustomSnackbar.show(
+                context,
+                "A Host befejezte a közös edzést.",
+                backgroundColor: Colors.orange,
+              );
+            }
+            _wsService.disconnect();
+          });
+        }
+
+        if (data['type'] == 'sync-exercises') {
+          try {
+            List<dynamic> rawData = data['data'];
+            if (mounted) {
+              setState(() {
+                userWorkouts = rawData
+                    .map((e) => ExerciseDto.fromJson(e))
+                    .toList();
+              });
+              print(
+                "✅ Lista sikeresen frissítve! Elemek száma: ${userWorkouts.length}",
+              );
+            }
+          } catch (e) {
+            print("🚨 Hiba a JSON feldolgozásakor (ExerciseDto.fromJson): $e");
+          }
+        }
+      };
+    } else {
+      if (isOnlineMode) {
+        setState(() {
+          isOnlineMode = false;
+          currentSessionId = null;
+          userWorkouts.clear();
+        });
+        _wsService.disconnect();
+      }
+    }
   }
 
   Future<List<CustomUserWorkoutDto>> fetchCustomUserWorkouts() async {
@@ -413,6 +487,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   @override
   void dispose() {
     FlutterBlePeripheral().stop();
+    _wsService.disconnect();
     super.dispose();
   }
 
@@ -654,6 +729,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                               backgroundColor: Colors.transparent,
                               builder: (context) => const HostGuestDrawer(),
                             );
+                            _checkAndConnectSession();
                           },
                           icon: const Icon(
                             Icons.link_rounded,
@@ -1268,10 +1344,23 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                             child: CustomButton(
                                               variant: CustomButtonVariant
                                                   .primaryDelete,
-                                              onPressed: () => {
-                                                setState(() {
-                                                  userWorkouts.removeAt(index);
-                                                }),
+                                              onPressed: () {
+                                                if (isOnlineMode &&
+                                                    currentSessionId != null) {
+                                                  _wsService.sendAction(
+                                                    'remove-exercise',
+                                                    {
+                                                      'exerciseId':
+                                                          exerciseItem.id,
+                                                    },
+                                                  );
+                                                } else {
+                                                  setState(() {
+                                                    userWorkouts.removeAt(
+                                                      index,
+                                                    );
+                                                  });
+                                                }
                                               },
                                               child: Text(
                                                 lang.getText("delete"),
@@ -1596,10 +1685,18 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         const AddWorkoutPage(),
                                   ),
                                 );
-                            if (result != null) {
-                              setState(() {
-                                userWorkouts.addAll(result);
-                              });
+                            if (result != null && result.isNotEmpty) {
+                              if (isOnlineMode && currentSessionId != null) {
+                                for (var ex in result) {
+                                  _wsService.sendAction('add-exercise', {
+                                    'exerciseId': ex.id,
+                                  });
+                                }
+                              } else {
+                                setState(() {
+                                  userWorkouts.addAll(result);
+                                });
+                              }
                             }
                           },
                         ),
@@ -1643,10 +1740,18 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                         const AddWorkoutPage(),
                                   ),
                                 );
-                            if (result != null) {
-                              setState(() {
-                                userWorkouts.addAll(result);
-                              });
+                            if (result != null && result.isNotEmpty) {
+                              if (isOnlineMode && currentSessionId != null) {
+                                for (var ex in result) {
+                                  _wsService.sendAction('add-exercise', {
+                                    'exerciseId': ex.id,
+                                  });
+                                }
+                              } else {
+                                setState(() {
+                                  userWorkouts.addAll(result);
+                                });
+                              }
                             }
                           },
                         ),
