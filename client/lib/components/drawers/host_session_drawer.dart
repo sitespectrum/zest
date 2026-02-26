@@ -31,12 +31,10 @@ Widget hostSessionDrawer(BuildContext context) {
   final isLoading = useState<bool>(false);
 
   final isNfcActive = useState<bool>(false);
-
   final isCreated = useState<bool>(false);
   final isHost = useState<bool>(true);
 
   final participants = useState<List<dynamic>>([]);
-
   final tabController = useTabController(initialLength: 2);
 
   Future<void> fetchParticipants() async {
@@ -67,17 +65,6 @@ Widget hostSessionDrawer(BuildContext context) {
     }
   }
 
-  useEffect(() {
-    Timer? timer;
-    if (isSessionCreated.value && shareId.value.isNotEmpty) {
-      fetchParticipants();
-      timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        fetchParticipants();
-      });
-    }
-    return () => timer?.cancel();
-  }, [isSessionCreated.value, shareId.value]);
-
   Future<void> stopSession() async {
     if (shareId.value.isEmpty) return;
 
@@ -97,24 +84,15 @@ Widget hostSessionDrawer(BuildContext context) {
         }
         isCreated.value = false;
 
-        final prefs = await SharedPreferences.getInstance();
         await prefs.remove('active_session_id');
 
         if (context.mounted) {
           CustomSnackbar.show(
             context,
-            lang.getText("session_stopped"),
+            lang.getText("session_stopped") ?? "Edzés leállítva",
             backgroundColor: Colors.green,
           );
           Navigator.pop(context);
-        }
-      } else {
-        if (context.mounted) {
-          CustomSnackbar.show(
-            context,
-            "Szerver hiba a törlésnél: ${response.body}",
-            backgroundColor: Colors.red,
-          );
         }
       }
     } catch (e) {
@@ -188,7 +166,7 @@ Widget hostSessionDrawer(BuildContext context) {
         tabController.index = 0;
         CustomSnackbar.show(
           context,
-          lang.getText("create_session_first"),
+          lang.getText("create_session_first") ?? "Előbb hozd létre!",
           backgroundColor: Colors.red,
         );
       }
@@ -202,12 +180,11 @@ Widget hostSessionDrawer(BuildContext context) {
     if (nameController.text.trim().isEmpty) {
       CustomSnackbar.show(
         context,
-        lang.getText("name_the_template"),
+        lang.getText("name_the_template") ?? "Adj meg egy nevet!",
         backgroundColor: Colors.red,
       );
       return;
     }
-    isCreated.value = true;
     isLoading.value = true;
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -254,15 +231,12 @@ Widget hostSessionDrawer(BuildContext context) {
         shareId.value = sid.toString().trim();
         sessionController.text = shareId.value;
 
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setString('active_session_id', shareId.value);
         await prefs.setBool('is_host', true);
 
         isCreated.value = true;
         isSessionCreated.value = true;
         tabController.animateTo(1);
-      } else {
-        throw Exception("Szerver hiba: ${response.statusCode}");
       }
     } catch (e) {
       CustomSnackbar.show(
@@ -284,7 +258,7 @@ Widget hostSessionDrawer(BuildContext context) {
       if (context.mounted) {
         CustomSnackbar.show(
           context,
-          lang.getText("nfc_stopped"),
+          lang.getText("nfc_stopped") ?? "NFC leállítva",
           backgroundColor: Colors.orange,
         );
       }
@@ -297,7 +271,7 @@ Widget hostSessionDrawer(BuildContext context) {
         if (context.mounted) {
           CustomSnackbar.show(
             context,
-            lang.getText("nfc_started"),
+            lang.getText("nfc_started") ?? "NFC elindítva",
             backgroundColor: Colors.green,
           );
         }
@@ -306,7 +280,7 @@ Widget hostSessionDrawer(BuildContext context) {
         if (context.mounted) {
           CustomSnackbar.show(
             context,
-            lang.getText("nfc_not_supported"),
+            lang.getText("nfc_not_supported") ?? "NFC nem elérhető",
             backgroundColor: Colors.red,
           );
         }
@@ -329,7 +303,7 @@ Widget hostSessionDrawer(BuildContext context) {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  lang.getText("share"),
+                  lang.getText("share") ?? "Megosztás",
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -366,8 +340,8 @@ Widget hostSessionDrawer(BuildContext context) {
                       unselectedLabelColor: Colors.grey,
                       indicatorColor: Colors.green,
                       tabs: [
-                        Tab(text: lang.getText("create")),
-                        Tab(text: lang.getText("share")),
+                        Tab(text: lang.getText("create") ?? "Létrehozás"),
+                        Tab(text: lang.getText("share") ?? "Megosztás"),
                       ],
                     ),
                   ),
@@ -381,18 +355,11 @@ Widget hostSessionDrawer(BuildContext context) {
                             : const NeverScrollableScrollPhysics(),
                         children: [
                           isCreated.value
-                              ? Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 0,
-                                    vertical: 5,
-                                  ),
-                                  child: Column(
-                                    spacing: 12,
-                                    children: [
-                                      Container(
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                            0.2,
+                              ? Column(
+                                  spacing: 12,
+                                  children: [
+                                    Expanded(
+                                      child: Container(
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF272727),
                                           borderRadius: BorderRadius.circular(
@@ -427,54 +394,224 @@ Widget hostSessionDrawer(BuildContext context) {
                                                   itemBuilder: (context, index) {
                                                     final p = participants
                                                         .value[index];
-                                                    final isHost =
-                                                        p['role'] == "Host" ||
-                                                        p['role'] == 0;
 
-                                                    return ListTile(
-                                                      dense: true,
-                                                      leading: Icon(
-                                                        isHost
-                                                            ? Icons.star
-                                                            : Icons.person,
-                                                        color: isHost
-                                                            ? Colors.amber
-                                                            : Colors.blueAccent,
-                                                      ),
-                                                      title: Text(
+                                                    final roleVal =
+                                                        p['role'] ?? p['Role'];
+                                                    final isHost =
+                                                        roleVal == "Host" ||
+                                                        roleVal == 0;
+                                                    final userName =
                                                         p['userName'] ??
-                                                            'Ismeretlen',
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      subtitle: Text(
-                                                        isHost
-                                                            ? 'Host'
-                                                            : 'Vendég',
-                                                        style: const TextStyle(
-                                                          color: Colors.white54,
-                                                        ),
-                                                      ),
-                                                      trailing: isHost
-                                                          ? null
-                                                          : Icon(
-                                                              p['isReady'] ==
-                                                                      true
-                                                                  ? Icons
-                                                                        .check_circle
-                                                                  : Icons
-                                                                        .hourglass_empty,
-                                                              color:
-                                                                  p['isReady'] ==
-                                                                      true
-                                                                  ? Colors.green
-                                                                  : Colors
-                                                                        .orange,
-                                                              size: 20,
+                                                        p['UserName'] ??
+                                                        'Ismeretlen';
+                                                    final isReady =
+                                                        p['isReady'] ??
+                                                        p['IsReady'] ??
+                                                        false;
+
+                                                    final profilePicData =
+                                                        p['profilePicture'] ??
+                                                        p['ProfilePicture'];
+                                                    final hasProfilePic =
+                                                        profilePicData !=
+                                                            null &&
+                                                        profilePicData
+                                                            .toString()
+                                                            .trim()
+                                                            .isNotEmpty;
+
+                                                    String cleanBase64 = "";
+                                                    if (hasProfilePic) {
+                                                      cleanBase64 =
+                                                          profilePicData
+                                                              .toString();
+                                                      if (cleanBase64.contains(
+                                                        ',',
+                                                      )) {
+                                                        cleanBase64 =
+                                                            cleanBase64
+                                                                .split(',')
+                                                                .last;
+                                                      }
+                                                    }
+
+                                                    var tapPosition =
+                                                        Offset.zero;
+
+                                                    return GestureDetector(
+                                                      onTapDown: (details) =>
+                                                          tapPosition = details
+                                                              .globalPosition,
+                                                      onTap: () async {
+                                                        if (isHost) return;
+                                                        final selectedValue = await showMenu<String>(
+                                                          context: context,
+                                                          color: const Color(
+                                                            0xFF333333,
+                                                          ),
+                                                          elevation: 8,
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  16,
+                                                                ),
+                                                          ),
+                                                          position:
+                                                              RelativeRect.fromLTRB(
+                                                                tapPosition.dx,
+                                                                tapPosition.dy,
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.width -
+                                                                    tapPosition
+                                                                        .dx,
+                                                                MediaQuery.of(
+                                                                      context,
+                                                                    ).size.height -
+                                                                    tapPosition
+                                                                        .dy,
+                                                              ),
+                                                          items: [
+                                                            PopupMenuItem(
+                                                              value: 'profile',
+                                                              child: Row(
+                                                                children: [
+                                                                  const Icon(
+                                                                    Icons
+                                                                        .person,
+                                                                    color: Colors
+                                                                        .blueAccent,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 12,
+                                                                  ),
+                                                                  Text(
+                                                                    lang.getText(
+                                                                          "view_profile",
+                                                                        ) ??
+                                                                        "Profil",
+                                                                    style: const TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
                                                             ),
+                                                            PopupMenuItem(
+                                                              value: 'kick',
+                                                              child: Row(
+                                                                children: [
+                                                                  const Icon(
+                                                                    Icons
+                                                                        .person_remove,
+                                                                    color: Colors
+                                                                        .redAccent,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 12,
+                                                                  ),
+                                                                  Text(
+                                                                    lang.getText(
+                                                                          "kick_user",
+                                                                        ) ??
+                                                                        "Kirúgás",
+                                                                    style: const TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                        if (selectedValue ==
+                                                            'profile') {
+                                                          CustomSnackbar.show(
+                                                            context,
+                                                            "$userName profilja",
+                                                            backgroundColor:
+                                                                Colors.blue,
+                                                          );
+                                                        }
+                                                        if (selectedValue ==
+                                                            'kick') {
+                                                          CustomSnackbar.show(
+                                                            context,
+                                                            "$userName kirúgva!",
+                                                            backgroundColor:
+                                                                Colors.red,
+                                                          );
+                                                        }
+                                                      },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              const Color.fromARGB(
+                                                                255,
+                                                                55,
+                                                                55,
+                                                                55,
+                                                              ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                20,
+                                                              ),
+                                                        ),
+                                                        margin:
+                                                            const EdgeInsets.symmetric(
+                                                              vertical: 5,
+                                                            ),
+                                                        child: ListTile(
+                                                          dense: true,
+                                                          leading: CircleAvatar(
+                                                            backgroundColor:
+                                                                Colors.green,
+                                                            backgroundImage:
+                                                                hasProfilePic
+                                                                ? MemoryImage(
+                                                                    base64Decode(
+                                                                      cleanBase64,
+                                                                    ),
+                                                                  )
+                                                                : null,
+                                                            child:
+                                                                !hasProfilePic
+                                                                ? Icon(
+                                                                    isHost
+                                                                        ? Icons
+                                                                              .star
+                                                                        : Icons
+                                                                              .person,
+                                                                    color: Colors
+                                                                        .white,
+                                                                  )
+                                                                : null,
+                                                          ),
+                                                          title: Text(
+                                                            userName,
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                          ),
+                                                          subtitle: Text(
+                                                            isHost
+                                                                ? 'Host'
+                                                                : 'Vendég',
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white54,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ),
                                                     );
                                                   },
                                                 ),
@@ -521,325 +658,300 @@ Widget hostSessionDrawer(BuildContext context) {
                                     ],
                                   ),
                                 )
-                              : Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 0,
-                                    vertical: 5,
-                                  ),
-                                  child: Column(
-                                    spacing: 12,
-                                    children: [
-                                      CustomTextField(
-                                        nameController,
-                                        lang.getText("jam_name"),
-                                        isCreateWorkout: true,
-                                      ),
-                                      Container(
-                                        height: 45,
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                            0.6,
-                                        decoration: BoxDecoration(
+                              : Column(
+                                  spacing: 12,
+                                  children: [
+                                    CustomTextField(
+                                      nameController,
+                                      lang.getText("jam_name") ?? "Név",
+                                      isCreateWorkout: true,
+                                    ),
+                                    Container(
+                                      height: 45,
+                                      width:
+                                          MediaQuery.of(context).size.width *
+                                          0.6,
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromARGB(
+                                          50,
+                                          50,
+                                          146,
+                                          255,
+                                        ),
+                                        border: Border.all(
                                           color: const Color.fromARGB(
-                                            50,
+                                            100,
                                             50,
                                             146,
                                             255,
                                           ),
-                                          border: Border.all(
-                                            color: const Color.fromARGB(
-                                              100,
-                                              50,
-                                              146,
-                                              255,
-                                            ),
-                                            width: 1,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
+                                          width: 1,
                                         ),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () =>
-                                                    isPublic.value = true,
-                                                behavior:
-                                                    HitTestBehavior.opaque,
-                                                child: AnimatedContainer(
-                                                  duration: const Duration(
-                                                    milliseconds: 200,
-                                                  ),
-                                                  margin: const EdgeInsets.all(
-                                                    4,
-                                                  ),
-                                                  decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: GestureDetector(
+                                              onTap: () =>
+                                                  isPublic.value = true,
+                                              behavior: HitTestBehavior.opaque,
+                                              child: AnimatedContainer(
+                                                duration: const Duration(
+                                                  milliseconds: 200,
+                                                ),
+                                                margin: const EdgeInsets.all(4),
+                                                decoration: BoxDecoration(
+                                                  color: isPublic.value
+                                                      ? const Color.fromARGB(
+                                                          100,
+                                                          50,
+                                                          146,
+                                                          255,
+                                                        )
+                                                      : Colors.transparent,
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  lang.getText("public") ??
+                                                      "Public",
+                                                  style: TextStyle(
                                                     color: isPublic.value
-                                                        ? const Color.fromARGB(
-                                                            100,
-                                                            50,
-                                                            146,
-                                                            255,
-                                                          )
-                                                        : Colors.transparent,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          16,
-                                                        ),
-                                                  ),
-                                                  alignment: Alignment.center,
-                                                  child: Text(
-                                                    lang.getText("public"),
-                                                    style: TextStyle(
-                                                      color: isPublic.value
-                                                          ? Colors.white
-                                                          : Colors.grey,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
+                                                        ? Colors.white
+                                                        : Colors.grey,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () =>
-                                                    isPublic.value = false,
-                                                behavior:
-                                                    HitTestBehavior.opaque,
-                                                child: AnimatedContainer(
-                                                  duration: const Duration(
-                                                    milliseconds: 200,
-                                                  ),
-                                                  margin: const EdgeInsets.all(
-                                                    4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: !isPublic.value
-                                                        ? const Color.fromARGB(
-                                                            100,
-                                                            50,
-                                                            146,
-                                                            255,
-                                                          )
-                                                        : Colors.transparent,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          16,
-                                                        ),
-                                                  ),
-                                                  alignment: Alignment.center,
-                                                  child: Text(
-                                                    lang.getText("private"),
-                                                    style: TextStyle(
-                                                      color: !isPublic.value
-                                                          ? Colors.white
-                                                          : Colors.grey,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      const Spacer(),
-
-                                      CustomButton(
-                                        onPressed: createSession,
-                                        variant:
-                                            CustomButtonVariant.primaryWorkout,
-                                        title: lang.getText("create"),
-                                        iconData: Icons.cast,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 5,
-                            ),
-                            child: Column(
-                              spacing: 24,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: AspectRatio(
-                                        aspectRatio: 1,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              16,
                                             ),
                                           ),
-                                          child: IconButton(
-                                            style: IconButton.styleFrom(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
-                                              backgroundColor:
-                                                  const Color.fromARGB(
-                                                    65,
-                                                    50,
-                                                    142,
-                                                    255,
+                                          Expanded(
+                                            child: GestureDetector(
+                                              onTap: () =>
+                                                  isPublic.value = false,
+                                              behavior: HitTestBehavior.opaque,
+                                              child: AnimatedContainer(
+                                                duration: const Duration(
+                                                  milliseconds: 200,
+                                                ),
+                                                margin: const EdgeInsets.all(4),
+                                                decoration: BoxDecoration(
+                                                  color: !isPublic.value
+                                                      ? const Color.fromARGB(
+                                                          100,
+                                                          50,
+                                                          146,
+                                                          255,
+                                                        )
+                                                      : Colors.transparent,
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  lang.getText("private") ??
+                                                      "Private",
+                                                  style: TextStyle(
+                                                    color: !isPublic.value
+                                                        ? Colors.white
+                                                        : Colors.grey,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
-                                              side: const BorderSide(
-                                                color: Color.fromARGB(
-                                                  100,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    CustomButton(
+                                      onPressed: createSession,
+                                      variant:
+                                          CustomButtonVariant.primaryWorkout,
+                                      title:
+                                          lang.getText("create") ??
+                                          "Létrehozás",
+                                      iconData: Icons.cast,
+                                    ),
+                                  ],
+                                ),
+                          Column(
+                            spacing: 24,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: AspectRatio(
+                                      aspectRatio: 1,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: IconButton(
+                                          style: IconButton.styleFrom(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                  65,
                                                   50,
                                                   142,
                                                   255,
                                                 ),
+                                            side: const BorderSide(
+                                              color: Color.fromARGB(
+                                                100,
+                                                50,
+                                                142,
+                                                255,
                                               ),
                                             ),
-                                            onPressed: toggleNfc,
-                                            icon: const Icon(
-                                              Icons.contactless_rounded,
-                                            ),
-                                            color: Colors.white70,
-                                            iconSize:
-                                                MediaQuery.of(
-                                                  context,
-                                                ).size.width *
-                                                0.25,
                                           ),
+                                          onPressed: toggleNfc,
+                                          icon: const Icon(
+                                            Icons.contactless_rounded,
+                                          ),
+                                          color: Colors.white70,
+                                          iconSize:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.width *
+                                              0.25,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: AspectRatio(
-                                        aspectRatio: 1,
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withAlpha(25),
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.white.withAlpha(50),
-                                            ),
-                                          ),
-                                          child: shareId.value.isNotEmpty
-                                              ? QrImageView(
-                                                  data: shareId.value,
-                                                  version: QrVersions.auto,
-                                                  dataModuleStyle:
-                                                      const QrDataModuleStyle(
-                                                        color: Colors.white,
-                                                        dataModuleShape:
-                                                            QrDataModuleShape
-                                                                .square,
-                                                      ),
-                                                  eyeStyle: const QrEyeStyle(
-                                                    color: Colors.white,
-                                                    eyeShape: QrEyeShape.square,
-                                                  ),
-                                                )
-                                              : Column(
-                                                  spacing: 12,
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(
-                                                      Icons.qr_code,
-                                                      size: 64,
-                                                      color: Colors.white38,
-                                                    ),
-                                                    Text(
-                                                      lang.getText(
-                                                        "no_qr_code_yet",
-                                                      ),
-                                                      style: const TextStyle(
-                                                        color: Colors.white38,
-                                                        fontSize: 14,
-                                                      ),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                  ],
-                                                ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                TextField(
-                                  controller: sessionController,
-                                  readOnly: true,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    letterSpacing: 4.0,
                                   ),
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: const Color(0xFF272727),
-                                    labelText: "Session ID",
-                                    labelStyle: const TextStyle(
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: AspectRatio(
+                                      aspectRatio: 1,
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withAlpha(25),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withAlpha(50),
+                                          ),
+                                        ),
+                                        child: shareId.value.isNotEmpty
+                                            ? QrImageView(
+                                                data: shareId.value,
+                                                version: QrVersions.auto,
+                                                dataModuleStyle:
+                                                    const QrDataModuleStyle(
+                                                      color: Colors.white,
+                                                      dataModuleShape:
+                                                          QrDataModuleShape
+                                                              .square,
+                                                    ),
+                                                eyeStyle: const QrEyeStyle(
+                                                  color: Colors.white,
+                                                  eyeShape: QrEyeShape.square,
+                                                ),
+                                              )
+                                            : Column(
+                                                spacing: 12,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.qr_code,
+                                                    size: 64,
+                                                    color: Colors.white38,
+                                                  ),
+                                                  Text(
+                                                    lang.getText(
+                                                          "no_qr_code_yet",
+                                                        ) ??
+                                                        "Nincs kód",
+                                                    style: const TextStyle(
+                                                      color: Colors.white38,
+                                                      fontSize: 14,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ],
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              TextField(
+                                controller: sessionController,
+                                readOnly: true,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  letterSpacing: 4.0,
+                                ),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFF272727),
+                                  labelText: "Session ID",
+                                  labelStyle: const TextStyle(
+                                    color: Colors.white54,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Colors.white24,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Colors.white24,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Colors.white24,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(
+                                      Icons.copy,
                                       color: Colors.white54,
                                     ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: const BorderSide(
-                                        color: Colors.white24,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: const Icon(
-                                        Icons.copy,
-                                        color: Colors.white54,
-                                      ),
-                                      onPressed: () async {
-                                        await Clipboard.setData(
-                                          ClipboardData(
-                                            text: sessionController.text,
-                                          ),
+                                    onPressed: () async {
+                                      await Clipboard.setData(
+                                        ClipboardData(
+                                          text: sessionController.text,
+                                        ),
+                                      );
+                                      if (context.mounted) {
+                                        CustomSnackbar.show(
+                                          context,
+                                          lang.getText("copied_to_clipboard") ??
+                                              "Másolva!",
+                                          backgroundColor: Colors.green,
                                         );
-
-                                        if (context.mounted) {
-                                          CustomSnackbar.show(
-                                            context,
-                                            lang.getText("copied_to_clipboard"),
-                                            backgroundColor: Colors.green,
-                                          );
-                                        }
-                                      },
-                                    ),
+                                      }
+                                    },
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

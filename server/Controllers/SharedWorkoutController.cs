@@ -163,7 +163,8 @@ public class WorkoutSessionController : ControllerBase
             {
                 userName = p.User != null ? p.User.UserName : "Ismeretlen",
                 role = p.Role.ToString(),
-                isReady = p.IsReady
+                isReady = p.IsReady,
+                profilePicture = p.User?.ProfilePicture
             });
 
             return Ok(result);
