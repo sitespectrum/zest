@@ -1,4 +1,5 @@
 using Zest.Api.Data;
+using ZestApi.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -42,6 +43,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddHttpClient<IMealService, MealService>();
 
+builder.Services.AddSingleton<WebSocketHandler>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -60,5 +63,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.UseWebSockets();
 
 app.Run();
