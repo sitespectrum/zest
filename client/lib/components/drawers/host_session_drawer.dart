@@ -617,46 +617,45 @@ Widget hostSessionDrawer(BuildContext context) {
                                                 ),
                                               ),
                                       ),
+                                    ),
 
-                                      const Spacer(),
+                                    const Spacer(),
 
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: CustomButton(
+                                            onPressed: isHost.value
+                                                ? stopSession
+                                                : leaveSession,
+                                            variant: CustomButtonVariant
+                                                .primaryWorkout,
+                                            title: isHost.value
+                                                ? lang.getText("stop_session")
+                                                : "Kilépés",
+                                            iconData: isHost.value
+                                                ? Icons.stop
+                                                : Icons.exit_to_app,
+                                          ),
+                                        ),
+
+                                        if (isHost.value) ...[
+                                          const SizedBox(width: 10),
                                           Expanded(
                                             child: CustomButton(
-                                              onPressed: isHost.value
-                                                  ? stopSession
-                                                  : leaveSession,
+                                              onPressed: () {},
                                               variant: CustomButtonVariant
                                                   .primaryWorkout,
-                                              title: isHost.value
-                                                  ? lang.getText("stop_session")
-                                                  : "Kilépés",
-                                              iconData: isHost.value
-                                                  ? Icons.stop
-                                                  : Icons.exit_to_app,
+                                              title: lang.getText("invite"),
+                                              iconData: Icons.person_add_alt_1,
                                             ),
                                           ),
-
-                                          if (isHost.value) ...[
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: CustomButton(
-                                                onPressed: () {},
-                                                variant: CustomButtonVariant
-                                                    .primaryWorkout,
-                                                title: lang.getText("invite"),
-                                                iconData:
-                                                    Icons.person_add_alt_1,
-                                              ),
-                                            ),
-                                          ],
                                         ],
-                                      ),
-                                    ],
-                                  ),
+                                      ],
+                                    ),
+                                  ],
                                 )
                               : Column(
                                   spacing: 12,
