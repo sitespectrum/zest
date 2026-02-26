@@ -92,6 +92,10 @@ Widget hostSessionDrawer(BuildContext context) {
         if (isNfcActive.value) {
           await NfcHce.removeApduResponse(0);
         }
+        isCreated.value = false;
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('active_session_id');
 
         if (context.mounted) {
           CustomSnackbar.show(
@@ -122,6 +126,24 @@ Widget hostSessionDrawer(BuildContext context) {
       isLoading.value = false;
     }
   }
+
+  useEffect(() {
+    Future<void> loadSavedSession() async {
+      final prefs = await SharedPreferences.getInstance();
+      final savedId = prefs.getString('active_session_id');
+
+      if (savedId != null && savedId.isNotEmpty) {
+        shareId.value = savedId;
+        sessionController.text = savedId;
+        isCreated.value = true;
+        isSessionCreated.value = true;
+        tabController.animateTo(0);
+      }
+    }
+
+    loadSavedSession();
+    return null;
+  }, []);
 
   useEffect(() {
     void listener() {
@@ -190,8 +212,15 @@ Widget hostSessionDrawer(BuildContext context) {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        shareId.value = data['sessionId'];
+
+        final sid = data['sessionId'] ?? data['SessionId'] ?? "";
+        shareId.value = sid.toString().trim();
         sessionController.text = shareId.value;
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('active_session_id', shareId.value);
+
+        isCreated.value = true;
         isSessionCreated.value = true;
         tabController.animateTo(1);
       } else {
@@ -309,7 +338,9 @@ Widget hostSessionDrawer(BuildContext context) {
                       padding: const EdgeInsets.only(top: 24),
                       child: TabBarView(
                         controller: tabController,
-                        physics: const NeverScrollableScrollPhysics(),
+                        physics: isSessionCreated.value
+                            ? const AlwaysScrollableScrollPhysics()
+                            : const NeverScrollableScrollPhysics(),
                         children: [
                           isCreated.value
                               ? Padding(
@@ -432,7 +463,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                           SizedBox(width: 10),
                                           Expanded(
                                             child: CustomButton(
-                                              onPressed: stopSession,
+                                              onPressed: () {},
                                               variant: CustomButtonVariant
                                                   .primaryWorkout,
                                               title: lang.getText("start"),
