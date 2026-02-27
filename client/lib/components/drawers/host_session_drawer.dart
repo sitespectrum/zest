@@ -36,6 +36,7 @@ Widget hostSessionDrawer(BuildContext context) {
 
   final participants = useState<List<dynamic>>([]);
   final lastResponse = useState<String>("");
+  final myUserName = useState<String>("");
   final tabController = useTabController(initialLength: 2);
 
   Future<void> fetchParticipants() async {
@@ -59,7 +60,7 @@ Widget hostSessionDrawer(BuildContext context) {
         if (context.mounted) {
           CustomSnackbar.show(
             context,
-            "Szerver hiba a lekérésnél: ${response.body}",
+            "${lang.getText("error")} ${response.body}",
             backgroundColor: Colors.red,
           );
         }
@@ -104,7 +105,7 @@ Widget hostSessionDrawer(BuildContext context) {
         if (context.mounted) {
           CustomSnackbar.show(
             context,
-            lang.getText("session_stopped") ?? "Edzés leállítva",
+            lang.getText("session_stopped"),
             backgroundColor: Colors.green,
           );
           Navigator.pop(context);
@@ -114,7 +115,7 @@ Widget hostSessionDrawer(BuildContext context) {
       if (context.mounted) {
         CustomSnackbar.show(
           context,
-          "Hiba a leállításkor: $e",
+          "${lang.getText("error")} $e",
           backgroundColor: Colors.red,
         );
       }
@@ -149,7 +150,7 @@ Widget hostSessionDrawer(BuildContext context) {
     if (context.mounted) {
       CustomSnackbar.show(
         context,
-        "Kiléptél a sessionből.",
+        lang.getText("you_left_the_session"),
         backgroundColor: Colors.blue,
       );
       Navigator.pop(context);
@@ -159,6 +160,27 @@ Widget hostSessionDrawer(BuildContext context) {
   useEffect(() {
     Future<void> loadSavedSession() async {
       final prefs = await SharedPreferences.getInstance();
+
+      final token = prefs.getString('jwt_token');
+      if (token != null && token.isNotEmpty) {
+        try {
+          final parts = token.split('.');
+          if (parts.length >= 2) {
+            String normalized = base64Url.normalize(parts[1]);
+            final payloadStr = utf8.decode(base64Url.decode(normalized));
+            final payload = jsonDecode(payloadStr);
+            myUserName.value =
+                payload['unique_name'] ??
+                payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ??
+                payload['name'] ??
+                payload['sub'] ??
+                '';
+          }
+        } catch (e) {
+          debugPrint("Token dekódolási hiba: $e");
+        }
+      }
+
       final savedId = prefs.getString('active_session_id');
 
       if (savedId != null && savedId.isNotEmpty) {
@@ -181,7 +203,7 @@ Widget hostSessionDrawer(BuildContext context) {
         tabController.index = 0;
         CustomSnackbar.show(
           context,
-          lang.getText("create_session_first") ?? "Előbb hozd létre!",
+          lang.getText("create_session_first"),
           backgroundColor: Colors.red,
         );
       }
@@ -191,11 +213,54 @@ Widget hostSessionDrawer(BuildContext context) {
     return () => tabController.removeListener(listener);
   }, [isSessionCreated.value]);
 
+  Future<void> kickUser(int targetUserId, String targetUserName) async {
+    if (shareId.value.isEmpty) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      final response = await http.delete(
+        Uri.parse(
+          "$apiUrl/api/WorkoutSession/${shareId.value}/kick/$targetUserId",
+        ),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            "$targetUserName kirúgva!",
+            backgroundColor: Colors.green,
+          );
+          fetchParticipants();
+        }
+      } else {
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            "Hiba a kirúgáskor: ${response.body}",
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          "${lang.getText("error")} $e",
+          backgroundColor: Colors.red,
+        );
+      }
+    }
+  }
+
   Future<void> createSession() async {
     if (nameController.text.trim().isEmpty) {
       CustomSnackbar.show(
         context,
-        lang.getText("name_the_template") ?? "Adj meg egy nevet!",
+        lang.getText("name_the_template"),
         backgroundColor: Colors.red,
       );
       return;
@@ -211,7 +276,7 @@ Widget hostSessionDrawer(BuildContext context) {
           permission == LocationPermission.deniedForever) {
         CustomSnackbar.show(
           context,
-          "A helymeghatározás szükséges a megosztáshoz!",
+          lang.getText("location_needed"),
           backgroundColor: Colors.red,
         );
         isLoading.value = false;
@@ -256,7 +321,7 @@ Widget hostSessionDrawer(BuildContext context) {
     } catch (e) {
       CustomSnackbar.show(
         context,
-        "Hiba a létrehozáskor: $e",
+        "${lang.getText("error")} $e",
         backgroundColor: Colors.red,
       );
     } finally {
@@ -273,33 +338,13 @@ Widget hostSessionDrawer(BuildContext context) {
       if (context.mounted) {
         CustomSnackbar.show(
           context,
-          lang.getText("nfc_stopped") ?? "NFC leállítva",
+          lang.getText("nfc_stopped"),
           backgroundColor: Colors.orange,
         );
       }
     } else {
       isNfcActive.value = true;
       final nfcState = await NfcHce.checkDeviceNfcState();
-
-      if (nfcState == NfcState.enabled) {
-        await NfcHce.addApduResponse(0, utf8.encode(shareId.value));
-        if (context.mounted) {
-          CustomSnackbar.show(
-            context,
-            lang.getText("nfc_started") ?? "NFC elindítva",
-            backgroundColor: Colors.green,
-          );
-        }
-      } else {
-        isNfcActive.value = false;
-        if (context.mounted) {
-          CustomSnackbar.show(
-            context,
-            lang.getText("nfc_not_supported") ?? "NFC nem elérhető",
-            backgroundColor: Colors.red,
-          );
-        }
-      }
     }
   }
 
@@ -318,7 +363,7 @@ Widget hostSessionDrawer(BuildContext context) {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  lang.getText("share") ?? "Megosztás",
+                  lang.getText("share"),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -355,8 +400,8 @@ Widget hostSessionDrawer(BuildContext context) {
                       unselectedLabelColor: Colors.grey,
                       indicatorColor: Colors.green,
                       tabs: [
-                        Tab(text: lang.getText("create") ?? "Létrehozás"),
-                        Tab(text: lang.getText("share") ?? "Megosztás"),
+                        Tab(text: lang.getText("create")),
+                        Tab(text: lang.getText("share")),
                       ],
                     ),
                   ),
@@ -412,17 +457,39 @@ Widget hostSessionDrawer(BuildContext context) {
 
                                                     final roleVal =
                                                         p['role'] ?? p['Role'];
-                                                    final isHost =
+                                                    final isParticipantHost =
                                                         roleVal == "Host" ||
-                                                        roleVal == 0;
+                                                        roleVal == 0 ||
+                                                        roleVal == "0";
                                                     final userName =
                                                         p['userName'] ??
                                                         p['UserName'] ??
                                                         'Ismeretlen';
-                                                    final isReady =
-                                                        p['isReady'] ??
-                                                        p['IsReady'] ??
-                                                        false;
+                                                    final userId =
+                                                        p['userId'] ??
+                                                        p['UserId'] ??
+                                                        0;
+
+                                                    bool isMe =
+                                                        p['isMe'] == true ||
+                                                        p['isMe'] == 'true' ||
+                                                        p['IsMe'] == true ||
+                                                        p['IsMe'] == 'true';
+
+                                                    if (isHost.value &&
+                                                        isParticipantHost) {
+                                                      isMe = true;
+                                                    }
+
+                                                    if (myUserName
+                                                            .value
+                                                            .isNotEmpty &&
+                                                        userName
+                                                                .toLowerCase() ==
+                                                            myUserName.value
+                                                                .toLowerCase()) {
+                                                      isMe = true;
+                                                    }
 
                                                     final profilePicData =
                                                         p['profilePicture'] ??
@@ -469,112 +536,144 @@ Widget hostSessionDrawer(BuildContext context) {
                                                         Offset.zero;
 
                                                     return GestureDetector(
-                                                      onTapDown: (details) =>
-                                                          tapPosition = details
-                                                              .globalPosition,
-                                                      onTap: () async {
-                                                        if (isHost) return;
-                                                        final selectedValue = await showMenu<String>(
-                                                          context: context,
-                                                          color: const Color(
-                                                            0xFF333333,
-                                                          ),
-                                                          elevation: 8,
-                                                          shape: RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  16,
-                                                                ),
-                                                          ),
-                                                          position:
-                                                              RelativeRect.fromLTRB(
-                                                                tapPosition.dx,
-                                                                tapPosition.dy,
-                                                                MediaQuery.of(
-                                                                      context,
-                                                                    ).size.width -
-                                                                    tapPosition
-                                                                        .dx,
-                                                                MediaQuery.of(
-                                                                      context,
-                                                                    ).size.height -
-                                                                    tapPosition
-                                                                        .dy,
-                                                              ),
-                                                          items: [
-                                                            PopupMenuItem(
-                                                              value: 'profile',
-                                                              child: Row(
-                                                                children: [
-                                                                  const Icon(
-                                                                    Icons
-                                                                        .person,
-                                                                    color: Colors
-                                                                        .blueAccent,
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    width: 12,
-                                                                  ),
-                                                                  Text(
-                                                                    lang.getText(
+                                                      onTapDown: isMe
+                                                          ? null
+                                                          : (
+                                                              details,
+                                                            ) => tapPosition =
+                                                                details
+                                                                    .globalPosition,
+                                                      onTap: isMe
+                                                          ? null
+                                                          : () async {
+                                                              List<
+                                                                PopupMenuEntry<
+                                                                  String
+                                                                >
+                                                              >
+                                                              menuItems = [
+                                                                PopupMenuItem(
+                                                                  value:
+                                                                      'profile',
+                                                                  child: Row(
+                                                                    children: [
+                                                                      const Icon(
+                                                                        Icons
+                                                                            .person,
+                                                                        color: Colors
+                                                                            .blueAccent,
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        width:
+                                                                            12,
+                                                                      ),
+                                                                      Text(
+                                                                        lang.getText(
                                                                           "view_profile",
-                                                                        ) ??
-                                                                        "Profil",
-                                                                    style: const TextStyle(
-                                                                      color: Colors
-                                                                          .white,
+                                                                        ),
+                                                                        style: const TextStyle(
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ];
+
+                                                              if (isHost
+                                                                      .value &&
+                                                                  !isParticipantHost) {
+                                                                menuItems.add(
+                                                                  PopupMenuItem(
+                                                                    value:
+                                                                        'kick',
+                                                                    child: Row(
+                                                                      children: [
+                                                                        const Icon(
+                                                                          Icons
+                                                                              .person_remove,
+                                                                          color:
+                                                                              Colors.redAccent,
+                                                                        ),
+                                                                        const SizedBox(
+                                                                          width:
+                                                                              12,
+                                                                        ),
+                                                                        Text(
+                                                                          lang.getText(
+                                                                            "kick_user",
+                                                                          ),
+                                                                          style: const TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                        ),
+                                                                      ],
                                                                     ),
                                                                   ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                            PopupMenuItem(
-                                                              value: 'kick',
-                                                              child: Row(
-                                                                children: [
-                                                                  const Icon(
-                                                                    Icons
-                                                                        .person_remove,
-                                                                    color: Colors
-                                                                        .redAccent,
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    width: 12,
-                                                                  ),
-                                                                  Text(
-                                                                    lang.getText(
-                                                                          "kick_user",
-                                                                        ) ??
-                                                                        "Kirúgás",
-                                                                    style: const TextStyle(
-                                                                      color: Colors
-                                                                          .white,
+                                                                );
+                                                              }
+
+                                                              final selectedValue = await showMenu<String>(
+                                                                context:
+                                                                    context,
+                                                                color:
+                                                                    const Color(
+                                                                      0xFF333333,
                                                                     ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        );
-                                                        if (selectedValue ==
-                                                            'profile') {
-                                                          CustomSnackbar.show(
-                                                            context,
-                                                            "$userName profilja",
-                                                            backgroundColor:
-                                                                Colors.blue,
-                                                          );
-                                                        }
-                                                        if (selectedValue ==
-                                                            'kick') {
-                                                          CustomSnackbar.show(
-                                                            context,
-                                                            "$userName kirúgva!",
-                                                            backgroundColor:
-                                                                Colors.red,
-                                                          );
-                                                        }
-                                                      },
+                                                                elevation: 8,
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        16,
+                                                                      ),
+                                                                ),
+                                                                position: RelativeRect.fromLTRB(
+                                                                  tapPosition
+                                                                      .dx,
+                                                                  tapPosition
+                                                                      .dy,
+                                                                  MediaQuery.of(
+                                                                        context,
+                                                                      ).size.width -
+                                                                      tapPosition
+                                                                          .dx,
+                                                                  MediaQuery.of(
+                                                                        context,
+                                                                      ).size.height -
+                                                                      tapPosition
+                                                                          .dy,
+                                                                ),
+                                                                items:
+                                                                    menuItems,
+                                                              );
+
+                                                              if (selectedValue ==
+                                                                  'profile') {
+                                                                CustomSnackbar.show(
+                                                                  context,
+                                                                  "$userName ${lang.getText("someones_profile")}",
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .blue,
+                                                                );
+                                                              }
+                                                              if (selectedValue ==
+                                                                  'kick') {
+                                                                kickUser(
+                                                                  userId,
+                                                                  userName,
+                                                                );
+                                                                CustomSnackbar.show(
+                                                                  context,
+                                                                  "$userName ${lang.getText("kicked")}",
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .red,
+                                                                );
+                                                              }
+                                                            },
                                                       child: Container(
                                                         decoration: BoxDecoration(
                                                           color:
@@ -609,7 +708,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                                                 imageBytes ==
                                                                     null
                                                                 ? Icon(
-                                                                    isHost
+                                                                    isParticipantHost
                                                                         ? Icons
                                                                               .star
                                                                         : Icons
@@ -631,9 +730,13 @@ Widget hostSessionDrawer(BuildContext context) {
                                                                 ),
                                                           ),
                                                           subtitle: Text(
-                                                            isHost
-                                                                ? 'Host'
-                                                                : 'Vendég',
+                                                            isParticipantHost
+                                                                ? lang.getText(
+                                                                    "Host",
+                                                                  )
+                                                                : lang.getText(
+                                                                    "guest",
+                                                                  ),
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
@@ -662,7 +765,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                                 .primaryWorkout,
                                             title: isHost.value
                                                 ? lang.getText("stop_session")
-                                                : "Kilépés",
+                                                : lang.getText("quit"),
                                             iconData: isHost.value
                                                 ? Icons.stop
                                                 : Icons.exit_to_app,
@@ -688,10 +791,13 @@ Widget hostSessionDrawer(BuildContext context) {
                               : Column(
                                   spacing: 12,
                                   children: [
-                                    CustomTextField(
-                                      nameController,
-                                      lang.getText("jam_name") ?? "Név",
-                                      isCreateWorkout: true,
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 5),
+                                      child: CustomTextField(
+                                        nameController,
+                                        lang.getText("jam_name"),
+                                        isCreateWorkout: true,
+                                      ),
                                     ),
                                     Container(
                                       height: 45,
@@ -742,8 +848,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                                 ),
                                                 alignment: Alignment.center,
                                                 child: Text(
-                                                  lang.getText("public") ??
-                                                      "Public",
+                                                  lang.getText("public"),
                                                   style: TextStyle(
                                                     color: isPublic.value
                                                         ? Colors.white
@@ -778,8 +883,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                                 ),
                                                 alignment: Alignment.center,
                                                 child: Text(
-                                                  lang.getText("private") ??
-                                                      "Private",
+                                                  lang.getText("private"),
                                                   style: TextStyle(
                                                     color: !isPublic.value
                                                         ? Colors.white
@@ -798,9 +902,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                       onPressed: createSession,
                                       variant:
                                           CustomButtonVariant.primaryWorkout,
-                                      title:
-                                          lang.getText("create") ??
-                                          "Létrehozás",
+                                      title: lang.getText("create"),
                                       iconData: Icons.cast,
                                     ),
                                   ],
@@ -901,9 +1003,8 @@ Widget hostSessionDrawer(BuildContext context) {
                                                   ),
                                                   Text(
                                                     lang.getText(
-                                                          "no_qr_code_yet",
-                                                        ) ??
-                                                        "Nincs kód",
+                                                      "no_qr_code_yet",
+                                                    ),
                                                     style: const TextStyle(
                                                       color: Colors.white38,
                                                       fontSize: 14,
@@ -969,8 +1070,7 @@ Widget hostSessionDrawer(BuildContext context) {
                                       if (context.mounted) {
                                         CustomSnackbar.show(
                                           context,
-                                          lang.getText("copied_to_clipboard") ??
-                                              "Másolva!",
+                                          lang.getText("copied_to_clipboard"),
                                           backgroundColor: Colors.green,
                                         );
                                       }

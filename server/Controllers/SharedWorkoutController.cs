@@ -149,6 +149,10 @@ public class WorkoutSessionController : ControllerBase
     {
         try
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int.TryParse(userIdClaim, out int currentUserId);
+
+            var cleanId = sessionId.Trim().ToUpper();
             var participants = await _context.SessionParticipants
                 .Include(p => p.User)
                 .Where(p => p.SessionId == sessionId.ToUpper())
@@ -161,6 +165,8 @@ public class WorkoutSessionController : ControllerBase
 
             var result = participants.Select(p => new
             {
+                userId = p.UserId,
+                isMe = (p.UserId == currentUserId),
                 userName = p.User != null ? p.User.UserName : "Ismeretlen",
                 role = p.Role.ToString(),
                 isReady = p.IsReady,
@@ -203,7 +209,31 @@ public class WorkoutSessionController : ControllerBase
         return Ok(new { Message = "Edzés sikeresen leállítva és törölve." });
     }
 
+    [HttpDelete("{sessionId}/kick/{targetUserId}")]
+    public async Task<IActionResult> KickUser(string sessionId, int targetUserId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out int currentUserId)) return Unauthorized("Érvénytelen felhasználó.");
 
+        var cleanId = sessionId.Trim().ToUpper();
+
+        var session = await _context.SharedWorkoutSessions
+            .Include(s => s.Participants)
+            .FirstOrDefaultAsync(s => s.SessionId == cleanId);
+
+        if (session == null) return NotFound("A szoba nem található.");
+        
+        if (session.HostId != currentUserId) return StatusCode(403, "Csak a szoba létrehozója rúghat ki tagokat.");
+
+        var targetParticipant = session.Participants.FirstOrDefault(p => p.UserId == targetUserId);
+        if (targetParticipant == null) return NotFound("A felhasználó nincs a szobában.");
+        if (targetParticipant.UserId == currentUserId) return BadRequest("Magadat nem rúghatod ki.");
+
+        _context.SessionParticipants.Remove(targetParticipant);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Felhasználó sikeresen eltávolítva." });
+    }
 
     [HttpGet("ws/{sessionId}")]
     public async Task ConnectWebSocket(string sessionId)
