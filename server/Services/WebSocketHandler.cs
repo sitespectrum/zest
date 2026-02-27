@@ -102,6 +102,9 @@ public class WebSocketHandler
                 case "remove-exercise":
                     await HandleRemoveExercise(sessionId, message.Data);
                     break;
+                case "reorder-exercises":
+                    await HandleReorderExercises(sessionId, message.Data);
+                    break;
                 default:
                     Console.WriteLine($"Ismeretlen WS üzenet: {message.Type}");
                     break;
@@ -157,6 +160,39 @@ public class WebSocketHandler
 
                 await BroadcastSyncExercises(sessionId);
             }
+        }
+    }
+
+    private async Task HandleReorderExercises(string sessionId, JsonElement data)
+    {
+        if (data.TryGetProperty("orderedIds", out var idsProp) && idsProp.ValueKind == JsonValueKind.Array)
+        {
+            var orderedIds = idsProp.EnumerateArray().Select(e => e.GetInt32()).ToList();
+
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ZestDbContext>();
+
+            var sessionExercises = await context.SharedSessionExercises
+                .Where(s => s.SessionId == sessionId)
+                .ToListAsync();
+
+            var unassignedExercises = sessionExercises.ToList();
+
+            for (int i = 0; i < orderedIds.Count; i++)
+            {
+                int exId = orderedIds[i];
+                var matchingItem = unassignedExercises.FirstOrDefault(x => x.ExerciseId == exId);
+                
+                if (matchingItem != null)
+                {
+                    matchingItem.OrderIndex = i + 1;
+                    unassignedExercises.Remove(matchingItem); 
+                }
+            }
+
+            await context.SaveChangesAsync();
+
+            await BroadcastSyncExercises(sessionId);
         }
     }
 
