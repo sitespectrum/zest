@@ -198,6 +198,14 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
       }
       final ExerciseDto item = userWorkouts.removeAt(oldIndex);
       userWorkouts.insert(newIndex, item);
+
+      if (isOnlineMode && currentSessionId != null) {
+        final List<int> orderedIds = userWorkouts.map((e) => e.id).toList();
+
+        _wsService.sendAction('reorder-exercises', {
+          'orderedIds': orderedIds
+        });
+      }
     });
   }
 
