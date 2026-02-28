@@ -174,20 +174,7 @@ Widget hostSessionDrawer(BuildContext context) {
           final kickedId = data['kickedUserId'];
 
           if (kickedId == myUserId.value) {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.remove('active_session_id');
-            await prefs.remove('is_host');
-
-            WebSocketService().disconnect();
-
-            if (context.mounted) {
-              CustomSnackbar.show(
-                context,
-                lang.getText("kicked_from_session"),
-                backgroundColor: Colors.red,
-              );
-              Navigator.pop(context);
-            }
+            leaveSession();
           } else {
             fetchParticipants();
           }
