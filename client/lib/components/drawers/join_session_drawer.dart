@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:client/constants.dart';
 import 'package:client/providers/language_provider.dart';
+import 'package:client/services/websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -85,6 +86,10 @@ Widget joinSessionDrawer(BuildContext context) {
       if (response.statusCode == 200) {
         await prefs.setString('active_session_id', sessionId);
         await prefs.setBool('is_host', false);
+
+        WebSocketService().activeSessionNotifier.value = sessionId;
+        WebSocketService().connect(sessionId);
+
         if (context.mounted) {
           Navigator.pop(context);
           CustomSnackbar.show(
