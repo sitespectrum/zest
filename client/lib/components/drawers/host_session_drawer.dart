@@ -174,6 +174,20 @@ Widget hostSessionDrawer(BuildContext context) {
           final kickedId = data['kickedUserId'];
 
           if (kickedId == myUserId.value) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove('active_session_id');
+            await prefs.remove('is_host');
+
+            WebSocketService().disconnect();
+
+            if (context.mounted) {
+              CustomSnackbar.show(
+                context,
+                lang.getText("kicked_from_session"),
+                backgroundColor: Colors.red,
+              );
+              Navigator.pop(context);
+            }
           } else {
             fetchParticipants();
           }
@@ -203,7 +217,14 @@ Widget hostSessionDrawer(BuildContext context) {
                 payload['sub'] ??
                 '';
             myUserId.value =
-                int.tryParse(payload['nameid'] ?? payload['sub'] ?? '0') ?? 0;
+                int.tryParse(
+                  payload['nameid']?.toString() ??
+                      payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+                          ?.toString() ??
+                      payload['sub']?.toString() ??
+                      '0',
+                ) ??
+                0;
           }
         } catch (e) {
           debugPrint("Token dekódolási hiba: $e");
