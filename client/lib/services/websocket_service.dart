@@ -1,21 +1,22 @@
+import 'dart:async' show StreamController;
 import 'dart:convert';
 import 'package:client/constants.dart';
-import 'package:flutter/foundation.dart'; // <--- FONTOS IMPORT A ValueNotifier-hez
+import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketService {
-  // --- SINGLETON MINTA KEZDETE ---
   static final WebSocketService _instance = WebSocketService._internal();
   factory WebSocketService() => _instance;
   WebSocketService._internal();
-  // -------------------------------
 
   WebSocketChannel? _channel;
   Function(dynamic)? onMessageReceived;
   bool isConnected = false;
 
-  // Ez fogja értesíteni a felületet, ha online lettünk vagy kiléptünk
   final ValueNotifier<String?> activeSessionNotifier = ValueNotifier<String?>(null);
+
+  final StreamController<dynamic> _messageController = StreamController<dynamic>.broadcast();
+  Stream<dynamic> get messageStream => _messageController.stream;
 
   void connect(String sessionId) {
     if (isConnected) return;
@@ -32,6 +33,10 @@ class WebSocketService {
 
       _channel!.stream.listen(
         (message) {
+          final decodedMessage = jsonDecode(message);
+
+          _messageController.add(decodedMessage);
+
           if (onMessageReceived != null) {
             onMessageReceived!(jsonDecode(message));
           }
@@ -58,6 +63,6 @@ class WebSocketService {
     _channel?.sink.close();
     _channel = null;
     isConnected = false;
-    activeSessionNotifier.value = null; // Töröljük a globális állapotot is
+    activeSessionNotifier.value = null;
   }
 }

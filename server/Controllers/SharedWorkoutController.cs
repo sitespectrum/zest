@@ -229,6 +229,14 @@ public class WorkoutSessionController : ControllerBase
         if (targetParticipant == null) return NotFound("A felhasználó nincs a szobában.");
         if (targetParticipant.UserId == currentUserId) return BadRequest("Magadat nem rúghatod ki.");
 
+        var kickmessage = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            type = "user-kicked",
+            kickedUserId = targetUserId
+        });
+
+        await _wsHandler.BroadcastToSession(cleanId, kickmessage);
+
         _context.SessionParticipants.Remove(targetParticipant);
         await _context.SaveChangesAsync();
 

@@ -38,6 +38,7 @@ Widget hostSessionDrawer(BuildContext context) {
   final participants = useState<List<dynamic>>([]);
   final lastResponse = useState<String>("");
   final myUserName = useState<String>("");
+  final myUserId = useState<int>(0);
   final tabController = useTabController(initialLength: 2);
 
   Future<void> fetchParticipants() async {
@@ -165,6 +166,25 @@ Widget hostSessionDrawer(BuildContext context) {
   }
 
   useEffect(() {
+    StreamSubscription? subscription;
+
+    if (isSessionCreated.value && shareId.value.isNotEmpty) {
+      subscription = WebSocketService().messageStream.listen((data) async {
+        if (data['type'] == 'user-kicked') {
+          final kickedId = data['kickedUserId'];
+
+          if (kickedId == myUserId.value) {
+          } else {
+            fetchParticipants();
+          }
+        }
+      });
+    }
+
+    return () => subscription?.cancel();
+  }, [isSessionCreated.value, shareId.value, myUserId.value]);
+
+  useEffect(() {
     Future<void> loadSavedSession() async {
       final prefs = await SharedPreferences.getInstance();
 
@@ -182,6 +202,8 @@ Widget hostSessionDrawer(BuildContext context) {
                 payload['name'] ??
                 payload['sub'] ??
                 '';
+            myUserId.value =
+                int.tryParse(payload['nameid'] ?? payload['sub'] ?? '0') ?? 0;
           }
         } catch (e) {
           debugPrint("Token dekódolási hiba: $e");
