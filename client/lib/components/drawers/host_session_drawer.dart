@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:client/services/websocket_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:nfc_host_card_emulation/nfc_host_card_emulation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -102,6 +103,9 @@ Widget hostSessionDrawer(BuildContext context) {
 
         await prefs.remove('active_session_id');
 
+        WebSocketService().activeSessionNotifier.value = null;
+        WebSocketService().disconnect();
+
         if (context.mounted) {
           CustomSnackbar.show(
             context,
@@ -146,6 +150,9 @@ Widget hostSessionDrawer(BuildContext context) {
 
     await prefs.remove('active_session_id');
     await prefs.remove('is_host');
+
+    WebSocketService().activeSessionNotifier.value = null;
+    WebSocketService().disconnect();
 
     if (context.mounted) {
       CustomSnackbar.show(
@@ -313,6 +320,9 @@ Widget hostSessionDrawer(BuildContext context) {
 
         await prefs.setString('active_session_id', shareId.value);
         await prefs.setBool('is_host', true);
+
+        WebSocketService().activeSessionNotifier.value = shareId.value;
+        WebSocketService().connect(shareId.value);
 
         isCreated.value = true;
         isSessionCreated.value = true;

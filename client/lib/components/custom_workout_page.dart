@@ -41,7 +41,7 @@ class CWorkoutPage extends StatefulWidget {
   State<CWorkoutPage> createState() => _CWorkoutPageState();
 }
 
-class _CWorkoutPageState extends State<CWorkoutPage> {
+class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver {
   List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
   bool showdelete = false;
@@ -54,16 +54,46 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
   String shareId = "";
   Color workoutColorCode = const Color.fromARGB(150, 50, 146, 255);
 
-  final WebSocketService _wsService = WebSocketService();
   String? currentSessionId;
   bool isOnlineMode = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     futureCustomWorkouts = fetchCustomUserWorkouts().catchError((e) {
       return <CustomUserWorkoutDto>[];
     });
+
+    WebSocketService().activeSessionNotifier.addListener(_onSessionStateChanged);
+
+    WebSocketService().onMessageReceived = (data) {
+      if (data['type'] == 'session-ended') {
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.remove('active_session_id');
+          prefs.remove('is_host');
+          WebSocketService().disconnect();
+          
+          if (mounted) {
+            if (Navigator.canPop(context)) Navigator.pop(context);
+            CustomSnackbar.show(context, "A Host befejezte a közös edzést.", backgroundColor: Colors.orange);
+          }
+        });
+      }
+      else if (data['type'] == 'sync-exercises') {
+        try {
+          List<dynamic> rawData = data['data'];
+          if (mounted) {
+            setState(() {
+              userWorkouts = rawData.map((e) => ExerciseDto.fromJson(e)).toList();
+            });
+          }
+        } catch (e) {
+          print("Hiba a JSON feldolgozásakor: $e");
+        }
+      }
+    };
+
     NfcManager.instance.isAvailable().then((isAvailable) {
       if (isAvailable) {
       } else {
@@ -75,71 +105,31 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
     _checkAndConnectSession();
   }
 
+  void _onSessionStateChanged() {
+    final sessionId = WebSocketService().activeSessionNotifier.value;
+    if (mounted) {
+      setState(() {
+        if (sessionId != null && sessionId.isNotEmpty) {
+          currentSessionId = sessionId;
+          isOnlineMode = true;
+        } else {
+          currentSessionId = null;
+          isOnlineMode = false;
+        }
+      });
+    }
+  }
+
   Future<void> _checkAndConnectSession() async {
     final prefs = await SharedPreferences.getInstance();
     final savedId = prefs.getString('active_session_id');
 
     if (savedId != null && savedId.isNotEmpty) {
-      setState(() {
-        currentSessionId = savedId;
-        isOnlineMode = true;
-      });
-
-      _wsService.connect(savedId);
-
-      _wsService.onMessageReceived = (data) {
-        if (data['type'] == 'session-ended') {
-          SharedPreferences.getInstance().then((prefs) {
-            prefs.remove('active_session_id');
-            prefs.remove('is_host');
-
-            if (mounted) {
-              setState(() {
-                currentSessionId = null;
-                isOnlineMode = false;
-              });
-
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-
-              CustomSnackbar.show(
-                context,
-                "A Host befejezte a közös edzést.",
-                backgroundColor: Colors.orange,
-              );
-            }
-            _wsService.disconnect();
-          });
-        }
-
-        if (data['type'] == 'sync-exercises') {
-          try {
-            List<dynamic> rawData = data['data'];
-            if (mounted) {
-              setState(() {
-                userWorkouts = rawData
-                    .map((e) => ExerciseDto.fromJson(e))
-                    .toList();
-              });
-              print(
-                "✅ Lista sikeresen frissítve! Elemek száma: ${userWorkouts.length}",
-              );
-            }
-          } catch (e) {
-            print("🚨 Hiba a JSON feldolgozásakor (ExerciseDto.fromJson): $e");
-          }
-        }
-      };
+      WebSocketService().activeSessionNotifier.value = savedId;
+      WebSocketService().connect(savedId);
     } else {
-      if (isOnlineMode) {
-        setState(() {
-          isOnlineMode = false;
-          currentSessionId = null;
-          userWorkouts.clear();
-        });
-        _wsService.disconnect();
-      }
+      WebSocketService().activeSessionNotifier.value = null;
+      WebSocketService().disconnect();
     }
   }
 
@@ -202,7 +192,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
       if (isOnlineMode && currentSessionId != null) {
         final List<int> orderedIds = userWorkouts.map((e) => e.id).toList();
 
-        _wsService.sendAction('reorder-exercises', {
+        WebSocketService().sendAction('reorder-exercises', {
           'orderedIds': orderedIds
         });
       }
@@ -494,9 +484,21 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     FlutterBlePeripheral().stop();
-    _wsService.disconnect();
+    WebSocketService().disconnect();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      _checkAndConnectSession();
+    } else if (state == AppLifecycleState.paused) {
+      WebSocketService().disconnect();
+    }
   }
 
   Future<String?> _uploadWorkoutToBackend() async {
@@ -1355,7 +1357,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                                               onPressed: () {
                                                 if (isOnlineMode &&
                                                     currentSessionId != null) {
-                                                  _wsService.sendAction(
+                                                  WebSocketService().sendAction(
                                                     'remove-exercise',
                                                     {
                                                       'exerciseId':
@@ -1696,7 +1698,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                             if (result != null && result.isNotEmpty) {
                               if (isOnlineMode && currentSessionId != null) {
                                 for (var ex in result) {
-                                  _wsService.sendAction('add-exercise', {
+                                  WebSocketService().sendAction('add-exercise', {
                                     'exerciseId': ex.id,
                                   });
                                 }
@@ -1751,7 +1753,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> {
                             if (result != null && result.isNotEmpty) {
                               if (isOnlineMode && currentSessionId != null) {
                                 for (var ex in result) {
-                                  _wsService.sendAction('add-exercise', {
+                                  WebSocketService().sendAction('add-exercise', {
                                     'exerciseId': ex.id,
                                   });
                                 }
