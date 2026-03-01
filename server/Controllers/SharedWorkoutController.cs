@@ -222,7 +222,7 @@ public class WorkoutSessionController : ControllerBase
             .FirstOrDefaultAsync(s => s.SessionId == cleanId);
 
         if (session == null) return NotFound("A szoba nem található.");
-        
+
         if (session.HostId != currentUserId) return StatusCode(403, "Csak a szoba létrehozója rúghat ki tagokat.");
 
         var targetParticipant = session.Participants.FirstOrDefault(p => p.UserId == targetUserId);
@@ -241,6 +241,33 @@ public class WorkoutSessionController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { Message = "Felhasználó sikeresen eltávolítva." });
+    }
+
+    [HttpPost("{sessionId}/invite/{targetUserId}")]
+    public async Task<IActionResult> InviteToSession(string sessionId, int targetUserId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out int currentUserId)) return Unauthorized("Érvénytelen felhasználó.");
+
+        var hostUser = await _context.Users.FindAsync(currentUserId);
+        if (hostUser == null) return NotFound("Felhasználó nem található.");
+
+        using var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
+
+        request.Headers.Add("Authorization", "Basic ONESIGNAL_REST_API_KEY");
+
+        var content = new StringContent($@"{{
+            ""app_id"": ""ONESIGNAL_APP_ID"",
+            ""include_external_user_ids"": [""{targetUserId}""],
+            ""contents"": {{""en"": ""{hostUser.UserName} invited you to workout together!"", ""hu"": ""{hostUser.UserName} meghívott egy közös edzésre!""}},
+            ""data"": {{ ""type"": ""session_invite"", ""sessionId"": ""{sessionId}"" }}
+        }}", null, "application/json");
+
+        request.Content = content;
+        await client.SendAsync(request);
+
+        return Ok(new { Message = "Meghívó elküldve!" });
     }
 
     [HttpGet("ws/{sessionId}")]
