@@ -74,8 +74,11 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-    
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+    );
+
     if (image == null) return;
 
     try {
@@ -101,7 +104,11 @@ class _ProfilePageState extends State<ProfilePage>
           }
         });
         if (mounted) {
-          CustomSnackbar.show(context, "Profilkép frissítve!", backgroundColor: Colors.green);
+          CustomSnackbar.show(
+            context,
+            "Profilkép frissítve!",
+            backgroundColor: Colors.green,
+          );
         }
       } else {
         debugPrint("Hiba a feltöltéskor: ${response.statusCode}");
@@ -563,6 +570,7 @@ class _ProfilePageState extends State<ProfilePage>
     await prefs.remove("jwt_token");
     await prefs.remove("accessToken");
     await prefs.remove("refreshToken");
+    OneSignal.logout();
 
     setState(() {
       loggedIn = false;
@@ -808,7 +816,7 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
                     ),
-                    if (userData != null) 
+                    if (userData != null)
                       Center(
                         child: Column(
                           children: [
@@ -821,7 +829,12 @@ class _ProfilePageState extends State<ProfilePage>
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: const Color.fromARGB(255, 85, 173, 78),
+                                        color: const Color.fromARGB(
+                                          255,
+                                          85,
+                                          173,
+                                          78,
+                                        ),
                                         width: 3,
                                       ),
                                       boxShadow: [
@@ -835,12 +848,24 @@ class _ProfilePageState extends State<ProfilePage>
                                     child: CircleAvatar(
                                       radius: 60,
                                       backgroundColor: const Color(0xFF272727),
-                                      backgroundImage: (userData!['profilePicture'] != null && 
-                                                        userData!['profilePicture'].toString().isNotEmpty)
-                                          ? MemoryImage(base64Decode(userData!['profilePicture']))
+                                      backgroundImage:
+                                          (userData!['profilePicture'] !=
+                                                  null &&
+                                              userData!['profilePicture']
+                                                  .toString()
+                                                  .isNotEmpty)
+                                          ? MemoryImage(
+                                              base64Decode(
+                                                userData!['profilePicture'],
+                                              ),
+                                            )
                                           : null,
-                                      child: (userData!['profilePicture'] == null || 
-                                              userData!['profilePicture'].toString().isEmpty)
+                                      child:
+                                          (userData!['profilePicture'] ==
+                                                  null ||
+                                              userData!['profilePicture']
+                                                  .toString()
+                                                  .isEmpty)
                                           ? const Icon(
                                               Icons.person,
                                               size: 60,

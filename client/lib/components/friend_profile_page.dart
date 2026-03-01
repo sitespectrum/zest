@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -28,6 +29,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
   late TabController _tabController;
   List<dynamic> workouts = [];
   List<dynamic> meals = [];
+  List<dynamic> friends = [];
   bool isLoading = true;
 
   @override
@@ -35,6 +37,27 @@ class _FriendProfilePageState extends State<FriendProfilePage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     fetchFriendData();
+    fetchFriends();
+  }
+
+  Future<void> fetchFriends() async {
+    final token = await _getToken();
+    if (token == null) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/Friends/list"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            friends = jsonDecode(response.body);
+          });
+        }
+      }
+    } catch (e) {}
   }
 
   Future<String?> _getToken() async {
@@ -183,6 +206,31 @@ class _FriendProfilePageState extends State<FriendProfilePage>
     }
   }
 
+  Future<void> sendRequest(int userId) async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    final token = await _getToken();
+    if (token == null) return;
+
+    final response = await http.post(
+      Uri.parse("$apiUrl/api/Friends/request/$userId"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      CustomSnackbar.show(
+        context,
+        lang.getText("request_sent"),
+        backgroundColor: Colors.green,
+      );
+    } else {
+      CustomSnackbar.show(
+        context,
+        "${lang.getText("error_occurred")}: ${response.body}",
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
@@ -195,7 +243,8 @@ class _FriendProfilePageState extends State<FriendProfilePage>
             CircleAvatar(
               radius: 16,
               backgroundColor: Colors.green,
-              backgroundImage: (widget.friendImage != null && widget.friendImage!.isNotEmpty)
+              backgroundImage:
+                  (widget.friendImage != null && widget.friendImage!.isNotEmpty)
                   ? MemoryImage(base64Decode(widget.friendImage!))
                   : null,
               child: (widget.friendImage == null || widget.friendImage!.isEmpty)
@@ -251,6 +300,27 @@ class _FriendProfilePageState extends State<FriendProfilePage>
           : TabBarView(
               controller: _tabController,
               children: [_buildWorkoutList(lang), _buildMealList(lang)],
+            ),
+
+      bottomNavigationBar:
+          friends.any(
+            (f) =>
+                f['id'] == widget.friendId ||
+                f['friendId'] == widget.friendId ||
+                f['userId'] == widget.friendId,
+          )
+          ? Container()
+          : SafeArea(
+              child: Container(
+                margin: EdgeInsets.all(20),
+                child: CustomButton(
+                  onPressed: () {
+                    sendRequest(widget.friendId);
+                  },
+                  title: lang.getText("send_friend_request"),
+                  iconData: Icons.group_add_sharp,
+                ),
+              ),
             ),
     );
   }

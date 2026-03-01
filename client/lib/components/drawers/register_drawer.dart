@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -152,6 +152,7 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
 
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setInt('userId', userId);
+                OneSignal.login(userId.toString());
 
                 if (context.mounted) {
                   Navigator.push(

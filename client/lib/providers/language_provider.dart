@@ -259,6 +259,8 @@ class LanguageProvider with ChangeNotifier {
       'quit': 'Kilépés',
       'view_profile': 'Profil megtekintése',
       'kick_user': 'Felhaszn. kirúgása',
+      'send_friend_request': 'Barátkérelem küldése',
+      'invite_friends' : 'Barátok meghívása',
     },
     'en': {
       'register_button_main': "Register",
@@ -477,6 +479,8 @@ class LanguageProvider with ChangeNotifier {
       'quit': 'Quit',
       'view_profile': 'View profile',
       'kick_user': 'Kick user',
+      'send_friend_request': 'Send friend request',
+      'invite_friends' : 'Invite friends',
     },
   };
 }
