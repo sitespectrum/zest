@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:client/components/friend_profile_page.dart';
 import 'package:client/services/websocket_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:nfc_host_card_emulation/nfc_host_card_emulation.dart';
@@ -691,6 +692,19 @@ Widget hostSessionDrawer(BuildContext context) {
 
                                                               if (selectedValue ==
                                                                   'profile') {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder: (context) => FriendProfilePage(
+                                                                      friendId:
+                                                                          userId,
+                                                                      friendName:
+                                                                          userName,
+                                                                      friendImage:
+                                                                          profilePicData,
+                                                                    ),
+                                                                  ),
+                                                                );
                                                                 CustomSnackbar.show(
                                                                   context,
                                                                   "$userName ${lang.getText("someones_profile")}",
