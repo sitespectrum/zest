@@ -9,6 +9,7 @@ import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/constants.dart';
 import 'package:client/pages.dart';
 import 'package:client/providers/language_provider.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class LoginDrawer extends StatefulWidget {
   const LoginDrawer({super.key});
@@ -75,6 +76,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
                 await prefs.setString('refresh_token', refreshToken);
                 await prefs.setString('username', username);
                 await prefs.setInt('userId', userId);
+                OneSignal.login(userId.toString());
 
                 print('Token mentve: $token');
                 if (context.mounted) {

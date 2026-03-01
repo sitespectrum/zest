@@ -80,6 +80,33 @@ public class FriendsController : ControllerBase
         return Ok(new { message = "Jelölés elküldve!" });
     }
 
+    [HttpPost("{sessionId}/invite/{targetUserId}")]
+    public async Task<IActionResult> InviteToSession(string sessionId, int targetUserId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out int currentUserId)) return Unauthorized("Érvénytelen felhasználó.");
+
+        var hostUser = await _context.Users.FindAsync(currentUserId);
+        if (hostUser == null) return NotFound("Felhasználó nem található.");
+
+        using var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
+        
+        request.Headers.Add("Authorization", "Basic ONESIGNAL_REST_API_KEY");
+
+        var content = new StringContent($@"{{
+            ""app_id"": ""ONESIGNAL_APP_ID"",
+            ""include_external_user_ids"": [""{targetUserId}""],
+            ""contents"": {{""en"": ""{hostUser.UserName} invited you to workout together!"", ""hu"": ""{hostUser.UserName} meghívott egy közös edzésre!""}},
+            ""data"": {{ ""type"": ""session_invite"", ""sessionId"": ""{sessionId}"" }}
+        }}", null, "application/json");
+
+        request.Content = content;
+        await client.SendAsync(request);
+
+        return Ok(new { Message = "Meghívó elküldve!" });
+    }
+
     private async Task SendPushNotification(int targetUserId, string requesterName)
     {
         try

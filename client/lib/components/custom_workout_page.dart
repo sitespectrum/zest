@@ -41,7 +41,8 @@ class CWorkoutPage extends StatefulWidget {
   State<CWorkoutPage> createState() => _CWorkoutPageState();
 }
 
-class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver {
+class _CWorkoutPageState extends State<CWorkoutPage>
+    with WidgetsBindingObserver {
   List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
   bool showdelete = false;
@@ -65,7 +66,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver
       return <CustomUserWorkoutDto>[];
     });
 
-    WebSocketService().activeSessionNotifier.addListener(_onSessionStateChanged);
+    WebSocketService().activeSessionNotifier.addListener(
+      _onSessionStateChanged,
+    );
 
     WebSocketService().onMessageReceived = (data) {
       if (data['type'] == 'session-ended') {
@@ -73,19 +76,24 @@ class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver
           prefs.remove('active_session_id');
           prefs.remove('is_host');
           WebSocketService().disconnect();
-          
+
           if (mounted) {
             if (Navigator.canPop(context)) Navigator.pop(context);
-            CustomSnackbar.show(context, "A Host befejezte a közös edzést.", backgroundColor: Colors.orange);
+            CustomSnackbar.show(
+              context,
+              "A Host befejezte a közös edzést.",
+              backgroundColor: Colors.orange,
+            );
           }
         });
-      }
-      else if (data['type'] == 'sync-exercises') {
+      } else if (data['type'] == 'sync-exercises') {
         try {
           List<dynamic> rawData = data['data'];
           if (mounted) {
             setState(() {
-              userWorkouts = rawData.map((e) => ExerciseDto.fromJson(e)).toList();
+              userWorkouts = rawData
+                  .map((e) => ExerciseDto.fromJson(e))
+                  .toList();
             });
           }
         } catch (e) {
@@ -107,17 +115,16 @@ class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver
 
   void _onSessionStateChanged() {
     final sessionId = WebSocketService().activeSessionNotifier.value;
-    if (mounted) {
-      setState(() {
-        if (sessionId != null && sessionId.isNotEmpty) {
-          currentSessionId = sessionId;
-          isOnlineMode = true;
-        } else {
-          currentSessionId = null;
-          isOnlineMode = false;
-        }
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      if (sessionId != null && sessionId.isNotEmpty) {
+        currentSessionId = sessionId;
+        isOnlineMode = true;
+      } else {
+        currentSessionId = null;
+        isOnlineMode = false;
+      }
+    });
   }
 
   Future<void> _checkAndConnectSession() async {
@@ -193,7 +200,7 @@ class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver
         final List<int> orderedIds = userWorkouts.map((e) => e.id).toList();
 
         WebSocketService().sendAction('reorder-exercises', {
-          'orderedIds': orderedIds
+          'orderedIds': orderedIds,
         });
       }
     });
@@ -486,6 +493,9 @@ class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     FlutterBlePeripheral().stop();
+    WebSocketService().activeSessionNotifier.removeListener(
+      _onSessionStateChanged,
+    );
     WebSocketService().disconnect();
     super.dispose();
   }
@@ -1698,9 +1708,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver
                             if (result != null && result.isNotEmpty) {
                               if (isOnlineMode && currentSessionId != null) {
                                 for (var ex in result) {
-                                  WebSocketService().sendAction('add-exercise', {
-                                    'exerciseId': ex.id,
-                                  });
+                                  WebSocketService().sendAction(
+                                    'add-exercise',
+                                    {'exerciseId': ex.id},
+                                  );
                                 }
                               } else {
                                 setState(() {
@@ -1753,9 +1764,10 @@ class _CWorkoutPageState extends State<CWorkoutPage> with WidgetsBindingObserver
                             if (result != null && result.isNotEmpty) {
                               if (isOnlineMode && currentSessionId != null) {
                                 for (var ex in result) {
-                                  WebSocketService().sendAction('add-exercise', {
-                                    'exerciseId': ex.id,
-                                  });
+                                  WebSocketService().sendAction(
+                                    'add-exercise',
+                                    {'exerciseId': ex.id},
+                                  );
                                 }
                               } else {
                                 setState(() {

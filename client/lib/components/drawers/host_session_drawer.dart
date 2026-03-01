@@ -41,6 +41,39 @@ Widget hostSessionDrawer(BuildContext context) {
   final myUserName = useState<String>("");
   final myUserId = useState<int>(0);
   final tabController = useTabController(initialLength: 2);
+  final friends = useState<List<dynamic>>([]);
+
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('jwt_token');
+  }
+
+  Future<void> fetchFriends() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/Friends/list"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        if (context.mounted) {
+          friends.value = jsonDecode(response.body);
+        }
+      }
+    } catch (e) {
+      debugPrint("Hiba a barátok lekérésekor: $e");
+    }
+  }
+
+  useEffect(() {
+    fetchFriends();
+    return null;
+  }, []);
 
   Future<void> fetchParticipants() async {
     if (shareId.value.isEmpty) return;
@@ -291,6 +324,41 @@ Widget hostSessionDrawer(BuildContext context) {
           backgroundColor: Colors.red,
         );
       }
+    }
+  }
+
+  Future<void> inviteFriend(int friendId, String friendName) async {
+    if (shareId.value.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      final response = await http.post(
+        Uri.parse(
+          "$apiUrl/api/WorkoutSession/${shareId.value}/invite/$friendId",
+        ),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            "Meghívó elküldve $friendName számára!",
+            backgroundColor: Colors.green,
+          );
+        }
+      } else {
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            "Hiba a meghíváskor: ${response.body}",
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Hiba a meghívás küldésekor: $e");
     }
   }
 
@@ -830,7 +898,191 @@ Widget hostSessionDrawer(BuildContext context) {
                                           const SizedBox(width: 10),
                                           Expanded(
                                             child: CustomButton(
-                                              onPressed: () {},
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (builder) => Dialog(
+                                                    backgroundColor:
+                                                        const Color.fromARGB(
+                                                          255,
+                                                          30,
+                                                          30,
+                                                          30,
+                                                        ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                    ),
+                                                    child: Container(
+                                                      height:
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).size.height *
+                                                          0.5,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              20,
+                                                            ),
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Text(
+                                                              lang.getText(
+                                                                "invite_friends",
+                                                              ),
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 20,
+                                                              ),
+                                                            ),
+                                                            SizedBox(height: 5),
+                                                            Divider(
+                                                              color: Colors
+                                                                  .white24,
+                                                              thickness: 2,
+                                                            ),
+                                                            SizedBox(height: 5),
+                                                            Expanded(
+                                                              child: Builder(
+                                                                builder: (context) {
+                                                                  final availableFriends = friends.value.where((
+                                                                    friend,
+                                                                  ) {
+                                                                    final friendId =
+                                                                        friend['id'] ??
+                                                                        friend['userId'] ??
+                                                                        friend['friendId'];
+
+                                                                    bool
+                                                                    isAlreadyIn = participants.value.any((
+                                                                      p,
+                                                                    ) {
+                                                                      final pId =
+                                                                          p['userId'] ??
+                                                                          p['UserId'];
+                                                                      return pId ==
+                                                                          friendId;
+                                                                    });
+
+                                                                    return !isAlreadyIn;
+                                                                  }).toList();
+
+                                                                  if (availableFriends
+                                                                      .isEmpty) {
+                                                                    return Center(
+                                                                      child: Text(
+                                                                        "Minden barátod csatlakozott már!",
+                                                                        style: TextStyle(
+                                                                          color:
+                                                                              Colors.white54,
+                                                                        ),
+                                                                      ),
+                                                                    );
+                                                                  }
+
+                                                                  return ListView.builder(
+                                                                    itemCount:
+                                                                        availableFriends
+                                                                            .length,
+                                                                    itemBuilder:
+                                                                        (
+                                                                          context,
+                                                                          index,
+                                                                        ) {
+                                                                          final friend =
+                                                                              availableFriends[index];
+                                                                          return Card(
+                                                                            color: const Color.fromARGB(
+                                                                              255,
+                                                                              45,
+                                                                              45,
+                                                                              45,
+                                                                            ),
+                                                                            margin: const EdgeInsets.symmetric(
+                                                                              horizontal: 5,
+                                                                              vertical: 5,
+                                                                            ),
+                                                                            child: ListTile(
+                                                                              leading: CircleAvatar(
+                                                                                backgroundColor: Colors.green,
+                                                                                backgroundImage:
+                                                                                    (friend['profilePicture'] !=
+                                                                                            null &&
+                                                                                        friend['profilePicture'].toString().isNotEmpty)
+                                                                                    ? MemoryImage(
+                                                                                        base64Decode(
+                                                                                          friend['profilePicture'],
+                                                                                        ),
+                                                                                      )
+                                                                                    : null,
+                                                                                child:
+                                                                                    (friend['profilePicture'] ==
+                                                                                            null ||
+                                                                                        friend['profilePicture'].toString().isEmpty)
+                                                                                    ? const Icon(
+                                                                                        Icons.person,
+                                                                                        color: Colors.white,
+                                                                                      )
+                                                                                    : null,
+                                                                              ),
+                                                                              title: Text(
+                                                                                friend['userName'],
+                                                                                style: const TextStyle(
+                                                                                  color: Colors.white,
+                                                                                  fontWeight: FontWeight.bold,
+                                                                                ),
+                                                                              ),
+                                                                              trailing: IconButton(
+                                                                                onPressed: () {
+                                                                                  final friendId =
+                                                                                      friend['id'] ??
+                                                                                      friend['userId'] ??
+                                                                                      friend['friendId'];
+                                                                                  inviteFriend(
+                                                                                    friendId,
+                                                                                    friend['userName'],
+                                                                                  );
+                                                                                },
+                                                                                icon: const Icon(
+                                                                                  Icons.send,
+                                                                                  color: Colors.blueAccent,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                        },
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ),
+                                                            CustomButton(
+                                                              onPressed: () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                  ),
+                                                              variant:
+                                                                  CustomButtonVariant
+                                                                      .secondary,
+                                                              iconData:
+                                                                  Icons.close,
+                                                              title: lang
+                                                                  .getText(
+                                                                    "close",
+                                                                  ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
                                               variant: CustomButtonVariant
                                                   .primaryWorkout,
                                               title: lang.getText("invite"),
