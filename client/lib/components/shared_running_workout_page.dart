@@ -4,12 +4,14 @@ import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/services/websocket_service.dart';
 import 'package:client/components/ui/custom_button.dart';
+import 'package:client/components/shared_workout_summary_page.dart';
 
 class SharedRunningWorkoutPage extends StatefulWidget {
   final List<ExerciseDto> userWorkouts;
@@ -109,6 +111,8 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
       });
     }
 
+    print("📤 Kör befejezése, adatok küldése: ${jsonEncode(setsData)}");
+
     WebSocketService().sendAction('end-turn', {"sets": setsData});
   }
 
@@ -124,7 +128,7 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color.fromARGB(255, 30, 30, 30),
         title: Text(
-          isHost ? (lang.getText('end_workout')) : (lang.getText('leave_workout')),
+          isHost ? lang.getText('end_workout') : lang.getText('leave_workout'),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -132,8 +136,8 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
         ),
         content: Text(
           isHost
-              ? (lang.getText('end_workout_description'))
-              : (lang.getText('leave_workout_description')),
+              ? lang.getText('end_workout_description')
+              : lang.getText('leave_workout_description'),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -144,6 +148,7 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
               style: const TextStyle(color: Colors.grey),
             ),
           ),
+
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -154,6 +159,7 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
               style: const TextStyle(color: Colors.blue),
             ),
           ),
+
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () {
@@ -174,8 +180,8 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
             },
             child: Text(
               isHost
-                  ? (lang.getText("end_workout"))
-                  : (lang.getText("leave_workout")),
+                  ? lang.getText("end_workout")
+                  : lang.getText("leave_workout"),
             ),
           ),
         ],
@@ -222,62 +228,63 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
       body: Column(
         children: [
           SizedBox(
-            height: 105,
+            height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: players.length,
               itemBuilder: (context, index) {
                 var p = players[index];
                 bool isActive = index == currentPlIndex;
-                String? profilePic = p['profilePicture'];
-                bool isDisc = p['isDisconnected'] == true;
+
+                final profilePicData =
+                    p['profilePicture'] ?? p['ProfilePicture'];
+                final hasProfilePic =
+                    profilePicData != null &&
+                    profilePicData.toString().trim().isNotEmpty;
+
+                Uint8List? imageBytes;
+                if (hasProfilePic) {
+                  try {
+                    String cleanBase64 = profilePicData.toString();
+                    if (cleanBase64.contains(',')) {
+                      cleanBase64 = cleanBase64.split(',').last;
+                    }
+                    cleanBase64 = cleanBase64.replaceAll(RegExp(r'\s+'), '');
+                    imageBytes = base64Decode(cleanBase64);
+                  } catch (e) {
+                    imageBytes = null;
+                  }
+                }
 
                 return Container(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 8,
+                    vertical: 10,
                   ),
                   child: Column(
                     children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isActive ? primaryBlue : Colors.transparent,
-                            ),
-                            child: CircleAvatar(
-                              radius: isActive ? 26 : 22,
-                              backgroundColor: const Color(0xFF272727),
-                              backgroundImage: profilePic != null && profilePic.isNotEmpty
-                                  ? NetworkImage("$apiUrl$profilePic")
-                                  : null,
-                              child: profilePic == null || profilePic.isEmpty
-                                  ? Icon(
-                                      Icons.person,
-                                      color: isDisc ? Colors.red : Colors.white,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          if (isDisc)
-                            Positioned(
-                              bottom: 2,
-                              right: 2,
-                              child: Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: const Color(0xFF1E1E1E), width: 2),
-                                ),
-                              ),
-                            ),
-                        ],
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isActive ? primaryBlue : Colors.transparent,
+                        ),
+                        child: CircleAvatar(
+                          radius: isActive ? 26 : 22,
+                          backgroundColor: const Color(0xFF272727),
+                          backgroundImage: imageBytes != null
+                              ? MemoryImage(imageBytes)
+                              : null,
+                          child: imageBytes == null
+                              ? Icon(
+                                  Icons.person,
+                                  color: p['isDisconnected']
+                                      ? Colors.red
+                                      : Colors.white,
+                                )
+                              : null,
+                        ),
                       ),
                       const SizedBox(height: 5),
                       Text(
@@ -389,24 +396,24 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
               icon: const Icon(Icons.skip_next, color: Colors.red),
               label: Text(
                 lang.getText('skip_player'),
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.red),
               ),
             ),
 
           const SizedBox(height: 20),
           const Divider(color: Colors.white24),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: EdgeInsets.symmetric(vertical: 10),
             child: Text(
               lang.getText('results_in_this_turn'),
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
+              style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
           ),
 
           if (stats.isEmpty)
             Text(
               lang.getText('no_results_yet'),
-              style: const TextStyle(color: Colors.white38),
+              style: TextStyle(color: Colors.white38),
             ),
 
           Expanded(
@@ -423,22 +430,15 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
                     .map((s) => "${s['weight']}kg x ${s['reps']}")
                     .join("  |  ");
 
-                String? pPic = p['profilePicture'];
-
                 return Card(
                   color: const Color(0xFF272727),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.transparent,
-                      backgroundImage: pPic != null && pPic.isNotEmpty
-                          ? NetworkImage("$apiUrl$pPic")
-                          : null,
-                      child: pPic == null || pPic.isEmpty
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : null,
+                    leading: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
                     ),
                     title: Text(
                       p['userName'],
