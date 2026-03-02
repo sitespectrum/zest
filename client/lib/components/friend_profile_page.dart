@@ -309,7 +309,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
                 f['friendId'] == widget.friendId ||
                 f['userId'] == widget.friendId,
           )
-          ? Container()
+          ? null
           : SafeArea(
               child: Container(
                 margin: EdgeInsets.all(20),
