@@ -261,6 +261,7 @@ class LanguageProvider with ChangeNotifier {
       'kick_user': 'Felhaszn. kirúgása',
       'send_friend_request': 'Barátkérelem küldése',
       'invite_friends' : 'Barátok meghívása',
+      'accept' : 'Elfogadás',
     },
     'en': {
       'register_button_main': "Register",
@@ -481,6 +482,7 @@ class LanguageProvider with ChangeNotifier {
       'kick_user': 'Kick user',
       'send_friend_request': 'Send friend request',
       'invite_friends' : 'Invite friends',
+      'accept' : 'Accept',
     },
   };
 }
