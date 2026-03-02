@@ -6,6 +6,8 @@ import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:client/components/drawers/workout_details_drawer.dart';
 import 'package:client/components/drawers/workout_template_drawer.dart';
 import 'package:client/components/running_workout_page.dart';
+import 'package:client/components/shared_running_workout_page.dart';
+import 'package:client/components/shared_workout_summary_page.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/constants.dart';
 import 'package:flutter/cupertino.dart';
@@ -57,6 +59,8 @@ class _CWorkoutPageState extends State<CWorkoutPage>
 
   String? currentSessionId;
   bool isOnlineMode = false;
+  bool isHost = false;
+  Map<String, dynamic>? currentGameState;
 
   @override
   void initState() {
@@ -70,6 +74,40 @@ class _CWorkoutPageState extends State<CWorkoutPage>
       _onSessionStateChanged,
     );
 
+    _setupWebSocketListeners();
+
+    NfcManager.instance.isAvailable().then((isAvailable) {
+      if (isAvailable) {
+      } else {
+        setState(() {
+          _nfcData = 'NFC is not available';
+        });
+      }
+    });
+    _checkAndConnectSession();
+  }
+
+  Future<void> _onSessionStateChanged() async {
+    final sessionId = WebSocketService().activeSessionNotifier.value;
+    final prefs = await SharedPreferences.getInstance();
+    final hostStatus = prefs.getBool('is_host') ?? false;
+
+    if (mounted) {
+      setState(() {
+        if (sessionId != null && sessionId.isNotEmpty) {
+          currentSessionId = sessionId;
+          isOnlineMode = true;
+          isHost = hostStatus;
+        } else {
+          currentSessionId = null;
+          isOnlineMode = false;
+          isHost = false;
+        }
+      });
+    }
+  }
+
+  void _setupWebSocketListeners() {
     WebSocketService().onMessageReceived = (data) {
       if (data['type'] == 'session-ended') {
         SharedPreferences.getInstance().then((prefs) {
@@ -78,6 +116,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
           WebSocketService().disconnect();
 
           if (mounted) {
+            setState(() {
+              currentGameState = null;
+            });
             if (Navigator.canPop(context)) Navigator.pop(context);
             CustomSnackbar.show(
               context,
@@ -99,32 +140,63 @@ class _CWorkoutPageState extends State<CWorkoutPage>
         } catch (e) {
           print("Hiba a JSON feldolgozásakor: $e");
         }
+      } else if (data['type'] == 'sync-workout-state') {
+        if (mounted) {
+          setState(() {
+            currentGameState = data['data'];
+          });
+        }
+      } else if (data['type'] == 'workout-started') {
+        if (mounted) {
+          for (var ex in userWorkouts) {
+            for (var set in ex.sets) {
+              set.isCompleted = false;
+            }
+          }
+
+          setState(() {
+            currentGameState = data['data'];
+          });
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SharedRunningWorkoutPage(
+                userWorkouts: userWorkouts,
+                initialGameState: data['data'],
+              ),
+            ),
+          ).then((result) {
+            _setupWebSocketListeners();
+
+            if (result != null &&
+                result is Map &&
+                result['status'] == 'finished') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SharedWorkoutSummaryPage(
+                    finalState: result['data'],
+                    userWorkouts: userWorkouts,
+                    isHost: isHost,
+                  ),
+                ),
+              ).then((_) {
+                if (mounted)
+                  setState(() {
+                    currentGameState = null;
+                  });
+              });
+            } else {
+              if (isOnlineMode && currentSessionId != null) {
+                WebSocketService().sendAction('get-workout-state', {});
+              }
+              if (mounted) setState(() {});
+            }
+          });
+        }
       }
     };
-
-    NfcManager.instance.isAvailable().then((isAvailable) {
-      if (isAvailable) {
-      } else {
-        setState(() {
-          _nfcData = 'NFC is not available';
-        });
-      }
-    });
-    _checkAndConnectSession();
-  }
-
-  void _onSessionStateChanged() {
-    final sessionId = WebSocketService().activeSessionNotifier.value;
-    if (!mounted) return;
-    setState(() {
-      if (sessionId != null && sessionId.isNotEmpty) {
-        currentSessionId = sessionId;
-        isOnlineMode = true;
-      } else {
-        currentSessionId = null;
-        isOnlineMode = false;
-      }
-    });
   }
 
   Future<void> _checkAndConnectSession() async {
@@ -496,7 +568,6 @@ class _CWorkoutPageState extends State<CWorkoutPage>
     WebSocketService().activeSessionNotifier.removeListener(
       _onSessionStateChanged,
     );
-    WebSocketService().disconnect();
     super.dispose();
   }
 
@@ -1727,19 +1798,85 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                       Expanded(
                         child: CustomButton(
                           iconData: Icons.skip_next,
-                          title: workoutProvider.isWorkoutActive
-                              ? lang.getText("continue_workout")
-                              : lang.getText("start"),
+                          title: isOnlineMode
+                              ? (currentGameState != null &&
+                                        currentGameState!['status'] == "Running"
+                                    ? lang.getText("continue_workout")
+                                    : lang.getText("start"))
+                              : (workoutProvider.isWorkoutActive
+                                    ? lang.getText("continue_workout")
+                                    : lang.getText("start")),
                           variant: CustomButtonVariant.primaryWorkout,
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => RunningWorkoutPage(
-                                  userWorkouts: userWorkouts,
+                            if (isOnlineMode) {
+                              if (currentGameState != null &&
+                                  currentGameState!['status'] == "Running") {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SharedRunningWorkoutPage(
+                                          userWorkouts: userWorkouts,
+                                          initialGameState: currentGameState!,
+                                        ),
+                                  ),
+                                ).then((result) {
+                                  _setupWebSocketListeners();
+
+                                  if (result != null &&
+                                      result is Map &&
+                                      result['status'] == 'finished') {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            SharedWorkoutSummaryPage(
+                                              finalState: result['data'],
+                                              userWorkouts: userWorkouts,
+                                              isHost: isHost,
+                                            ),
+                                      ),
+                                    ).then((_) {
+                                      if (mounted)
+                                        setState(() {
+                                          currentGameState = null;
+                                        });
+                                    });
+                                  } else {
+                                    if (isOnlineMode &&
+                                        currentSessionId != null) {
+                                      WebSocketService().sendAction(
+                                        'get-workout-state',
+                                        {},
+                                      );
+                                    }
+                                    if (mounted) setState(() {});
+                                  }
+                                });
+                              } else {
+                                if (isHost) {
+                                  WebSocketService().sendAction(
+                                    'start-shared-workout',
+                                    {},
+                                  );
+                                } else {
+                                  CustomSnackbar.show(
+                                    context,
+                                    lang.getText("only_host_can_start"),
+                                    backgroundColor: Colors.orange,
+                                  );
+                                }
+                              }
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RunningWorkoutPage(
+                                    userWorkouts: userWorkouts,
+                                  ),
                                 ),
-                              ),
-                            );
+                              );
+                            }
                           },
                         ),
                       ),
