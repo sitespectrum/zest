@@ -309,20 +309,20 @@ public class WorkoutSessionController : ControllerBase
         }
     }
 
-    [HttpGet("ws/{sessionId}")]
-    public async Task ConnectWebSocket(string sessionId)
+    [HttpGet("ws/{sessionId}/{userId}")]
+public async Task ConnectWebSocket(string sessionId, int userId)
+{
+    if (HttpContext.WebSockets.IsWebSocketRequest)
     {
-        if (HttpContext.WebSockets.IsWebSocketRequest)
-        {
-            using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-
-            await _wsHandler.HandleConnection(sessionId.ToUpper(), webSocket);
-        }
-        else
-        {
-            HttpContext.Response.StatusCode = 400;
-        }
+        using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+        
+        await _wsHandler.HandleConnection(sessionId.ToUpper(), userId, webSocket);
     }
+    else
+    {
+        HttpContext.Response.StatusCode = 400;
+    }
+}
 
     private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {
