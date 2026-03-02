@@ -340,6 +340,9 @@ Widget hostSessionDrawer(BuildContext context) {
         headers: {"Authorization": "Bearer $token"},
       );
 
+      debugPrint("🚀 MEGHÍVÁS HTTP KÓD: ${response.statusCode}");
+      debugPrint("🚀 MEGHÍVÁS VÁLASZ BODY: ${response.body}");
+
       if (response.statusCode == 200) {
         if (context.mounted) {
           CustomSnackbar.show(

@@ -278,6 +278,7 @@ class LanguageProvider with ChangeNotifier {
       'leaderboard': 'Ranglista',
       'max_weight': 'Maximális súly',
       'score': 'Pontszám',
+      'accept' : 'Elfogadás',
     },
     'en': {
       'register_button_main': "Register",
@@ -515,6 +516,7 @@ class LanguageProvider with ChangeNotifier {
       'leaderboard': 'Leaderboard',
       'max_weight': 'Max weight',
       'score': 'Score',
+      'accept' : 'Accept',
     },
   };
 }

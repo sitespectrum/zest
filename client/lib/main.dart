@@ -36,6 +36,14 @@ void main() async {
   OneSignal.Notifications.addForegroundWillDisplayListener((event) {
     final data = event.notification.additionalData;
 
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+    debugPrint("🚨 ÉRTESÍTÉS ÉRKEZETT AZ ELŐTÉRBEN!");
+    debugPrint("🚨 ADATOK: $data");
+
     if (data != null && data['type'] == 'session_invite') {
       event.preventDefault();
       final sessionId = data['sessionId'];
@@ -43,60 +51,109 @@ void main() async {
 
       scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
-          content: Text(
-            body,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          content: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  body,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+              Container(
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(50, 64, 255, 50),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color.fromARGB(100, 64, 255, 50),
+                  ),
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.check, color: Colors.white),
+                  onPressed: () async {
+                    scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+                    final prefs = await SharedPreferences.getInstance();
+                    final token = prefs.getString('jwt_token');
+
+                    try {
+                      final response = await http.post(
+                        Uri.parse("$apiUrl/api/WorkoutSession/join"),
+                        headers: {
+                          "Authorization": "Bearer $token",
+                          "Content-Type": "application/json",
+                        },
+                        body: jsonEncode({"SessionId": sessionId}),
+                      );
+
+                      if (response.statusCode == 200) {
+                        await prefs.setString('active_session_id', sessionId);
+                        await prefs.setBool('is_host', false);
+
+                        scaffoldMessengerKey.currentState?.showSnackBar(
+                          const SnackBar(
+                            content: Text("Sikeres csatlakozás!"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+
+                        navigatorKey.currentState?.push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                CWorkoutPage(selectedDay: DateTime.now()),
+                          ),
+                        );
+                      } else {
+                        scaffoldMessengerKey.currentState?.showSnackBar(
+                          SnackBar(
+                            content: Text("Hiba: ${response.body}"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      debugPrint("Hiba a csatlakozáskor: $e");
+                    }
+                  },
+                ),
+              ),
+
+              const SizedBox(width: 8),
+              Container(
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(40, 255, 122, 122),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color.fromARGB(255, 255, 69, 69),
+                  ),
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () {
+                    scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+                  },
+                ),
+              ),
+            ],
           ),
-          duration: const Duration(seconds: 15),
+          duration: const Duration(seconds: 30),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF333333),
-          action: SnackBarAction(
-            label: "ELFOGADOM",
-            textColor: Colors.greenAccent,
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              final token = prefs.getString('jwt_token');
-              final api = dotenv.env[apiUrl];
-
-              try {
-                final response = await http.post(
-                  Uri.parse("$api/api/WorkoutSession/join"),
-                  headers: {
-                    "Authorization": "Bearer $token",
-                    "Content-Type": "application/json",
-                  },
-                  body: jsonEncode({"SessionId": sessionId}),
-                );
-
-                if (response.statusCode == 200) {
-                  await prefs.setString('active_session_id', sessionId);
-                  await prefs.setBool('is_host', false);
-
-                  scaffoldMessengerKey.currentState?.showSnackBar(
-                    const SnackBar(
-                      content: Text("Sikeres csatlakozás!"),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-
-                  navigatorKey.currentState?.push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CWorkoutPage(selectedDay: DateTime.now()),
-                    ),
-                  );
-                } else {
-                  scaffoldMessengerKey.currentState?.showSnackBar(
-                    SnackBar(
-                      content: Text("Hiba: ${response.body}"),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              } catch (e) {
-                debugPrint("Hiba a csatlakozáskor: $e");
-              }
-            },
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       );
@@ -125,6 +182,8 @@ class Myapp extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
     return MaterialApp(
+      navigatorKey: navigatorKey,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       locale: lang.currentLocale,
       localeResolutionCallback: (deviceLocale, supportedLocales) {

@@ -250,6 +250,8 @@ public class WorkoutSessionController : ControllerBase
     [HttpPost("{sessionId}/invite/{targetUserId}")]
     public async Task<IActionResult> SendPushNotification(string sessionId, int targetUserId)
     {
+        Console.WriteLine($"=> MEGHÍVÓ VÉGPONT ELINDULT! Session: {sessionId}, Target: {targetUserId}");
+
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdClaim, out int currentUserId)) return Unauthorized("Érvénytelen felhasználó.");
 
