@@ -1,7 +1,8 @@
-import 'package:client/constants.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/services/websocket_service.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/models/workout.dart';
 import 'package:provider/provider.dart';
@@ -120,6 +121,25 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   var pStat = sortedPlayers[index];
 
+                  final profilePicData = pStat.profilePicture;
+                  final hasProfilePic =
+                      profilePicData != null &&
+                      profilePicData.toString().trim().isNotEmpty;
+
+                  Uint8List? imageBytes;
+                  if (hasProfilePic) {
+                    try {
+                      String cleanBase64 = profilePicData.toString();
+                      if (cleanBase64.contains(',')) {
+                        cleanBase64 = cleanBase64.split(',').last;
+                      }
+                      cleanBase64 = cleanBase64.replaceAll(RegExp(r'\s+'), '');
+                      imageBytes = base64Decode(cleanBase64);
+                    } catch (e) {
+                      imageBytes = null;
+                    }
+                  }
+
                   Color medalColor;
                   if (index == 0) {
                     medalColor = Colors.amber;
@@ -150,25 +170,39 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
                         children: [
                           Row(
                             children: [
+                              SizedBox(
+                                width: 30,
+                                child: Text(
+                                  "${index + 1}.",
+                                  style: TextStyle(
+                                    color: index < 3
+                                        ? medalColor
+                                        : Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
                               CircleAvatar(
-                                radius: 28,
-                                backgroundColor: const Color(0xFF1E1E1E),
-                                backgroundImage:
-                                    pStat.profilePicture != null &&
-                                        pStat.profilePicture!.isNotEmpty
-                                    ? NetworkImage(
-                                        "$apiUrl${pStat.profilePicture}",
-                                      )
-                                    : null,
-                                child:
-                                    pStat.profilePicture == null ||
-                                        pStat.profilePicture!.isEmpty
-                                    ? const Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 30,
-                                      )
-                                    : null,
+                                radius: 20,
+                                backgroundColor:
+                                    medalColor == Colors.transparent
+                                    ? Colors.black26
+                                    : medalColor,
+                                child: CircleAvatar(
+                                  radius: index < 3 ? 18 : 20,
+                                  backgroundColor: const Color(0xFF272727),
+                                  backgroundImage: imageBytes != null
+                                      ? MemoryImage(imageBytes)
+                                      : null,
+                                  child: imageBytes == null
+                                      ? const Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 20,
+                                        )
+                                      : null,
+                                ),
                               ),
                               const SizedBox(width: 15),
                               Expanded(
