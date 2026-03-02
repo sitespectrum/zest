@@ -31,6 +31,7 @@ public class WorkoutPlayer
 {
     public int UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string? ProfilePicture { get; set; }
     public bool IsDisconnected { get; set; } = false;
 }
 
@@ -208,6 +209,7 @@ public class WebSocketHandler
             {
                 UserId = p.UserId,
                 UserName = p.User.UserName,
+                ProfilePicture = p.User.ProfilePicture,
                 IsDisconnected = false
             }).ToList()
         };

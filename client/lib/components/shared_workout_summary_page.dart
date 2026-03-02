@@ -1,3 +1,4 @@
+import 'package:client/constants.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/services/websocket_service.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +10,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PlayerStats {
   final int userId;
   final String userName;
+  final String? profilePicture;
   double totalVolume = 0;
   int totalReps = 0;
   int totalSets = 0;
   double maxWeight = 0;
   double score = 0;
 
-  PlayerStats({required this.userId, required this.userName});
+  PlayerStats({
+    required this.userId,
+    required this.userName,
+    this.profilePicture,
+  });
 }
 
 class SharedWorkoutSummaryPage extends StatelessWidget {
@@ -41,6 +47,7 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
       playerStatsMap[p['userId']] = PlayerStats(
         userId: p['userId'],
         userName: p['userName'],
+        profilePicture: p['profilePicture'],
       );
     }
 
@@ -63,7 +70,8 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
     }
 
     for (var pStat in playerStatsMap.values) {
-      pStat.score = (pStat.totalVolume * 0.5) +
+      pStat.score =
+          (pStat.totalVolume * 0.5) +
           (pStat.totalReps * 2) +
           (pStat.maxWeight * 5) +
           (pStat.totalSets * 10);
@@ -143,18 +151,24 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
                           Row(
                             children: [
                               CircleAvatar(
-                                radius: 20,
-                                backgroundColor: medalColor == Colors.transparent
-                                    ? Colors.black26
-                                    : medalColor,
-                                child: Text(
-                                  "${index + 1}.",
-                                  style: TextStyle(
-                                    color: index < 3 ? Colors.black : Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
+                                radius: 28,
+                                backgroundColor: const Color(0xFF1E1E1E),
+                                backgroundImage:
+                                    pStat.profilePicture != null &&
+                                        pStat.profilePicture!.isNotEmpty
+                                    ? NetworkImage(
+                                        "$apiUrl${pStat.profilePicture}",
+                                      )
+                                    : null,
+                                child:
+                                    pStat.profilePicture == null ||
+                                        pStat.profilePicture!.isEmpty
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 30,
+                                      )
+                                    : null,
                               ),
                               const SizedBox(width: 15),
                               Expanded(
@@ -197,23 +211,31 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               _buildStatItem(
-                                  lang.getText('volume'),
-                                  "${pStat.totalVolume.toStringAsFixed(0)} kg",
-                                  Icons.fitness_center),
-                              _buildStatItem(lang.getText('reps'),
-                                  "${pStat.totalReps}", Icons.repeat),
+                                lang.getText('volume'),
+                                "${pStat.totalVolume.toStringAsFixed(0)} kg",
+                                Icons.fitness_center,
+                              ),
+                              _buildStatItem(
+                                lang.getText('reps'),
+                                "${pStat.totalReps}",
+                                Icons.repeat,
+                              ),
                             ],
                           ),
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildStatItem(lang.getText('sets'),
-                                  "${pStat.totalSets}", Icons.layers),
                               _buildStatItem(
-                                  lang.getText('max_weight'),
-                                  "${pStat.maxWeight.toStringAsFixed(1)} kg",
-                                  Icons.local_fire_department),
+                                lang.getText('sets'),
+                                "${pStat.totalSets}",
+                                Icons.layers,
+                              ),
+                              _buildStatItem(
+                                lang.getText('max_weight'),
+                                "${pStat.maxWeight.toStringAsFixed(1)} kg",
+                                Icons.local_fire_department,
+                              ),
                             ],
                           ),
                         ],
@@ -264,7 +286,10 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-              color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
