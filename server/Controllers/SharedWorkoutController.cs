@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 using Zest.Api.Data;
 using Zest.Api.Models;
 using ZestApi.Services;
 
 namespace ZestApi.Controllers;
+
 
 [ApiController]
 [Route("api/[controller]")]
@@ -13,6 +15,8 @@ public class WorkoutSessionController : ControllerBase
 {
     private readonly ZestDbContext _context;
     private readonly WebSocketHandler _wsHandler;
+
+    private static readonly HttpClient _httpClient = new HttpClient();
 
     public WorkoutSessionController(ZestDbContext context, WebSocketHandler wsHandler)
     {
@@ -244,30 +248,63 @@ public class WorkoutSessionController : ControllerBase
     }
 
     [HttpPost("{sessionId}/invite/{targetUserId}")]
-    public async Task<IActionResult> InviteToSession(string sessionId, int targetUserId)
+    public async Task<IActionResult> SendPushNotification(string sessionId, int targetUserId)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdClaim, out int currentUserId)) return Unauthorized("Érvénytelen felhasználó.");
 
         var hostUser = await _context.Users.FindAsync(currentUserId);
         if (hostUser == null) return NotFound("Felhasználó nem található.");
+        try
+        {
+            string appId = _context.Database.GetDbConnection().ConnectionString.Contains("onesignal") ? "" : "ONESIGNAL_APP_ID";
+            string actualAppId = Environment.GetEnvironmentVariable("ONESIGNAL_APP_ID") ?? "";
+            string restApiKey = Environment.GetEnvironmentVariable("ONESIGNAL_REST_API_KEY") ?? "";
 
-        using var client = new HttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
 
-        request.Headers.Add("Authorization", "Basic ONESIGNAL_REST_API_KEY");
+            var notificationData = new
+            {
+                app_id = actualAppId,
+                include_aliases = new
+                {
+                    external_id = new[] { targetUserId.ToString() }
+                },
 
-        var content = new StringContent($@"{{
-            ""app_id"": ""ONESIGNAL_APP_ID"",
-            ""include_external_user_ids"": [""{targetUserId}""],
-            ""contents"": {{""en"": ""{hostUser.UserName} invited you to workout together!"", ""hu"": ""{hostUser.UserName} meghívott egy közös edzésre!""}},
-            ""data"": {{ ""type"": ""session_invite"", ""sessionId"": ""{sessionId}"" }}
-        }}", null, "application/json");
+                target_channel = "push",
 
-        request.Content = content;
-        await client.SendAsync(request);
+                headings = new { en = "Invite", hu = "Meghívó" },
+                contents = new { en = $"{hostUser.UserName} invited you to workout together!", hu = $"{hostUser.UserName} meghívott egy közös edzésre!" },
+                data = new { type = "session_invite", sessionId = sessionId },
 
-        return Ok(new { Message = "Meghívó elküldve!" });
+                android_accent_color = "FF55AD4E",
+                small_icon = "ic_stat_onesignal_default"
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
+            request.Headers.Add("Authorization", $"Basic {restApiKey}");
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            var jsonContent = JsonSerializer.Serialize(notificationData);
+            request.Content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine($"OneSignal Válasz Kód: {response.StatusCode}");
+            Console.WriteLine($"OneSignal Válasz Body: {responseBody}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Kritikus OneSignal hiba: {responseBody}");
+            }
+
+            return Ok(new { Message = "Meghívó elküldve!" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba az értesítés küldésekor: {ex.Message}");
+            return StatusCode(500, $"Belső szerver hiba: {ex.Message}");
+        }
     }
 
     [HttpGet("ws/{sessionId}")]
