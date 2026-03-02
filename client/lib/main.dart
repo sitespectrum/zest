@@ -36,6 +36,9 @@ void main() async {
   OneSignal.Notifications.addForegroundWillDisplayListener((event) {
     final data = event.notification.additionalData;
 
+    debugPrint("🚨 ÉRTESÍTÉS ÉRKEZETT AZ ELŐTÉRBEN!");
+    debugPrint("🚨 ADATOK: $data");
+
     if (data != null && data['type'] == 'session_invite') {
       event.preventDefault();
       final sessionId = data['sessionId'];
@@ -125,6 +128,8 @@ class Myapp extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
     return MaterialApp(
+      navigatorKey: navigatorKey,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       locale: lang.currentLocale,
       localeResolutionCallback: (deviceLocale, supportedLocales) {
