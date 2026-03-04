@@ -87,16 +87,16 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
     }
   }
 
-  void _endTurn(ExerciseDto currentExercise) {
+  void _endTurn(ExerciseDto currentExercise, bool finishExercise) {
     var validSets = currentExercise.sets
         .where((s) => s.isCompleted || s.reps > 0 || s.weight > 0)
         .toList();
 
-    if (validSets.isEmpty) {
+    if (validSets.isEmpty && !finishExercise) {
       final lang = Provider.of<LanguageProvider>(context, listen: false);
       CustomSnackbar.show(
         context,
-        lang.getText("no_valid_sets"),
+        lang.getText("no_valid_sets") ?? "Nincsenek érvényes sorozatok!",
         backgroundColor: Colors.orange,
       );
       return;
@@ -111,9 +111,14 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
       });
     }
 
-    print("📤 Kör befejezése, adatok küldése: ${jsonEncode(setsData)}");
+    print(
+      "📤 Adatok küldése: ${jsonEncode(setsData)}, Gyakorlat vége: $finishExercise",
+    );
 
-    WebSocketService().sendAction('end-turn', {"sets": setsData});
+    WebSocketService().sendAction('end-turn', {
+      "sets": setsData,
+      "finishExercise": finishExercise,
+    });
   }
 
   void _skipPlayer() {
@@ -208,15 +213,33 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
         .where((s) => s['exerciseId'] == currentExercise.id)
         .toList();
 
+    int currentSet = 1;
+    var activePlayerStat = currentExStats
+        .where((s) => s['userId'] == currentPlayer['userId'])
+        .toList();
+    if (activePlayerStat.isNotEmpty && activePlayerStat.first['sets'] != null) {
+      currentSet = (activePlayerStat.first['sets'] as List).length + 1;
+    }
+
     final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+    String setWord = lang.getText('set');
+    setWord = setWord.toLowerCase();
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
-        title: Text(
-          "${lang.getText('shared_workout')} (${currentExIndex + 1}/${widget.userWorkouts.length})",
-          style: TextStyle(fontWeight: FontWeight.bold, color: primaryBlue),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            "${lang.getText('shared_workout')} (${currentExIndex + 1}/${widget.userWorkouts.length}) - $currentSet. $setWord",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: primaryBlue,
+              fontSize: 18,
+            ),
+          ),
         ),
         actions: [
           IconButton(
@@ -279,7 +302,7 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
                           child: imageBytes == null
                               ? Icon(
                                   Icons.person,
-                                  color: p['isDisconnected']
+                                  color: p['isDisconnected'] == true
                                       ? Colors.red
                                       : Colors.white,
                                 )
@@ -346,11 +369,26 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
 
           Padding(
             padding: const EdgeInsets.all(20.0),
-            child: CustomButton(
-              onPressed: () => _endTurn(currentExercise),
-              variant: CustomButtonVariant.primaryWorkout,
-              title: lang.getText('finish_turn'),
-              iconData: Icons.check_circle_outline,
+            child: Row(
+              children: [
+                Expanded(
+                  child: CustomButton(
+                    onPressed: () => _endTurn(currentExercise, false),
+                    variant: CustomButtonVariant.secondary,
+                    title: lang.getText('finish_set'),
+                    iconData: Icons.check,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: CustomButton(
+                    onPressed: () => _endTurn(currentExercise, true),
+                    variant: CustomButtonVariant.primaryWorkout,
+                    title: lang.getText('finish_exercise'),
+                    iconData: Icons.done_all,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 40),

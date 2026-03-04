@@ -33,6 +33,7 @@ public class WorkoutPlayer
     public string UserName { get; set; } = string.Empty;
     public string? ProfilePicture { get; set; }
     public bool IsDisconnected { get; set; } = false;
+    public bool IsDoneWithExercise { get; set; } = false;
 }
 
 public class WorkoutStat
@@ -227,15 +228,38 @@ public class WebSocketHandler
 
         try
         {
-            var stat = JsonSerializer.Deserialize<WorkoutStat>(data.GetRawText(), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-            if (stat != null)
+            var doc = JsonDocument.Parse(data.GetRawText());
+            bool finishExercise = false;
+
+            if (doc.RootElement.TryGetProperty("finishExercise", out var feProp))
             {
-                stat.UserId = userId;
-                stat.ExerciseId = state.ExerciseIds[state.CurrentExerciseIndex];
+                finishExercise = feProp.GetBoolean();
+            }
+
+            List<SetStat> sets = new();
+            if (doc.RootElement.TryGetProperty("sets", out var setsProp))
+            {
+                sets = JsonSerializer.Deserialize<List<SetStat>>(setsProp.GetRawText(), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? new List<SetStat>();
+            }
+
+            var player = state.Players.FirstOrDefault(p => p.UserId == userId);
+            if (player != null && finishExercise)
+            {
+                player.IsDoneWithExercise = true;
+            }
+
+            var stat = state.Stats.FirstOrDefault(s => s.UserId == userId && s.ExerciseId == state.ExerciseIds[state.CurrentExerciseIndex]);
+            if (stat == null)
+            {
+                stat = new WorkoutStat { UserId = userId, ExerciseId = state.ExerciseIds[state.CurrentExerciseIndex] };
                 state.Stats.Add(stat);
             }
+            stat.Sets = sets;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba a kör befejezésekor: {ex.Message}");
+        }
 
         await AdvanceTurn(sessionId, state);
     }
@@ -250,30 +274,53 @@ public class WebSocketHandler
 
     private async Task AdvanceTurn(string sessionId, WorkoutGameState state)
     {
-        int loopGuard = 0;
+        bool allDoneWithExercise = state.Players.All(p => p.IsDisconnected || p.IsDoneWithExercise);
         bool isWorkoutFinished = false;
 
-        do
+        if (allDoneWithExercise)
         {
-            state.CurrentPlayerIndex++;
+            state.CurrentExerciseIndex++;
+            state.CurrentPlayerIndex = 0;
 
-            if (state.CurrentPlayerIndex >= state.Players.Count)
+            foreach (var p in state.Players)
             {
-                state.CurrentPlayerIndex = 0;
-                state.CurrentExerciseIndex++;
+                p.IsDoneWithExercise = false;
             }
 
             if (state.CurrentExerciseIndex >= state.ExerciseIds.Count)
             {
                 state.Status = "Finished";
                 isWorkoutFinished = true;
-                break;
             }
+            else
+            {
+                while (state.CurrentPlayerIndex < state.Players.Count && state.Players[state.CurrentPlayerIndex].IsDisconnected)
+                {
+                    state.CurrentPlayerIndex++;
+                }
+                if (state.CurrentPlayerIndex >= state.Players.Count)
+                {
+                    state.Status = "Finished";
+                    isWorkoutFinished = true;
+                }
+            }
+        }
+        else
+        {
+            int loopGuard = 0;
+            do
+            {
+                state.CurrentPlayerIndex++;
+                if (state.CurrentPlayerIndex >= state.Players.Count)
+                {
+                    state.CurrentPlayerIndex = 0;
+                }
 
-            loopGuard++;
-            if (loopGuard > state.Players.Count) break;
+                loopGuard++;
+                if (loopGuard > state.Players.Count) break;
 
-        } while (state.Players[state.CurrentPlayerIndex].IsDisconnected);
+            } while (state.Players[state.CurrentPlayerIndex].IsDisconnected || state.Players[state.CurrentPlayerIndex].IsDoneWithExercise);
+        }
 
         if (isWorkoutFinished)
         {
@@ -431,7 +478,7 @@ public class WebSocketHandler
         var message = JsonSerializer.Serialize(new { type = "sync-exercises", data = exercises }, options);
         await BroadcastToSession(sessionId, message);
     }
-    
+
     private async Task SendCurrentStateToUser(string sessionId, int userId)
     {
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
