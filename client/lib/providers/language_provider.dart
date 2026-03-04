@@ -154,7 +154,7 @@ class LanguageProvider with ChangeNotifier {
       'evening': 'esti edzés',
       'night': 'éjszakai edzés',
       'finish_workout': 'Edzés befejezése',
-      'set': 'Soroz.',
+      'set': 'Szett',
       'reps': 'Ismétlések',
       'done': 'Kész',
       'add_set': 'Hozzáadás',
@@ -162,7 +162,7 @@ class LanguageProvider with ChangeNotifier {
       'continue_workout': 'Folytatás',
       'name_the_template': 'Adj nevet a sablonnak!',
       'min': 'perc',
-      'sets': 'Sorozatok',
+      'sets': 'Szettek',
       'exercises': 'Gyakorlatok',
       'volume': 'Összesen',
       'duration': 'Időtartam',
@@ -279,6 +279,8 @@ class LanguageProvider with ChangeNotifier {
       'max_weight': 'Maximális súly',
       'score': 'Pontszám',
       'accept' : 'Elfogadás',
+      'finish_set': 'Szett befejezése',
+      'finish_exercise': 'Gyakorlat befejezése',
     },
     'en': {
       'register_button_main': "Register",
@@ -517,6 +519,8 @@ class LanguageProvider with ChangeNotifier {
       'max_weight': 'Max weight',
       'score': 'Score',
       'accept' : 'Accept',
+      'finish_set': 'Finish set',
+      'finish_exercise': 'Finish exercise',
     },
   };
 }
