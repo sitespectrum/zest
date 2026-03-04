@@ -734,262 +734,277 @@ class _ProfilePageState extends State<ProfilePage>
     final lang = Provider.of<LanguageProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color.fromARGB(255, 85, 173, 78),
-              ),
-            )
-          : ScrollConfiguration(
-              behavior: NoGlowScrollBehavior(),
-              child: SingleChildScrollView(
-                physics: BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
+      body: RefreshIndicator(
+        onRefresh: () async => _initProfile(),
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color.fromARGB(255, 85, 173, 78),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PreferredSize(
-                      preferredSize: const Size.fromHeight(60),
-                      child: Container(
-                        margin: const EdgeInsets.all(6),
-                        child: AppBar(
-                          title: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: ClipRect(
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(
-                                  sigmaX: 10.0,
-                                  sigmaY: 10.0,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromRGBO(
-                                      45,
-                                      45,
-                                      45,
-                                      0.5,
-                                    ),
+              )
+            : ScrollConfiguration(
+                behavior: NoGlowScrollBehavior(),
+                child: SingleChildScrollView(
+                  physics: BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      PreferredSize(
+                        preferredSize: const Size.fromHeight(60),
+                        child: Container(
+                          margin: const EdgeInsets.all(6),
+                          child: AppBar(
+                            title: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: ClipRect(
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 10.0,
+                                    sigmaY: 10.0,
                                   ),
-                                  child: Text(
-                                    lang.getText("profile_page"),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          automaticallyImplyLeading: false,
-                          backgroundColor: Colors.transparent,
-                          actions: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 10),
-                              child: IconButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const FriendsPage(),
-                                    ),
-                                  );
-                                },
-                                icon: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: const BoxDecoration(
-                                    color: Color.fromARGB(255, 85, 173, 78),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.group,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (userData != null)
-                      Center(
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 20),
-                            GestureDetector(
-                              onTap: _pickAndUploadImage,
-                              child: Stack(
-                                children: [
-                                  Container(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          85,
-                                          173,
-                                          78,
-                                        ),
-                                        width: 3,
+                                      color: const Color.fromRGBO(
+                                        45,
+                                        45,
+                                        45,
+                                        0.5,
                                       ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 5),
-                                        ),
-                                      ],
                                     ),
-                                    child: CircleAvatar(
-                                      radius: 60,
-                                      backgroundColor: const Color(0xFF272727),
-                                      backgroundImage:
-                                          (userData!['profilePicture'] !=
-                                                  null &&
-                                              userData!['profilePicture']
-                                                  .toString()
-                                                  .isNotEmpty)
-                                          ? MemoryImage(
-                                              base64Decode(
-                                                userData!['profilePicture'],
-                                              ),
-                                            )
-                                          : null,
-                                      child:
-                                          (userData!['profilePicture'] ==
-                                                  null ||
-                                              userData!['profilePicture']
-                                                  .toString()
-                                                  .isEmpty)
-                                          ? const Icon(
-                                              Icons.person,
-                                              size: 60,
-                                              color: Colors.white54,
-                                            )
-                                          : null,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: const BoxDecoration(
-                                        color: Color.fromARGB(255, 85, 173, 78),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.camera_alt,
+                                    child: Text(
+                                      lang.getText("profile_page"),
+                                      style: TextStyle(
                                         color: Colors.white,
-                                        size: 20,
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 15),
-                            Text(
-                              username ?? "Felhasználó",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.1,
+                            automaticallyImplyLeading: false,
+                            backgroundColor: Colors.transparent,
+                            actions: [
+                              Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: IconButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const FriendsPage(),
+                                      ),
+                                    );
+                                  },
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: const BoxDecoration(
+                                      color: Color.fromARGB(255, 85, 173, 78),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.group,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    if (userData != null) ...[
-                      CustomCard(
-                        title: lang.getText("personal_details"),
-                        iconData: Icons.person,
-                        child: Column(
-                          children: [
-                            _buildInfoRow(
-                              Icons.height,
-                              lang.getText("height"),
-                              "${userData!['height']} cm",
-                            ),
-                            const Divider(color: Colors.white12),
-                            _buildInfoRow(
-                              Icons.fitness_center,
-                              lang.getText("weight"),
-                              "${userData!['weight']} kg",
-                            ),
-                          ],
+                      if (userData != null)
+                        Center(
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 20),
+                              GestureDetector(
+                                onTap: _pickAndUploadImage,
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color.fromARGB(
+                                            255,
+                                            85,
+                                            173,
+                                            78,
+                                          ),
+                                          width: 3,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.3,
+                                            ),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 60,
+                                        backgroundColor: const Color(
+                                          0xFF272727,
+                                        ),
+                                        backgroundImage:
+                                            (userData!['profilePicture'] !=
+                                                    null &&
+                                                userData!['profilePicture']
+                                                    .toString()
+                                                    .isNotEmpty)
+                                            ? MemoryImage(
+                                                base64Decode(
+                                                  userData!['profilePicture'],
+                                                ),
+                                              )
+                                            : null,
+                                        child:
+                                            (userData!['profilePicture'] ==
+                                                    null ||
+                                                userData!['profilePicture']
+                                                    .toString()
+                                                    .isEmpty)
+                                            ? const Icon(
+                                                Icons.person,
+                                                size: 60,
+                                                color: Colors.white54,
+                                              )
+                                            : null,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: const BoxDecoration(
+                                          color: Color.fromARGB(
+                                            255,
+                                            85,
+                                            173,
+                                            78,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                              Text(
+                                username ?? "Felhasználó",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
                         ),
-                      ),
-                      CustomCard(
-                        title: lang.getText("daily_goals"),
-                        iconData: Icons.calendar_month,
-                        child: Column(
-                          children: [
-                            _buildInfoRow(
-                              Icons.local_fire_department,
-                              lang.getText("calories"),
-                              "${userData!['calorieGoal'].toInt()} kcal",
-                            ),
-                            const Divider(color: Colors.white12),
-                            _buildInfoRow(
-                              Icons.egg_alt,
-                              lang.getText("protein"),
-                              "${userData!['proteinGoal'].toInt()} g",
-                            ),
-                            const Divider(color: Colors.white12),
-                            _buildInfoRow(
-                              Icons.bakery_dining,
-                              lang.getText("carbs"),
-                              "${userData!['carbsGoal'].toInt()} g",
-                            ),
-                            const Divider(color: Colors.white12),
-                            _buildInfoRow(
-                              Icons.opacity,
-                              lang.getText("fat"),
-                              "${userData!['fatGoal'].toInt()} g",
-                            ),
-                          ],
+                      if (userData != null) ...[
+                        CustomCard(
+                          title: lang.getText("personal_details"),
+                          iconData: Icons.person,
+                          child: Column(
+                            children: [
+                              _buildInfoRow(
+                                Icons.height,
+                                lang.getText("height"),
+                                "${userData!['height']} cm",
+                              ),
+                              const Divider(color: Colors.white12),
+                              _buildInfoRow(
+                                Icons.fitness_center,
+                                lang.getText("weight"),
+                                "${userData!['weight']} kg",
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        CustomCard(
+                          title: lang.getText("daily_goals"),
+                          iconData: Icons.calendar_month,
+                          child: Column(
+                            children: [
+                              _buildInfoRow(
+                                Icons.local_fire_department,
+                                lang.getText("calories"),
+                                "${userData!['calorieGoal'].toInt()} kcal",
+                              ),
+                              const Divider(color: Colors.white12),
+                              _buildInfoRow(
+                                Icons.egg_alt,
+                                lang.getText("protein"),
+                                "${userData!['proteinGoal'].toInt()} g",
+                              ),
+                              const Divider(color: Colors.white12),
+                              _buildInfoRow(
+                                Icons.bakery_dining,
+                                lang.getText("carbs"),
+                                "${userData!['carbsGoal'].toInt()} g",
+                              ),
+                              const Divider(color: Colors.white12),
+                              _buildInfoRow(
+                                Icons.opacity,
+                                lang.getText("fat"),
+                                "${userData!['fatGoal'].toInt()} g",
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          child: CustomButton(
+                            onPressed: () {
+                              _showEditPopup();
+                            },
+                            title: lang.getText("modify_details"),
+                            variant: CustomButtonVariant.primary,
+                          ),
+                        ),
+                      ],
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 10,
                         ),
                         child: CustomButton(
-                          onPressed: () {
-                            _showEditPopup();
+                          onPressed: () async {
+                            await _logout();
                           },
-                          title: lang.getText("modify_details"),
-                          variant: CustomButtonVariant.primary,
+                          title: lang.getText("logout"),
+                          variant: CustomButtonVariant.secondary,
                         ),
                       ),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.14,
+                      ),
                     ],
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      child: CustomButton(
-                        onPressed: () async {
-                          await _logout();
-                        },
-                        title: lang.getText("logout"),
-                        variant: CustomButtonVariant.secondary,
-                      ),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.14),
-                  ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }
