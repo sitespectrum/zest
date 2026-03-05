@@ -6,25 +6,29 @@ class WorkoutProvider with ChangeNotifier {
   Timer? _timer;
   final Stopwatch _stopwatch = Stopwatch();
 
+  int _initialOffsetSeconds = 0;
+
   List<ExerciseDto> _userWorkouts = [];
   bool _isWorkoutActive = false;
 
-  int get seconds => _stopwatch.elapsed.inSeconds % 60;
-  int get minutes => _stopwatch.elapsed.inMinutes % 60;
-  int get hours => _stopwatch.elapsed.inHours;
-  int get totalMinutes => _stopwatch.elapsed.inMinutes;
+  int get totalSeconds => _initialOffsetSeconds + _stopwatch.elapsed.inSeconds;
+
+  int get seconds => totalSeconds % 60;
+  int get minutes => (totalSeconds ~/ 60) % 60;
+  int get hours => totalSeconds ~/ 3600;
+  int get totalMinutes => totalSeconds ~/ 60;
+
   bool get isWorkoutActive => _isWorkoutActive;
   List<ExerciseDto> get userWorkouts => _userWorkouts;
 
   String get formattedTime {
-    final duration = _stopwatch.elapsed;
-    String s = (duration.inSeconds % 60).toString().padLeft(2, '0');
-    String m = (duration.inMinutes % 60).toString().padLeft(2, '0');
-    String h = (duration.inHours).toString().padLeft(2, '0');
+    String s = seconds.toString().padLeft(2, '0');
+    String m = minutes.toString().padLeft(2, '0');
+    String h = hours.toString().padLeft(2, '0');
     return "$h : $m : $s";
   }
 
-  void startWorkout(List<ExerciseDto> exercises) {
+  void startWorkout(List<ExerciseDto> exercises, {int initialSeconds = 0}) {
     if (_isWorkoutActive) {
       _userWorkouts = exercises;
       notifyListeners();
@@ -33,6 +37,7 @@ class WorkoutProvider with ChangeNotifier {
 
     _userWorkouts = exercises;
     _isWorkoutActive = true;
+    _initialOffsetSeconds = initialSeconds;
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       notifyListeners();
@@ -46,6 +51,7 @@ class WorkoutProvider with ChangeNotifier {
     _timer?.cancel();
     _isWorkoutActive = false;
     _stopwatch.stop();
+    _initialOffsetSeconds = 0;
     notifyListeners();
   }
 

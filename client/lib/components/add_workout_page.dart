@@ -60,6 +60,17 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     super.initState();
   }
 
+  Future<void> _saveDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    if (userWorkouts.isEmpty) {
+      await prefs.remove('draft_workout');
+    } else {
+      final jsonString = jsonEncode(userWorkouts.map((e) => e.toJson()).toList());
+      await prefs.setString('draft_workout', jsonString);
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -260,6 +271,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       setState(() {
         userWorkouts.add(exercise);
       });
+      _saveDraft();
     }
 
     final cleanName = stripHtmlTags(exercise.getName(langCode));

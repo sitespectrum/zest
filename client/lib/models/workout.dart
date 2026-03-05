@@ -113,6 +113,11 @@ class ExerciseDto {
       return defaultValue;
     }
 
+    List<WorkoutSetDto> parsedSets = [];
+    if (json['sets'] != null) {
+      parsedSets = (json['sets'] as List).map((i) => WorkoutSetDto.fromJson(i)).toList();
+    }
+
     return ExerciseDto(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
@@ -134,7 +139,7 @@ class ExerciseDto {
       instructions: parseList(json['instructions']),
       instructionsHu: parseList(json['instructionsHu']),
       images: parseList(json['images']),
-      sets: [],
+      sets: parsedSets,
       metValue: toDoubleSafe(json['metValue'], 3.5),
     );
   }
@@ -211,7 +216,13 @@ class WorkoutSetDto {
   }
 
   Map<String, dynamic> toJson() {
-    return {'weight': weight, 'reps': reps, 'isCompleted': isCompleted};
+    return {
+      'weight': weight, 
+      'reps': reps, 
+      'distance': distance, 
+      'durationSeconds': durationSeconds, 
+      'isCompleted': isCompleted
+    };
   }
 }
 
