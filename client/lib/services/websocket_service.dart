@@ -84,7 +84,6 @@ class WebSocketService {
           if (onMessageReceived != null) {
             onMessageReceived!(decodedMessage);
           }
-
           if (decodedMessage['type'] == 'user-kicked') {
             final kickedId = decodedMessage['kickedUserId'];
 
