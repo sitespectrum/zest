@@ -25,6 +25,7 @@ Widget joinSessionDrawer(BuildContext context) {
   final controller = useTextEditingController(text: "");
   final nearbySessions = useState<List<dynamic>>([]);
   final isLoading = useState(false);
+  final isConnected = useState(false);
 
   final tabController = useTabController(initialLength: 2);
 
@@ -69,6 +70,10 @@ Widget joinSessionDrawer(BuildContext context) {
 
   Future<void> joinSession(String sessionId) async {
     if (sessionId.isEmpty) return;
+    if (isConnected.value == true) {
+      CustomSnackbar.show(context, lang.getText("already_connected"));
+      return;
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -84,6 +89,7 @@ Widget joinSessionDrawer(BuildContext context) {
       );
 
       if (response.statusCode == 200) {
+        isConnected.value = true;
         await prefs.setString('active_session_id', sessionId);
         await prefs.setBool('is_host', false);
 
