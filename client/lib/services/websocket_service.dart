@@ -29,6 +29,9 @@ class WebSocketService {
     if (isConnected) return;
 
     final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString('active_session_id', sessionId);
+
     int myUserId = prefs.getInt('userId') ?? 0;
 
     if (myUserId == 0) {
@@ -69,6 +72,8 @@ class WebSocketService {
     try {
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       isConnected = true;
+
+      sendAction('get-workout-state', {});
 
       _channel!.stream.listen(
         (message) async {

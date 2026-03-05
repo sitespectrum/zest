@@ -172,6 +172,9 @@ public class WebSocketHandler
                 case "get-workout-state":
                     await SendCurrentStateToUser(sessionId, senderUserId);
                     break;
+                case "get-exercises":
+                    await SyncExercisesToUser(sessionId, senderUserId);
+                    break;
             }
         }
         catch (Exception e)
@@ -489,8 +492,21 @@ public class WebSocketHandler
         }
         else
         {
-            var msg = JsonSerializer.Serialize(new { type = "session-ended" }, options);
-            await SendToSingleUser(sessionId, userId, msg);
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ZestDbContext>();
+            var sessionExists = await context.SharedWorkoutSessions.AnyAsync(s => s.SessionId == sessionId);
+
+            if (sessionExists)
+            {
+                var lobbyState = new WorkoutGameState { SessionId = sessionId, Status = "Lobby" };
+                var msg = JsonSerializer.Serialize(new { type = "sync-workout-state", data = lobbyState }, options);
+                await SendToSingleUser(sessionId, userId, msg);
+            }
+            else
+            {
+                var msg = JsonSerializer.Serialize(new { type = "session-ended" }, options);
+                await SendToSingleUser(sessionId, userId, msg);
+            }
         }
     }
 
@@ -556,5 +572,27 @@ public class WebSocketHandler
                 }
             }
         }
+    }
+
+    private async Task SyncExercisesToUser(string sessionId, int userId)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ZestDbContext>();
+
+        var exercises = await context.SharedSessionExercises
+            .Where(s => s.SessionId == sessionId)
+            .OrderBy(s => s.OrderIndex)
+            .Select(s => s.Exercise)
+            .ToListAsync();
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = ReferenceHandler.IgnoreCycles
+        };
+
+        var message = JsonSerializer.Serialize(new { type = "sync-exercises", data = exercises }, options);
+
+        await SendToSingleUser(sessionId, userId, message);
     }
 }

@@ -202,11 +202,33 @@ class _CWorkoutPageState extends State<CWorkoutPage>
   Future<void> _checkAndConnectSession() async {
     final prefs = await SharedPreferences.getInstance();
     final savedId = prefs.getString('active_session_id');
+    final hostStatus = prefs.getBool('is_host') ?? false;
 
     if (savedId != null && savedId.isNotEmpty) {
+      
+      if (mounted) {
+        setState(() {
+          currentSessionId = savedId;
+          isOnlineMode = true;
+          isHost = hostStatus;
+        });
+      }
+
       WebSocketService().activeSessionNotifier.value = savedId;
-      WebSocketService().connect(savedId);
+      await WebSocketService().connect(savedId);
+
+      if (WebSocketService().isConnected) {
+        WebSocketService().sendAction('get-workout-state', {});
+        WebSocketService().sendAction('get-exercises', {});
+      }
     } else {
+      if (mounted) {
+        setState(() {
+          currentSessionId = null;
+          isOnlineMode = false;
+          isHost = false;
+        });
+      }
       WebSocketService().activeSessionNotifier.value = null;
       WebSocketService().disconnect();
     }
