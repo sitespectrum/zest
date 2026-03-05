@@ -151,7 +151,10 @@ class _HomePageState extends State<HomePage>
     final lang = Provider.of<LanguageProvider>(context);
     final langCode = Provider.of<LanguageProvider>(context).languageCode;
     final String locale = lang.languageCode == 'hu' ? 'hu_HU' : 'en_US';
-    final workoutProvider = Provider.of<WorkoutProvider>(context);
+    final workoutProvider = Provider.of<WorkoutProvider>(
+      context,
+      listen: false,
+    );
     super.build(context);
     return Scaffold(
       backgroundColor: Colors.transparent,

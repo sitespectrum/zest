@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:client/components/ui/custom_textfield.dart';
+import 'package:client/main.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/pages.dart';
@@ -18,7 +19,12 @@ import 'package:http/http.dart' as http;
 
 class RunningWorkoutPage extends StatefulWidget {
   final List<ExerciseDto> userWorkouts;
-  const RunningWorkoutPage({super.key, required this.userWorkouts});
+  final int initialSeconds;
+  const RunningWorkoutPage({
+    super.key,
+    required this.userWorkouts,
+    this.initialSeconds = 0,
+  });
 
   @override
   State<RunningWorkoutPage> createState() => _RunningWorkoutPageState();
@@ -28,6 +34,7 @@ final workoutcontroller = TextEditingController();
 
 class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
   Color workoutColorCode = const Color.fromARGB(150, 50, 146, 255);
+  bool _isPopping = false;
   Future<void> saveUserExercises(
     List<ExerciseDto> exercises,
     String workoutName,
@@ -161,7 +168,10 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
         listen: false,
       );
       if (!workoutProvider.isWorkoutActive) {
-        workoutProvider.startWorkout(widget.userWorkouts);
+        workoutProvider.startWorkout(
+          widget.userWorkouts,
+          initialSeconds: widget.initialSeconds,
+        );
       } else {
         workoutProvider.updateExercises(widget.userWorkouts);
       }
@@ -216,478 +226,520 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
         "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHourB()}";
     Timer? _debounce;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: Container(
-                margin: const EdgeInsets.all(3),
-                child: AppBar(
-                  backgroundColor: Colors.transparent,
-                  automaticallyImplyLeading: false,
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: ClipRect(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(
-                                sigmaX: 10.0,
-                                sigmaY: 10.0,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color.fromRGBO(45, 45, 45, 0.5),
+    return PopScope(
+      canPop: _isPopping,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        final prefs = await SharedPreferences.getInstance();
+        final sessionData = {
+          'elapsedSeconds': workoutProvider.totalSeconds,
+          'timestamp': DateTime.now()
+              .millisecondsSinceEpoch,
+          'exercises': workoutProvider.userWorkouts
+              .map((e) => e.toJson())
+              .toList(),
+        };
+        final jsonString = jsonEncode(sessionData);
+
+        await prefs.setString('offline_workout', jsonString);
+        offlineSessionNotifier.value = jsonString;
+
+        setState(() {
+          _isPopping = true;
+        });
+
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        body: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              PreferredSize(
+                preferredSize: const Size.fromHeight(60),
+                child: Container(
+                  margin: const EdgeInsets.all(3),
+                  child: AppBar(
+                    backgroundColor: Colors.transparent,
+                    automaticallyImplyLeading: false,
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: ClipRect(
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 10.0,
+                                  sigmaY: 10.0,
                                 ),
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back),
-                                      color: Colors.white,
-                                      padding: EdgeInsets.only(
-                                        left: 0,
-                                        top: 0,
-                                        bottom: 0,
-                                        right: 10,
-                                      ),
-                                      constraints: const BoxConstraints(),
-                                      style: IconButton.styleFrom(
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      onPressed: () =>
-                                          Navigator.maybePop(context),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromRGBO(
+                                      45,
+                                      45,
+                                      45,
+                                      0.5,
                                     ),
-                                    Text(
-                                      lang.getText(
-                                        "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}",
-                                      ),
-                                      style: TextStyle(
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_back),
                                         color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
+                                        padding: EdgeInsets.only(
+                                          left: 0,
+                                          top: 0,
+                                          bottom: 0,
+                                          right: 10,
+                                        ),
+                                        constraints: const BoxConstraints(),
+                                        style: IconButton.styleFrom(
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.maybePop(context),
                                       ),
-                                    ),
-                                  ],
+                                      Text(
+                                        lang.getText(
+                                          "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}",
+                                        ),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Text(
-                workoutProvider.formattedTime,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2.0,
+              const SizedBox(height: 20),
+              Center(
+                child: Text(
+                  workoutProvider.formattedTime,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 20),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 100),
-              curve: Curves.easeOut,
-              height: _getcurrentHeight(context),
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: widget.userWorkouts.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    currentPage = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final exercise = widget.userWorkouts[index];
-                  return SingleChildScrollView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    child: MeasureSize(
-                      onChange: (size) {
-                        double newHeight = size.height + 60;
-                        if (_pageHeights[index] != newHeight) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) {
-                              setState(() {
-                                _pageHeights[index] = newHeight;
-                              });
-                            }
-                          });
-                        }
-                      },
-                      child: ExerciseTrackerCard(
-                        exercise: exercise,
-                        onremoveExercise: () {
-                          setState(() {
-                            currentExercises.removeAt(index);
-                            _pageHeights.remove(index);
-                            if (currentPage >= currentExercises.length &&
-                                currentPage > 0) {
-                              currentPage = currentExercises.length - 1;
-                            }
-                          });
+              SizedBox(height: 20),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeOut,
+                height: _getcurrentHeight(context),
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: widget.userWorkouts.length,
+                  onPageChanged: (index) {
+                    setState(() {
+                      currentPage = index;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    final exercise = widget.userWorkouts[index];
+                    return SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: MeasureSize(
+                        onChange: (size) {
+                          double newHeight = size.height + 60;
+                          if (_pageHeights[index] != newHeight) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                setState(() {
+                                  _pageHeights[index] = newHeight;
+                                });
+                              }
+                            });
+                          }
                         },
+                        child: ExerciseTrackerCard(
+                          exercise: exercise,
+                          onremoveExercise: () {
+                            setState(() {
+                              currentExercises.removeAt(index);
+                              _pageHeights.remove(index);
+                              if (currentPage >= currentExercises.length &&
+                                  currentPage > 0) {
+                                currentPage = currentExercises.length - 1;
+                              }
+                            });
+                          },
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: CustomButton(
-                  title: lang.getText("finish_workout"),
-                  variant: CustomButtonVariant.primaryWorkout,
-                  onPressed: () async {
-                    final finishedExercises = workoutProvider.userWorkouts
-                        .where((ex) => ex.sets.any((s) => s.isCompleted))
-                        .toList();
-                    workoutProvider.stopWorkout();
-                    int totalSets = 0;
-                    int totalReps = 0;
-                    double totalVolume = 0;
-                    double totalMet = 0;
-                    for (var ex in finishedExercises) {
-                      final finishedSets = ex.sets
-                          .where((s) => s.isCompleted)
-                          .toList();
-                      totalSets += ex.sets.length;
-                      totalMet += ex.metValue;
-                      for (var s in finishedSets) {
-                        totalReps += s.reps;
-                        totalVolume += s.reps * s.weight;
-                      }
-                    }
-
-                    double avgMet = workoutProvider.userWorkouts.isNotEmpty
-                        ? totalMet / workoutProvider.userWorkouts.length
-                        : 3.5;
-
-                    double durationMin =
-                        (workoutProvider.minutes + workoutProvider.hours * 60)
-                            .toDouble();
-                    int burntCalories = (avgMet * 3.5 * 75 / 200 * durationMin)
-                        .toInt();
-                    if (burntCalories == 0 && durationMin > 0)
-                      // ignore: curly_braces_in_flow_control_structures
-                      burntCalories = (durationMin * 5).toInt();
-
-                    int currentWorkoutNum = 1;
-                    try {
-                      final prefs = await SharedPreferences.getInstance();
-                      final token = prefs.getString('jwt_token');
-                      final response = await http.get(
-                        Uri.parse("$apiUrl/api/workouts/getUserWorkouts"),
-                        headers: {"Authorization": "Bearer $token"},
-                      );
-                      if (response.statusCode == 200) {
-                        List data = jsonDecode(response.body);
-                        currentWorkoutNum = data.length + 1;
-                      }
-                    } catch (e) {
-                      debugPrint("Nem sikerült lekérni az edzések számát: $e");
-                    }
-
-                    for (var ex in workoutProvider.userWorkouts) {
-                      totalSets += ex.sets.length;
-                      for (var s in ex.sets) {
-                        if (s.isCompleted) {
-                          totalReps += s.reps;
-                          totalVolume += s.reps * s.weight;
-                        } else {
-                          totalReps += s.reps;
-                          totalVolume += s.reps * s.weight;
-                        }
-                      }
-                    }
-                    showDialog(
-                      barrierDismissible: false,
-                      context: context,
-                      builder: (builderContext) {
-                        return PopScope(
-                          canPop: false,
-                          child: Dialog(
-                            insetPadding: const EdgeInsets.all(20),
-                            backgroundColor: const Color.fromARGB(
-                              255,
-                              30,
-                              30,
-                              30,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color.fromRGBO(45, 45, 45, 1),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Center(
-                                    child: Text(
-                                      lang.getText(defWorkoutName),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-
-                                  const Divider(
-                                    color: Colors.white24,
-                                    height: 30,
-                                  ),
-
-                                  Row(
-                                    children: [
-                                      _buildStatCell(
-                                        "$currentWorkoutNum.",
-                                        isHeader: true,
-                                      ),
-                                      _buildStatCell(
-                                        "$burntCalories",
-                                        isHeader: true,
-                                      ),
-                                      _buildStatCell(
-                                        "${workoutProvider.minutes + workoutProvider.hours * 60} ${lang.getText("min")}",
-                                        isHeader: true,
-                                      ),
-                                      _buildStatCell(
-                                        "${totalVolume.toInt()}",
-                                        isHeader: true,
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      _buildStatCell(
-                                        lang.getText("workout"),
-                                        color: Colors.grey,
-                                      ),
-                                      _buildStatCell(
-                                        lang.getText("calories"),
-                                        color: Colors.grey,
-                                      ),
-                                      _buildStatCell(
-                                        lang.getText("duration"),
-                                        color: Colors.grey,
-                                      ),
-                                      _buildStatCell(
-                                        lang.getText("volume"),
-                                        color: Colors.grey,
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 15),
-                                  Row(
-                                    children: [
-                                      _buildStatCell(
-                                        "${workoutProvider.userWorkouts.length}",
-                                        isHeader: true,
-                                      ),
-                                      _buildStatCell(
-                                        "$totalSets",
-                                        isHeader: true,
-                                      ),
-                                      _buildStatCell(
-                                        "$totalReps",
-                                        isHeader: true,
-                                      ),
-                                      const Expanded(child: SizedBox()),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      _buildStatCell(
-                                        lang.getText("exercises"),
-                                        color: Colors.grey,
-                                      ),
-                                      _buildStatCell(
-                                        lang.getText("sets"),
-                                        color: Colors.grey,
-                                      ),
-                                      _buildStatCell(
-                                        lang.getText("reps"),
-                                        color: Colors.grey,
-                                      ),
-                                      const Expanded(child: SizedBox()),
-                                    ],
-                                  ),
-
-                                  const Divider(
-                                    color: Colors.white24,
-                                    height: 30,
-                                  ),
-
-                                  Flexible(
-                                    child: ListView.separated(
-                                      shrinkWrap: true,
-                                      itemCount: finishedExercises.length,
-                                      separatorBuilder: (ctx, i) =>
-                                          const Divider(color: Colors.white12),
-
-                                      itemBuilder: (context, index) {
-                                        final ex = finishedExercises[index];
-
-                                        final isCardio =
-                                            ex.category?.toLowerCase() ==
-                                            'cardio';
-                                        final isBodyweight =
-                                            ex.equipment?.toLowerCase() ==
-                                                'body only' ||
-                                            ex.equipment?.toLowerCase() ==
-                                                'none';
-
-                                        return Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              ex.getName(lang.languageCode),
-                                              style: TextStyle(
-                                                color: workoutColorCode,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 6),
-
-                                            if (ex.sets.isEmpty)
-                                              const Text(
-                                                " - Nincs sorozat",
-                                                style: TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: 12,
-                                                ),
-                                              )
-                                            else
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const SizedBox(height: 8),
-                                                  ...ex.sets.where((s) => s.isCompleted).map((
-                                                    set,
-                                                  ) {
-                                                    final isCardio =
-                                                        ex.category
-                                                            ?.toLowerCase() ==
-                                                        'cardio';
-                                                    final isBodyweight =
-                                                        ex.equipment
-                                                                ?.toLowerCase() ==
-                                                            'body only' ||
-                                                        ex.equipment
-                                                                ?.toLowerCase() ==
-                                                            'none';
-
-                                                    String textToShow = "";
-
-                                                    if (isCardio) {
-                                                      textToShow =
-                                                          "${set.weight} km | ${set.reps} ${lang.getText("min")}";
-                                                    } else if (isBodyweight) {
-                                                      textToShow =
-                                                          "${set.reps} ${lang.getText("reps")}";
-                                                    } else {
-                                                      textToShow =
-                                                          "${set.weight} kg x ${set.reps}";
-                                                    }
-
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                            left: 10.0,
-                                                            bottom: 8.0,
-                                                          ),
-                                                      child: Text(
-                                                        textToShow,
-                                                        style: const TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 13,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }).toList(),
-                                                ],
-                                              ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Center(
-                                    child: CustomButton(
-                                      variant: CustomButtonVariant.secondary,
-                                      onPressed: () async {
-                                        Navigator.pop(context);
-                                        if (_debounce?.isActive ?? false) {
-                                          _debounce!.cancel();
-                                        }
-                                        _debounce = Timer(
-                                          const Duration(milliseconds: 1500),
-                                          () {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).hideCurrentSnackBar();
-                                          },
-                                        );
-                                        _showSaveDialog(
-                                          context,
-                                          lang,
-                                          workoutProvider,
-                                          defWorkoutNameB,
-                                          burntCalories,
-                                          totalVolume,
-                                        );
-                                      },
-                                      iconData: Icons.close,
-                                      title: lang.getText("close"),
-                                    ),
-                                  ),
-                                  SizedBox(height: 10),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
                     );
                   },
                 ),
               ),
             ],
+          ),
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: CustomButton(
+                    title: lang.getText("finish_workout"),
+                    variant: CustomButtonVariant.primaryWorkout,
+                    onPressed: () async {
+                      final finishedExercises = workoutProvider.userWorkouts
+                          .where((ex) => ex.sets.any((s) => s.isCompleted))
+                          .toList();
+                      workoutProvider.stopWorkout();
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.remove('offline_workout');
+                      offlineSessionNotifier.value = null;
+                      int totalSets = 0;
+                      int totalReps = 0;
+                      double totalVolume = 0;
+                      double totalMet = 0;
+                      for (var ex in finishedExercises) {
+                        final finishedSets = ex.sets
+                            .where((s) => s.isCompleted)
+                            .toList();
+                        totalSets += ex.sets.length;
+                        totalMet += ex.metValue;
+                        for (var s in finishedSets) {
+                          totalReps += s.reps;
+                          totalVolume += s.reps * s.weight;
+                        }
+                      }
+
+                      double avgMet = workoutProvider.userWorkouts.isNotEmpty
+                          ? totalMet / workoutProvider.userWorkouts.length
+                          : 3.5;
+
+                      double durationMin =
+                          (workoutProvider.minutes + workoutProvider.hours * 60)
+                              .toDouble();
+                      int burntCalories =
+                          (avgMet * 3.5 * 75 / 200 * durationMin).toInt();
+                      if (burntCalories == 0 && durationMin > 0)
+                        // ignore: curly_braces_in_flow_control_structures
+                        burntCalories = (durationMin * 5).toInt();
+
+                      int currentWorkoutNum = 1;
+                      try {
+                        final prefs = await SharedPreferences.getInstance();
+                        final token = prefs.getString('jwt_token');
+                        final response = await http.get(
+                          Uri.parse("$apiUrl/api/workouts/getUserWorkouts"),
+                          headers: {"Authorization": "Bearer $token"},
+                        );
+                        if (response.statusCode == 200) {
+                          List data = jsonDecode(response.body);
+                          currentWorkoutNum = data.length + 1;
+                        }
+                      } catch (e) {
+                        debugPrint(
+                          "Nem sikerült lekérni az edzések számát: $e",
+                        );
+                      }
+
+                      for (var ex in workoutProvider.userWorkouts) {
+                        totalSets += ex.sets.length;
+                        for (var s in ex.sets) {
+                          if (s.isCompleted) {
+                            totalReps += s.reps;
+                            totalVolume += s.reps * s.weight;
+                          } else {
+                            totalReps += s.reps;
+                            totalVolume += s.reps * s.weight;
+                          }
+                        }
+                      }
+                      showDialog(
+                        barrierDismissible: false,
+                        context: context,
+                        builder: (builderContext) {
+                          return PopScope(
+                            canPop: false,
+                            child: Dialog(
+                              insetPadding: const EdgeInsets.all(20),
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                30,
+                                30,
+                                30,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(45, 45, 45, 1),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        lang.getText(defWorkoutName),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const Divider(
+                                      color: Colors.white24,
+                                      height: 30,
+                                    ),
+
+                                    Row(
+                                      children: [
+                                        _buildStatCell(
+                                          "$currentWorkoutNum.",
+                                          isHeader: true,
+                                        ),
+                                        _buildStatCell(
+                                          "$burntCalories",
+                                          isHeader: true,
+                                        ),
+                                        _buildStatCell(
+                                          "${workoutProvider.minutes + workoutProvider.hours * 60} ${lang.getText("min")}",
+                                          isHeader: true,
+                                        ),
+                                        _buildStatCell(
+                                          "${totalVolume.toInt()}",
+                                          isHeader: true,
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        _buildStatCell(
+                                          lang.getText("workout"),
+                                          color: Colors.grey,
+                                        ),
+                                        _buildStatCell(
+                                          lang.getText("calories"),
+                                          color: Colors.grey,
+                                        ),
+                                        _buildStatCell(
+                                          lang.getText("duration"),
+                                          color: Colors.grey,
+                                        ),
+                                        _buildStatCell(
+                                          lang.getText("volume"),
+                                          color: Colors.grey,
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 15),
+                                    Row(
+                                      children: [
+                                        _buildStatCell(
+                                          "${workoutProvider.userWorkouts.length}",
+                                          isHeader: true,
+                                        ),
+                                        _buildStatCell(
+                                          "$totalSets",
+                                          isHeader: true,
+                                        ),
+                                        _buildStatCell(
+                                          "$totalReps",
+                                          isHeader: true,
+                                        ),
+                                        const Expanded(child: SizedBox()),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        _buildStatCell(
+                                          lang.getText("exercises"),
+                                          color: Colors.grey,
+                                        ),
+                                        _buildStatCell(
+                                          lang.getText("sets"),
+                                          color: Colors.grey,
+                                        ),
+                                        _buildStatCell(
+                                          lang.getText("reps"),
+                                          color: Colors.grey,
+                                        ),
+                                        const Expanded(child: SizedBox()),
+                                      ],
+                                    ),
+
+                                    const Divider(
+                                      color: Colors.white24,
+                                      height: 30,
+                                    ),
+
+                                    Flexible(
+                                      child: ListView.separated(
+                                        shrinkWrap: true,
+                                        itemCount: finishedExercises.length,
+                                        separatorBuilder: (ctx, i) =>
+                                            const Divider(
+                                              color: Colors.white12,
+                                            ),
+
+                                        itemBuilder: (context, index) {
+                                          final ex = finishedExercises[index];
+
+                                          final isCardio =
+                                              ex.category?.toLowerCase() ==
+                                              'cardio';
+                                          final isBodyweight =
+                                              ex.equipment?.toLowerCase() ==
+                                                  'body only' ||
+                                              ex.equipment?.toLowerCase() ==
+                                                  'none';
+
+                                          return Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                ex.getName(lang.languageCode),
+                                                style: TextStyle(
+                                                  color: workoutColorCode,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+
+                                              if (ex.sets.isEmpty)
+                                                const Text(
+                                                  " - Nincs sorozat",
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12,
+                                                  ),
+                                                )
+                                              else
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    const SizedBox(height: 8),
+                                                    ...ex.sets.where((s) => s.isCompleted).map((
+                                                      set,
+                                                    ) {
+                                                      final isCardio =
+                                                          ex.category
+                                                              ?.toLowerCase() ==
+                                                          'cardio';
+                                                      final isBodyweight =
+                                                          ex.equipment
+                                                                  ?.toLowerCase() ==
+                                                              'body only' ||
+                                                          ex.equipment
+                                                                  ?.toLowerCase() ==
+                                                              'none';
+
+                                                      String textToShow = "";
+
+                                                      if (isCardio) {
+                                                        textToShow =
+                                                            "${set.weight} km | ${set.reps} ${lang.getText("min")}";
+                                                      } else if (isBodyweight) {
+                                                        textToShow =
+                                                            "${set.reps} ${lang.getText("reps")}";
+                                                      } else {
+                                                        textToShow =
+                                                            "${set.weight} kg x ${set.reps}";
+                                                      }
+
+                                                      return Padding(
+                                                        padding:
+                                                            const EdgeInsets.only(
+                                                              left: 10.0,
+                                                              bottom: 8.0,
+                                                            ),
+                                                        child: Text(
+                                                          textToShow,
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                                fontSize: 13,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                  ],
+                                                ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Center(
+                                      child: CustomButton(
+                                        variant: CustomButtonVariant.secondary,
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          if (_debounce?.isActive ?? false) {
+                                            _debounce!.cancel();
+                                          }
+                                          _debounce = Timer(
+                                            const Duration(milliseconds: 1500),
+                                            () {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).hideCurrentSnackBar();
+                                            },
+                                          );
+                                          _showSaveDialog(
+                                            context,
+                                            lang,
+                                            workoutProvider,
+                                            defWorkoutNameB,
+                                            burntCalories,
+                                            totalVolume,
+                                          );
+                                        },
+                                        iconData: Icons.close,
+                                        title: lang.getText("close"),
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

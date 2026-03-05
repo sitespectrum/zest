@@ -37,7 +37,12 @@ import 'package:client/services/websocket_service.dart';
 
 class CWorkoutPage extends StatefulWidget {
   final DateTime selectedDay;
-  const CWorkoutPage({super.key, required this.selectedDay});
+  final List<ExerciseDto>? restoredExercises;
+  const CWorkoutPage({
+    super.key,
+    required this.selectedDay,
+    this.restoredExercises,
+  });
 
   @override
   State<CWorkoutPage> createState() => _CWorkoutPageState();
@@ -68,6 +73,11 @@ class _CWorkoutPageState extends State<CWorkoutPage>
   @override
   void initState() {
     super.initState();
+    if (widget.restoredExercises != null) {
+      userWorkouts = widget.restoredExercises!;
+    } else {
+      _loadDraft();
+    }
     WidgetsBinding.instance.addObserver(this);
     futureCustomWorkouts = fetchCustomUserWorkouts().catchError((e) {
       return <CustomUserWorkoutDto>[];
@@ -88,6 +98,33 @@ class _CWorkoutPageState extends State<CWorkoutPage>
       }
     });
     _checkAndConnectSession();
+  }
+
+  Future<void> _loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final draftString = prefs.getString('draft_workout');
+
+    if (draftString != null) {
+      final decoded = jsonDecode(draftString) as List;
+      if (mounted) {
+        setState(() {
+          userWorkouts = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
+        });
+      }
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (userWorkouts.isEmpty) {
+      await prefs.remove('draft_workout');
+    } else {
+      final jsonString = jsonEncode(
+        userWorkouts.map((e) => e.toJson()).toList(),
+      );
+      await prefs.setString('draft_workout', jsonString);
+    }
   }
 
   Future<void> _onSessionStateChanged() async {
@@ -291,6 +328,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
       }
       final ExerciseDto item = userWorkouts.removeAt(oldIndex);
       userWorkouts.insert(newIndex, item);
+      _saveDraft();
 
       if (isOnlineMode && currentSessionId != null) {
         final List<int> orderedIds = userWorkouts.map((e) => e.id).toList();
@@ -426,6 +464,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
           setState(() {
             userWorkouts.addAll(newWorkouts);
           });
+          _saveDraft();
           CustomSnackbar.show(
             context,
             "${newWorkouts.length} ${lang.getText("meal_added_to_list")}",
@@ -713,6 +752,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
               setState(() {
                 userWorkouts.addAll(newWorkouts);
               });
+              _saveDraft();
 
               CustomSnackbar.show(
                 context,
@@ -1475,6 +1515,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                                       index,
                                                     );
                                                   });
+                                                  _saveDraft();
                                                 }
                                               },
                                               child: Text(
@@ -1812,6 +1853,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                 setState(() {
                                   userWorkouts.addAll(result);
                                 });
+                                _saveDraft();
                               }
                             }
                           },
@@ -1831,7 +1873,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                     ? lang.getText("continue_workout")
                                     : lang.getText("start")),
                           variant: CustomButtonVariant.primaryWorkout,
-                          onPressed: () {
+                          onPressed: () async {
                             if (isOnlineMode) {
                               if (currentGameState != null &&
                                   currentGameState!['status'] == "Running") {
@@ -1892,6 +1934,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                 }
                               }
                             } else {
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.remove('draft_workout');
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -1934,6 +1979,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                 setState(() {
                                   userWorkouts.addAll(result);
                                 });
+                                _saveDraft();
                               }
                             }
                           },

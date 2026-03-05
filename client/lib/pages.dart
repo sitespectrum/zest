@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 import 'package:client/components/drawers/add_drawer.dart';
+import 'package:client/components/running_workout_page.dart';
 import 'package:client/components/topo_background.dart';
 import 'package:client/components/workout_page.dart';
 import 'package:client/components/home_page.dart';
@@ -25,12 +27,16 @@ class Pages extends StatefulWidget {
   State<Pages> createState() => _PagesState();
 }
 
-class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
+class _PagesState extends State<Pages>
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   String? username;
   int _selectedIndex = 0;
 
   String? _activeSessionId;
   bool _isLoadingSharedWorkout = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   final List<Color> _pageColors = [
     const Color(0xFF7af970),
@@ -307,6 +313,114 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ValueListenableBuilder<String?>(
+              valueListenable: offlineSessionNotifier,
+              builder: (context, sessionData, child) {
+                if (sessionData == null) return const SizedBox.shrink();
+
+                return Container(
+                  margin: const EdgeInsets.only(
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(
+                      255,
+                      50,
+                      146,
+                      255,
+                    ).withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    leading: const Icon(
+                      Icons.fitness_center,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    title: Text(
+                      lang.languageCode == 'hu'
+                          ? "Edzés folyamatban..."
+                          : "Workout in progress...",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                      onPressed: () {
+                        try {
+                          final decoded = jsonDecode(sessionData);
+                          List<ExerciseDto> restoredWorkouts = [];
+                          int restoredSeconds = 0;
+
+                          if (decoded is List) {
+                            restoredWorkouts = decoded
+                                .map((e) => ExerciseDto.fromJson(e))
+                                .toList();
+                          } else if (decoded is Map) {
+                            int savedSeconds = decoded['elapsedSeconds'] ?? 0;
+                            int timestamp =
+                                decoded['timestamp'] ??
+                                DateTime.now().millisecondsSinceEpoch;
+
+                            int diffSeconds =
+                                (DateTime.now().millisecondsSinceEpoch -
+                                    timestamp) ~/
+                                1000;
+
+                            restoredSeconds = savedSeconds + diffSeconds;
+                            restoredWorkouts = (decoded['exercises'] as List)
+                                .map((e) => ExerciseDto.fromJson(e))
+                                .toList();
+                          }
+
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) =>
+                                      CWorkoutPage(selectedDay: DateTime.now(), restoredExercises: restoredWorkouts,),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
+                          );
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RunningWorkoutPage(
+                                userWorkouts: restoredWorkouts,
+                                initialSeconds: restoredSeconds,
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          debugPrint("Hiba a visszatöltéskor: $e");
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
             if (_activeSessionId != null && _activeSessionId!.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
