@@ -1,5 +1,7 @@
 import "dart:convert";
 import "dart:math";
+import "package:client/components/ui/custom_snackbar.dart";
+
 import 'components/custom_workout_page.dart';
 import "package:client/constants.dart";
 import "package:client/providers/language_provider.dart";
@@ -70,9 +72,24 @@ void main() async {
                 padding: EdgeInsets.zero,
                 icon: const Icon(Icons.check, color: Colors.white),
                 onPressed: () async {
+                  final currentContext = navigatorKey.currentContext;
+                  if (currentContext == null) return;
                   scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+                  final lang = Provider.of<LanguageProvider>(
+                    currentContext,
+                    listen: false,
+                  );
                   final prefs = await SharedPreferences.getInstance();
                   final token = prefs.getString('jwt_token');
+                  final activeSession = prefs.getString("active_session_id");
+                  if (activeSession != null && activeSession.isNotEmpty) {
+                    scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+                    CustomSnackbar.show(
+                      currentContext,
+                      lang.getText("already_connected"),
+                    );
+                    return;
+                  }
 
                   try {
                     final response = await http.post(

@@ -56,7 +56,7 @@ class WebSocketService {
       }
     }
 
-    _myUserId = myUserId; // Eltároljuk osztályszinten
+    _myUserId = myUserId;
 
     String wsUrl = apiUrl.contains('https')
         ? apiUrl.replaceFirst('https', 'wss') +
@@ -74,18 +74,14 @@ class WebSocketService {
         (message) async {
           final decodedMessage = jsonDecode(message);
 
-          // 1. Üzenet kiküldése a UI-nak (pl. nyitott drawernek)
           _messageController.add(decodedMessage);
 
           if (onMessageReceived != null) {
             onMessageReceived!(decodedMessage);
           }
-
-          // 2. GLOBÁLIS KILÉPTETÉS FIGYELÉSE
           if (decodedMessage['type'] == 'user-kicked') {
             final kickedId = decodedMessage['kickedUserId'];
 
-            // Ha minket dobtak ki, végrehajtjuk a kilépést a háttérben
             if (kickedId == _myUserId) {
               debugPrint("🔴 Kidobtak a sessionből, kilépés folyamatban...");
               await forceLeaveSession();
