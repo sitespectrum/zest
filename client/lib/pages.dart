@@ -12,6 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/language_provider.dart';
+import 'package:client/models/workout.dart';
+import 'package:client/services/websocket_service.dart';
+import 'package:client/components/shared_running_workout_page.dart';
+import 'package:client/components/shared_workout_summary_page.dart';
 
 class Pages extends StatefulWidget {
   const Pages({super.key});
@@ -24,6 +28,9 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
   String? username;
   int _selectedIndex = 0;
 
+  String? _activeSessionId;
+  bool _isLoadingSharedWorkout = false;
+
   final List<Color> _pageColors = [
     const Color(0xFF7af970),
     const Color.fromARGB(150, 50, 146, 255),
@@ -31,7 +38,6 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
     const Color.fromARGB(255, 255, 255, 255),
   ];
 
-  // ignore: prefer_final_fields
   late PageController _pageController = PageController();
   Color _currentColor = const Color(0xFF7af970);
 
@@ -40,13 +46,143 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
     super.initState();
     _loadUser();
     _pageController.addListener(_onScroll);
+
+    _checkActiveSharedWorkout();
+    WebSocketService().activeSessionNotifier.addListener(_onSessionChanged);
   }
 
   @override
   void dispose() {
     _pageController.removeListener(_onScroll);
     _pageController.dispose();
+    WebSocketService().activeSessionNotifier.removeListener(_onSessionChanged);
     super.dispose();
+  }
+
+  void _onSessionChanged() {
+    if (mounted) {
+      setState(() {
+        _activeSessionId = WebSocketService().activeSessionNotifier.value;
+      });
+    }
+  }
+
+  Future<void> _checkActiveSharedWorkout() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getString('active_session_id');
+    if (mounted) {
+      setState(() {
+        _activeSessionId = savedId;
+      });
+    }
+    if (savedId != null && savedId.isNotEmpty) {
+      if (!WebSocketService().isConnected) {
+        await WebSocketService().connect(savedId);
+      }
+    }
+  }
+
+  Future<void> _resumeSharedWorkout() async {
+    setState(() {
+      _isLoadingSharedWorkout = true;
+    });
+
+    if (!WebSocketService().isConnected && _activeSessionId != null) {
+      await WebSocketService().connect(_activeSessionId!);
+    }
+
+    List<ExerciseDto>? fetchedWorkouts;
+    Map<String, dynamic>? fetchedState;
+
+    final oldHandler = WebSocketService().onMessageReceived;
+
+    WebSocketService().onMessageReceived = (data) {
+      if (data['type'] == 'session-ended') {
+        WebSocketService().onMessageReceived = oldHandler;
+
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.remove('active_session_id');
+          prefs.remove('is_host');
+        });
+        WebSocketService().activeSessionNotifier.value = null;
+        WebSocketService().disconnect();
+
+        if (mounted) {
+          setState(() {
+            _isLoadingSharedWorkout = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Az edzés már befejeződött!"),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (data['type'] == 'sync-exercises') {
+        fetchedWorkouts = (data['data'] as List)
+            .map((e) => ExerciseDto.fromJson(e))
+            .toList();
+      } else if (data['type'] == 'sync-workout-state') {
+        fetchedState = data['data'];
+      }
+
+      if (fetchedWorkouts != null && fetchedState != null) {
+        WebSocketService().onMessageReceived = oldHandler;
+
+        if (mounted) {
+          setState(() {
+            _isLoadingSharedWorkout = false;
+          });
+        }
+
+        if (fetchedState!['status'] == 'Running') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SharedRunningWorkoutPage(
+                userWorkouts: fetchedWorkouts!,
+                initialGameState: fetchedState!,
+              ),
+            ),
+          ).then((result) async {
+            if (result != null &&
+                result is Map &&
+                result['status'] == 'finished') {
+              final prefs = await SharedPreferences.getInstance();
+              final isHost = prefs.getBool('is_host') ?? false;
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SharedWorkoutSummaryPage(
+                      finalState: result['data'],
+                      userWorkouts: fetchedWorkouts!,
+                      isHost: isHost,
+                    ),
+                  ),
+                );
+              }
+            }
+            _checkActiveSharedWorkout();
+          });
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CWorkoutPage(selectedDay: DateTime.now()),
+            ),
+          ).then((_) {
+            _checkActiveSharedWorkout();
+          });
+        }
+      }
+    };
+
+    WebSocketService().sendAction('get-exercises', {});
+    WebSocketService().sendAction('get-workout-state', {});
   }
 
   void _onScroll() {
@@ -167,81 +303,150 @@ class _PagesState extends State<Pages> with SingleTickerProviderStateMixin {
       ),
 
       bottomNavigationBar: SafeArea(
-        child: Container(
-          margin: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.only(
-                  left: 12,
-                  right: 12,
-                  top: 6,
-                  bottom: 6,
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_activeSessionId != null && _activeSessionId!.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
                 decoration: BoxDecoration(
-                  color: const Color.fromRGBO(85, 173, 78, 0.5),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Color(0xFF4E9C47)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildNavItem(0, Icons.home, lang.getText("home_page")),
-                    _buildNavItem(
-                      1,
-                      Icons.fitness_center,
-                      lang.getText("workout_page"),
+                  color: const Color.fromARGB(
+                    255,
+                    50,
+                    146,
+                    255,
+                  ).withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
-                    Container(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                          child: Container(
-                            width: MediaQuery.of(context).size.width * 0.15,
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(85, 173, 78, 0.5),
-                              border: Border.all(
-                                color: Color.fromRGBO(78, 156, 71, 255),
+                  ],
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  leading: const Icon(
+                    Icons.group,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                  title: Text(
+                    lang.getText("shared_workout_in_progress"),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  trailing: _isLoadingSharedWorkout
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(
+                            Icons.play_arrow,
+                            color: Colors.white,
+                            size: 34,
+                          ),
+                          onPressed: _resumeSharedWorkout,
+                        ),
+                ),
+              ),
+
+            Container(
+              margin: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.only(
+                      left: 12,
+                      right: 12,
+                      top: 6,
+                      bottom: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color.fromRGBO(85, 173, 78, 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF4E9C47)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildNavItem(0, Icons.home, lang.getText("home_page")),
+                        _buildNavItem(
+                          1,
+                          Icons.fitness_center,
+                          lang.getText("workout_page"),
+                        ),
+                        Container(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: 5.0,
+                                sigmaY: 5.0,
                               ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: GestureDetector(
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  builder: (context) => const AddDrawer(),
-                                );
-                              },
-                              child: const Icon(
-                                Icons.add,
-                                size: 38,
-                                color: Colors.white,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.15,
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(85, 173, 78, 0.5),
+                                  border: Border.all(
+                                    color: const Color.fromRGBO(
+                                      78,
+                                      156,
+                                      71,
+                                      255,
+                                    ),
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (context) => const AddDrawer(),
+                                    );
+                                  },
+                                  child: const Icon(
+                                    Icons.add,
+                                    size: 38,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                        _buildNavItem(
+                          2,
+                          Icons.favorite,
+                          lang.getText("health_page"),
+                        ),
+                        _buildNavItem(
+                          3,
+                          Icons.person,
+                          lang.getText("profile_page"),
+                        ),
+                      ],
                     ),
-                    _buildNavItem(
-                      2,
-                      Icons.favorite,
-                      lang.getText("health_page"),
-                    ),
-                    _buildNavItem(
-                      3,
-                      Icons.person,
-                      lang.getText("profile_page"),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

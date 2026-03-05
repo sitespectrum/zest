@@ -284,6 +284,7 @@ class LanguageProvider with ChangeNotifier {
       'finish_set': 'Szett befejezése',
       'finish_exercise': 'Gyakorlat befejezése',
       'already_connected': 'Már csatlakozva vagy egy eseményhez!',
+      'shared_workout_in_progress': 'Közös edzés folyamatban',
     },
     'en': {
       'register_button_main': "Register",
@@ -527,6 +528,7 @@ class LanguageProvider with ChangeNotifier {
       'finish_set': 'Finish set',
       'finish_exercise': 'Finish exercise',
       'already_connected': 'Already connected to a session!',
+      'shared_workout_in_progress': 'Shared workout in progress',
     },
   };
 }

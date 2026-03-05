@@ -120,6 +120,12 @@ public class WebSocketHandler
             {
                 player.IsDisconnected = true;
 
+                int activePlayersCount = state.Players.Count(p => !p.IsDisconnected);
+                if (activePlayersCount == 0)
+                {
+                    return;
+                }
+
                 if (state.Players[state.CurrentPlayerIndex].UserId == userId)
                 {
                     await AdvanceTurn(sessionId, state);
