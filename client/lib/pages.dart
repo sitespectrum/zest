@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/language_provider.dart';
+import 'package:client/main.dart';
 
 class Pages extends StatefulWidget {
   const Pages({super.key});
