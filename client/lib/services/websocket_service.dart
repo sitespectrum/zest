@@ -29,6 +29,9 @@ class WebSocketService {
     if (isConnected) return;
 
     final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString('active_session_id', sessionId);
+
     int myUserId = prefs.getInt('userId') ?? 0;
 
     if (myUserId == 0) {
@@ -56,7 +59,7 @@ class WebSocketService {
       }
     }
 
-    _myUserId = myUserId; // Eltároljuk osztályszinten
+    _myUserId = myUserId;
 
     String wsUrl = apiUrl.contains('https')
         ? apiUrl.replaceFirst('https', 'wss') +
@@ -70,22 +73,21 @@ class WebSocketService {
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       isConnected = true;
 
+      sendAction('get-workout-state', {});
+
       _channel!.stream.listen(
         (message) async {
           final decodedMessage = jsonDecode(message);
 
-          // 1. Üzenet kiküldése a UI-nak (pl. nyitott drawernek)
           _messageController.add(decodedMessage);
 
           if (onMessageReceived != null) {
             onMessageReceived!(decodedMessage);
           }
 
-          // 2. GLOBÁLIS KILÉPTETÉS FIGYELÉSE
           if (decodedMessage['type'] == 'user-kicked') {
             final kickedId = decodedMessage['kickedUserId'];
 
-            // Ha minket dobtak ki, végrehajtjuk a kilépést a háttérben
             if (kickedId == _myUserId) {
               debugPrint("🔴 Kidobtak a sessionből, kilépés folyamatban...");
               await forceLeaveSession();

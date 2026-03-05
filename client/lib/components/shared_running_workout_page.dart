@@ -43,6 +43,35 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
     WebSocketService().onMessageReceived = _handleWebSocketMessage;
   }
 
+  void _restoreMySets() {
+    if (myUserId == 0) return;
+    List stats = gameState['stats'] ?? [];
+    var myStats = stats.where((s) => s['userId'] == myUserId).toList();
+
+    for (var stat in myStats) {
+      int exId = stat['exerciseId'];
+      for (var ex in widget.userWorkouts) {
+        if (ex.id == exId) {
+          List setsData = stat['sets'] ?? [];
+          if (ex.sets.isEmpty && setsData.isNotEmpty) {
+            List<WorkoutSetDto> restoredSets = [];
+            for (var s in setsData) {
+              restoredSets.add(
+                WorkoutSetDto(
+                  weight: (s['weight'] as num?)?.toDouble() ?? 0.0,
+                  reps: s['reps'] as int? ?? 0,
+                  isCompleted: true,
+                ),
+              );
+            }
+            ex.sets = restoredSets;
+          }
+          break;
+        }
+      }
+    }
+  }
+
   Future<void> _initUser() async {
     final prefs = await SharedPreferences.getInstance();
     isHost = prefs.getBool('is_host') ?? false;
@@ -72,6 +101,8 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
       }
     }
 
+    _restoreMySets();
+
     if (mounted) setState(() {});
   }
 
@@ -88,15 +119,13 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
   }
 
   void _endTurn(ExerciseDto currentExercise, bool finishExercise) {
-    var validSets = currentExercise.sets
-        .where((s) => s.isCompleted || s.reps > 0 || s.weight > 0)
-        .toList();
+    var validSets = currentExercise.sets.where((s) => s.isCompleted).toList();
 
     if (validSets.isEmpty && !finishExercise) {
       final lang = Provider.of<LanguageProvider>(context, listen: false);
       CustomSnackbar.show(
         context,
-        lang.getText("no_valid_sets") ?? "Nincsenek érvényes sorozatok!",
+        lang.getText("no_valid_sets"),
         backgroundColor: Colors.orange,
       );
       return;
