@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/language_provider.dart';
+import 'package:client/main.dart';
 import 'package:client/models/workout.dart';
 import 'package:client/services/websocket_service.dart';
 import 'package:client/components/shared_running_workout_page.dart';

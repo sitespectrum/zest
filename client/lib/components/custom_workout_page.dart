@@ -44,7 +44,7 @@ class CWorkoutPage extends StatefulWidget {
 }
 
 class _CWorkoutPageState extends State<CWorkoutPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
   bool showdelete = false;
@@ -61,6 +61,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
   bool isOnlineMode = false;
   bool isHost = false;
   Map<String, dynamic>? currentGameState;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -205,7 +208,6 @@ class _CWorkoutPageState extends State<CWorkoutPage>
     final hostStatus = prefs.getBool('is_host') ?? false;
 
     if (savedId != null && savedId.isNotEmpty) {
-      
       if (mounted) {
         setState(() {
           currentSessionId = savedId;

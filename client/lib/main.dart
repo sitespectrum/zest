@@ -26,6 +26,9 @@ final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
+final ValueNotifier<String?> offlineSessionNotifier = ValueNotifier<String?>(
+  null,
+);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -190,6 +193,11 @@ void main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final prefs = await SharedPreferences.getInstance();
   final savedUsername = prefs.getString('username');
+
+  final savedOfflineWorkout = prefs.getString('offline_workout');
+  if (savedOfflineWorkout != null) {
+    offlineSessionNotifier.value = savedOfflineWorkout;
+  }
 
   runApp(
     MultiProvider(
