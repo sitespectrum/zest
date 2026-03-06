@@ -394,22 +394,25 @@ class _PagesState extends State<Pages>
 
                           Navigator.push(
                             context,
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (context, animation, secondaryAnimation) =>
-                                      CWorkoutPage(selectedDay: DateTime.now(), restoredExercises: restoredWorkouts,),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          );
-
-                          Navigator.push(
-                            context,
                             MaterialPageRoute(
                               builder: (context) => RunningWorkoutPage(
                                 userWorkouts: restoredWorkouts,
                                 initialSeconds: restoredSeconds,
                               ),
+                            ),
+                          );
+
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) =>
+                                      CWorkoutPage(
+                                        selectedDay: DateTime.now(),
+                                        restoredExercises: restoredWorkouts,
+                                      ),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
                             ),
                           );
                         } catch (e) {
