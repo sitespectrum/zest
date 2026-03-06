@@ -149,7 +149,22 @@ class _CWorkoutPageState extends State<CWorkoutPage>
 
   void _setupWebSocketListeners() {
     WebSocketService().onMessageReceived = (data) {
-      if (data['type'] == 'session-ended') {
+      if (data['type'] == 'promoted-to-host') {
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.setBool('is_host', true);
+        });
+        if (mounted) {
+          setState(() {
+            isHost = true;
+          });
+          final lang = Provider.of<LanguageProvider>(context, listen: false);
+          CustomSnackbar.show(
+            context,
+            "Te lettél a Host!",
+            backgroundColor: Colors.green,
+          );
+        }
+      } else if (data['type'] == 'session-ended') {
         SharedPreferences.getInstance().then((prefs) {
           prefs.remove('active_session_id');
           prefs.remove('is_host');

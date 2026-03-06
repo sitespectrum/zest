@@ -21,6 +21,7 @@ public class WorkoutGameState
     public string Status { get; set; } = "Lobby";
     public int CurrentExerciseIndex { get; set; } = 0;
     public int CurrentPlayerIndex { get; set; } = 0;
+    public int HostId { get; set; } = 0;
 
     public List<WorkoutPlayer> Players { get; set; } = new();
     public List<WorkoutStat> Stats { get; set; } = new();
@@ -214,6 +215,7 @@ public class WebSocketHandler
             Status = "Running",
             CurrentPlayerIndex = 0,
             CurrentExerciseIndex = 0,
+            HostId = participants.FirstOrDefault()?.UserId ?? 0,
             ExerciseIds = exercises,
             Players = participants.Select(p => new WorkoutPlayer
             {
@@ -550,12 +552,18 @@ public class WebSocketHandler
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ZestDbContext>();
+
         var participant = await context.SessionParticipants.FirstOrDefaultAsync(p => p.SessionId == sessionId && p.UserId == userId);
         if (participant != null)
         {
             context.SessionParticipants.Remove(participant);
             await context.SaveChangesAsync();
         }
+
+        var nextParticipant = await context.SessionParticipants
+            .Where(p => p.SessionId == sessionId)
+            .OrderBy(p => p.Id)
+            .FirstOrDefaultAsync();
 
         if (_gameStates.TryGetValue(sessionId, out var state))
         {
@@ -565,16 +573,45 @@ public class WebSocketHandler
                 state.Players.Remove(player);
                 if (state.Players.Count > 0)
                 {
+                    if (state.HostId == userId || state.HostId == 0)
+                    {
+                        if (nextParticipant != null)
+                        {
+                            state.HostId = nextParticipant.UserId;
+
+                            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+                            var msg = JsonSerializer.Serialize(new { type = "promoted-to-host" }, options);
+                            await SendToSingleUser(sessionId, state.HostId, msg);
+                        }
+                    }
+
                     if (state.CurrentPlayerIndex >= state.Players.Count)
                     {
                         state.CurrentPlayerIndex = 0;
-                        state.CurrentExerciseIndex++;
                     }
                     await BroadcastGameState(sessionId, "sync-workout-state", state);
                 }
                 else
                 {
                     await EndSharedWorkout(sessionId);
+                }
+            }
+        }
+        else
+        {
+            if (nextParticipant != null)
+            {
+                var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+                var msg = JsonSerializer.Serialize(new { type = "promoted-to-host" }, options);
+                await SendToSingleUser(sessionId, nextParticipant.UserId, msg);
+            }
+            else
+            {
+                var session = await context.SharedWorkoutSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+                if (session != null)
+                {
+                    context.SharedWorkoutSessions.Remove(session);
+                    await context.SaveChangesAsync();
                 }
             }
         }

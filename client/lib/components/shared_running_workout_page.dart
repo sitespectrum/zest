@@ -107,7 +107,21 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
   }
 
   void _handleWebSocketMessage(dynamic data) {
-    if (data['type'] == 'sync-workout-state') {
+    if (data['type'] == 'promoted-to-host') {
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setBool('is_host', true);
+      });
+      if (mounted) {
+        setState(() {
+          isHost = true;
+        });
+        CustomSnackbar.show(
+          context,
+          "Te lettél az új Host!",
+          backgroundColor: Colors.green,
+        );
+      }
+    } else if (data['type'] == 'sync-workout-state') {
       setState(() {
         gameState = data['data'];
       });
@@ -162,16 +176,14 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color.fromARGB(255, 30, 30, 30),
         title: Text(
-          isHost ? lang.getText('end_workout') : lang.getText('leave_workout'),
+          lang.getText('leave_workout'),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
-          isHost
-              ? lang.getText('end_workout_description')
-              : lang.getText('leave_workout_description'),
+          lang.getText('leave_workout_description'),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -194,28 +206,35 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
             ),
           ),
 
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () {
-              if (isHost) {
+          if (isHost)
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+              onPressed: () {
                 WebSocketService().sendAction('end-shared-workout', {});
                 Navigator.pop(context);
                 Navigator.pop(context);
-              } else {
-                WebSocketService().sendAction('leave-shared-workout', {});
-                SharedPreferences.getInstance().then((prefs) {
-                  prefs.remove('active_session_id');
-                  prefs.remove('is_host');
-                  WebSocketService().disconnect();
-                });
-                Navigator.pop(context);
-                Navigator.pop(context);
-              }
+              },
+              child: Text(lang.getText("end_workout")),
+            ),
+
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: isHost ? Colors.orange : Colors.redAccent,
+            ),
+            onPressed: () {
+              WebSocketService().sendAction('leave-shared-workout', {});
+              SharedPreferences.getInstance().then((prefs) {
+                prefs.remove('active_session_id');
+                prefs.remove('is_host');
+                WebSocketService().disconnect();
+              });
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: Text(
               isHost
-                  ? lang.getText("end_workout")
-                  : lang.getText("leave_workout"),
+                  ? "Kilépés (Host átadása)"
+                  : (lang.getText("leave_workout")),
             ),
           ),
         ],
