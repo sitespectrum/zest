@@ -132,7 +132,7 @@ class _PagesState extends State<Pages>
         fetchedWorkouts = (data['data'] as List)
             .map((e) => ExerciseDto.fromJson(e))
             .toList();
-      } } else if (data['type'] == 'sync-workout-state') {
+      } else if (data['type'] == 'sync-workout-state') {
         fetchedState = data['data'];
 
         SharedPreferences.getInstance().then((prefs) {
@@ -404,7 +404,10 @@ class _PagesState extends State<Pages>
                             PageRouteBuilder(
                               pageBuilder:
                                   (context, animation, secondaryAnimation) =>
-                                      CWorkoutPage(selectedDay: DateTime.now(), restoredExercises: restoredWorkouts,),
+                                      CWorkoutPage(
+                                        selectedDay: DateTime.now(),
+                                        restoredExercises: restoredWorkouts,
+                                      ),
                               transitionDuration: Duration.zero,
                               reverseTransitionDuration: Duration.zero,
                             ),
