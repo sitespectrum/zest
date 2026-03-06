@@ -132,8 +132,15 @@ class _PagesState extends State<Pages>
         fetchedWorkouts = (data['data'] as List)
             .map((e) => ExerciseDto.fromJson(e))
             .toList();
-      } else if (data['type'] == 'sync-workout-state') {
+      } } else if (data['type'] == 'sync-workout-state') {
         fetchedState = data['data'];
+
+        SharedPreferences.getInstance().then((prefs) {
+          int myUserId = prefs.getInt('userId') ?? 0;
+          if (fetchedState!['hostId'] == myUserId) {
+            prefs.setBool('is_host', true);
+          }
+        });
       }
 
       if (fetchedWorkouts != null && fetchedState != null) {
