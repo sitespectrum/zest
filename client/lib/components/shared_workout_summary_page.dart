@@ -7,6 +7,9 @@ import 'package:client/components/ui/custom_button.dart';
 import 'package:client/models/workout.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:client/constants.dart';
+import 'package:intl/intl.dart';
 
 class PlayerStats {
   final int userId;
@@ -25,7 +28,7 @@ class PlayerStats {
   });
 }
 
-class SharedWorkoutSummaryPage extends StatelessWidget {
+class SharedWorkoutSummaryPage extends StatefulWidget {
   final Map<String, dynamic> finalState;
   final List<ExerciseDto> userWorkouts;
   final bool isHost;
@@ -38,10 +41,139 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
   });
 
   @override
+  State<SharedWorkoutSummaryPage> createState() =>
+      _SharedWorkoutSummaryPageState();
+}
+
+class _SharedWorkoutSummaryPageState extends State<SharedWorkoutSummaryPage> {
+  bool _hasSaved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoSaveMyWorkout();
+  }
+
+  String _dependOnHour(String langCode) {
+    final hour = DateTime.now().hour;
+    if (langCode == 'hu') {
+      if (6 <= hour && hour < 12) return "reggeli közös edzés";
+      if (12 <= hour && hour < 18) return "délutáni közös edzés";
+      if (18 <= hour && hour < 21) return "esti közös edzés";
+      return "éjszakai közös edzés";
+    } else {
+      if (6 <= hour && hour < 12) return "Morning Shared Workout";
+      if (12 <= hour && hour < 18) return "Afternoon Shared Workout";
+      if (18 <= hour && hour < 21) return "Evening Shared Workout";
+      return "Night Shared Workout";
+    }
+  }
+
+  Future<void> _autoSaveMyWorkout() async {
+    if (_hasSaved) return;
+    _hasSaved = true;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('userId');
+      final token = prefs.getString('jwt_token');
+
+      if (userId == null || token == null) return;
+
+      List stats = widget.finalState['stats'] ?? [];
+      var myStats = stats.where((s) => s['userId'] == userId).toList();
+
+      if (myStats.isEmpty) return;
+
+      List<ExerciseDto> exercisesToSave = [];
+      double totalVolume = 0;
+      int totalSets = 0;
+
+      for (var ex in widget.userWorkouts) {
+        var myStatForEx = myStats.firstWhere(
+          (s) => s['exerciseId'] == ex.id,
+          orElse: () => null,
+        );
+        if (myStatForEx != null) {
+          List setsData = myStatForEx['sets'] ?? [];
+          if (setsData.isNotEmpty) {
+            var exCopy = ex.copyWith();
+            List<WorkoutSetDto> completedSets = [];
+
+            for (var s in setsData) {
+              double w = (s['weight'] as num).toDouble();
+              int r = (s['reps'] as num).toInt();
+              completedSets.add(
+                WorkoutSetDto(weight: w, reps: r, isCompleted: true),
+              );
+              totalVolume += (w * r);
+              totalSets++;
+            }
+            exCopy.sets = completedSets;
+            exercisesToSave.add(exCopy);
+          }
+        }
+      }
+
+      if (exercisesToSave.isEmpty) return;
+
+      int durationMinutes = totalSets * 3;
+      if (durationMinutes < 10) durationMinutes = 10;
+      int burntCalories = (3.5 * 3.5 * 75 / 200 * durationMinutes).toInt();
+
+      final langProvider = Provider.of<LanguageProvider>(
+        context,
+        listen: false,
+      );
+      final locale = langProvider.languageCode == 'hu' ? 'hu_HU' : 'en_US';
+      String timeStr = _dependOnHour(langProvider.languageCode);
+      String workoutName =
+          "${DateFormat.MMMd(locale).format(DateTime.now())} $timeStr";
+
+      final dto = {
+        "userId": userId,
+        "WorkoutName": workoutName,
+        "UserId": userId,
+        "Date": DateTime.now().toIso8601String(),
+        "Exercises": exercisesToSave
+            .map(
+              (e) => {
+                "ExerciseId": e.id,
+                "Name": e.name,
+                "Sets": e.sets.map((s) => s.toJson()).toList(),
+              },
+            )
+            .toList(),
+        "DurationMinutes": durationMinutes,
+        "CaloriesBurnt": burntCalories,
+        "TotalVolume": totalVolume.toInt(),
+        "IsCustom": false,
+      };
+
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/Workout/AddWorkout"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(dto),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint("✅ Közös edzés sikeresen mentve a profilhoz!");
+      } else {
+        debugPrint("❌ Hiba a közös edzés mentésekor: ${response.body}");
+      }
+    } catch (e) {
+      debugPrint("❌ Kivétel a mentéskor: $e");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
-    List players = finalState['players'] ?? [];
-    List stats = finalState['stats'] ?? [];
+    List players = widget.finalState['players'] ?? [];
+    List stats = widget.finalState['stats'] ?? [];
 
     Map<int, PlayerStats> playerStatsMap = {};
     for (var p in players) {
@@ -284,7 +416,7 @@ class SharedWorkoutSummaryPage extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 10.0),
                 child: CustomButton(
                   onPressed: () {
-                    if (isHost) {
+                    if (widget.isHost) {
                       WebSocketService().sendAction('end-shared-workout', {});
                     } else {
                       WebSocketService().sendAction('leave-shared-workout', {});
