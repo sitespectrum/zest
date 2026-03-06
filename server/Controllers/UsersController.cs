@@ -21,7 +21,7 @@ public class UsersController : ControllerBase
     [ValidateToken]
     public IActionResult Me()
     {
-        var user = (User) HttpContext.Items["User"]!;
+        var user = (User)HttpContext.Items["User"]!;
         return Ok(new
         {
             id = user.Id,
