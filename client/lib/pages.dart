@@ -134,6 +134,13 @@ class _PagesState extends State<Pages>
             .toList();
       } else if (data['type'] == 'sync-workout-state') {
         fetchedState = data['data'];
+
+        SharedPreferences.getInstance().then((prefs) {
+          int myUserId = prefs.getInt('userId') ?? 0;
+          if (fetchedState!['hostId'] == myUserId) {
+            prefs.setBool('is_host', true);
+          }
+        });
       }
 
       if (fetchedWorkouts != null && fetchedState != null) {
@@ -485,13 +492,50 @@ class _PagesState extends State<Pages>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    trailing: _isLoadingSharedWorkout
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                    trailing: IconButton(
+                      icon: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                      onPressed: () {
+                        try {
+                          final decoded = jsonDecode(sessionData);
+                          List<ExerciseDto> restoredWorkouts = [];
+                          int restoredSeconds = 0;
+
+                          if (decoded is List) {
+                            restoredWorkouts = decoded
+                                .map((e) => ExerciseDto.fromJson(e))
+                                .toList();
+                          } else if (decoded is Map) {
+                            int savedSeconds = decoded['elapsedSeconds'] ?? 0;
+                            int timestamp =
+                                decoded['timestamp'] ??
+                                DateTime.now().millisecondsSinceEpoch;
+
+                            int diffSeconds =
+                                (DateTime.now().millisecondsSinceEpoch -
+                                    timestamp) ~/
+                                1000;
+
+                            restoredSeconds = savedSeconds + diffSeconds;
+                            restoredWorkouts = (decoded['exercises'] as List)
+                                .map((e) => ExerciseDto.fromJson(e))
+                                .toList();
+                          }
+
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) =>
+                                      CWorkoutPage(
+                                        selectedDay: DateTime.now(),
+                                        restoredExercises: restoredWorkouts,
+                                      ),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
                             ),
                           )
                         : IconButton(

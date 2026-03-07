@@ -201,6 +201,19 @@ class _CWorkoutPageState extends State<CWorkoutPage>
             currentGameState = data['data'];
           });
         }
+
+        SharedPreferences.getInstance().then((prefs) {
+          int myUserId = prefs.getInt('userId') ?? 0;
+          bool amIHost = data['data']['hostId'] == myUserId;
+
+          if (amIHost && !isHost) {
+            prefs.setBool('is_host', true);
+            if (mounted) setState(() => isHost = true);
+          } else if (!amIHost && isHost) {
+            prefs.setBool('is_host', false);
+            if (mounted) setState(() => isHost = false);
+          }
+        });
       } else if (data['type'] == 'workout-started') {
         if (mounted) {
           for (var ex in userWorkouts) {
