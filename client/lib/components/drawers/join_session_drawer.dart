@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
+import 'package:client/components/custom_workout_page.dart';
 import 'package:client/constants.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/services/websocket_service.dart';
@@ -102,6 +103,14 @@ Widget joinSessionDrawer(BuildContext context) {
             context,
             "Sikeres csatlakozás!",
             backgroundColor: Colors.green,
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CWorkoutPage(
+                selectedDay: DateTime.now(),
+              ),
+            ),
           );
         }
       } else {

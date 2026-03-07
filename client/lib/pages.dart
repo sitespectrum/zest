@@ -152,36 +152,19 @@ class _PagesState extends State<Pages>
           });
         }
 
-        if (fetchedState!['status'] == 'Running') {
+        if (fetchedState != null && fetchedState?['status'] == 'Running') {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => SharedRunningWorkoutPage(
-                userWorkouts: fetchedWorkouts!,
-                initialGameState: fetchedState!,
-              ),
-            ),
-          ).then((result) async {
-            if (result != null &&
-                result is Map &&
-                result['status'] == 'finished') {
-              final prefs = await SharedPreferences.getInstance();
-              final isHost = prefs.getBool('is_host') ?? false;
-              if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SharedWorkoutSummaryPage(
-                      finalState: result['data'],
-                      userWorkouts: fetchedWorkouts!,
-                      isHost: isHost,
-                    ),
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  CWorkoutPage(
+                    selectedDay: DateTime.now(),
+                    restoredExercises: fetchedWorkouts,
                   ),
-                );
-              }
-            }
-            _checkActiveSharedWorkout();
-          });
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
         } else {
           Navigator.push(
             context,
@@ -325,7 +308,152 @@ class _PagesState extends State<Pages>
               builder: (context, sessionData, child) {
                 if (sessionData == null) return const SizedBox.shrink();
 
-                return Container(
+                return GestureDetector(
+                  onTap: () {
+                    try {
+                      final decoded = jsonDecode(sessionData);
+                      List<ExerciseDto> restoredWorkouts = [];
+                      int restoredSeconds = 0;
+
+                      if (decoded is List) {
+                        restoredWorkouts = decoded
+                            .map((e) => ExerciseDto.fromJson(e))
+                            .toList();
+                      } else if (decoded is Map) {
+                        int savedSeconds = decoded['elapsedSeconds'] ?? 0;
+                        int timestamp =
+                            decoded['timestamp'] ??
+                            DateTime.now().millisecondsSinceEpoch;
+
+                        int diffSeconds =
+                            (DateTime.now().millisecondsSinceEpoch -
+                                timestamp) ~/
+                            1000;
+
+                        restoredSeconds = savedSeconds + diffSeconds;
+                        restoredWorkouts = (decoded['exercises'] as List)
+                            .map((e) => ExerciseDto.fromJson(e))
+                            .toList();
+                      }
+
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  CWorkoutPage(
+                                    selectedDay: DateTime.now(),
+                                    restoredExercises: restoredWorkouts,
+                                  ),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint("Hiba a visszatöltéskor: $e");
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(
+                      left: 10,
+                      right: 10,
+                      bottom: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(
+                        255,
+                        50,
+                        146,
+                        255,
+                      ).withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      leading: const Icon(
+                        Icons.fitness_center,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      title: Text(
+                        lang.languageCode == 'hu'
+                            ? "Edzés folyamatban..."
+                            : "Workout in progress...",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 34,
+                        ),
+                        onPressed: () {
+                          try {
+                            final decoded = jsonDecode(sessionData);
+                            List<ExerciseDto> restoredWorkouts = [];
+                            int restoredSeconds = 0;
+
+                            if (decoded is List) {
+                              restoredWorkouts = decoded
+                                  .map((e) => ExerciseDto.fromJson(e))
+                                  .toList();
+                            } else if (decoded is Map) {
+                              int savedSeconds = decoded['elapsedSeconds'] ?? 0;
+                              int timestamp =
+                                  decoded['timestamp'] ??
+                                  DateTime.now().millisecondsSinceEpoch;
+
+                              int diffSeconds =
+                                  (DateTime.now().millisecondsSinceEpoch -
+                                      timestamp) ~/
+                                  1000;
+
+                              restoredSeconds = savedSeconds + diffSeconds;
+                              restoredWorkouts = (decoded['exercises'] as List)
+                                  .map((e) => ExerciseDto.fromJson(e))
+                                  .toList();
+                            }
+
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        CWorkoutPage(
+                                          selectedDay: DateTime.now(),
+                                          restoredExercises: restoredWorkouts,
+                                        ),
+                                transitionDuration: Duration.zero,
+                                reverseTransitionDuration: Duration.zero,
+                              ),
+                            );
+                          } catch (e) {
+                            debugPrint("Hiba a visszatöltéskor: $e");
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (_activeSessionId != null && _activeSessionId!.isNotEmpty)
+              GestureDetector(
+                onTap: _resumeSharedWorkout,
+                child: Container(
                   margin: const EdgeInsets.only(
                     left: 10,
                     right: 10,
@@ -353,14 +481,12 @@ class _PagesState extends State<Pages>
                       vertical: 4,
                     ),
                     leading: const Icon(
-                      Icons.fitness_center,
+                      Icons.group,
                       color: Colors.white,
                       size: 30,
                     ),
                     title: Text(
-                      lang.languageCode == 'hu'
-                          ? "Edzés folyamatban..."
-                          : "Workout in progress...",
+                      lang.getText("shared_workout_in_progress"),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -411,79 +537,16 @@ class _PagesState extends State<Pages>
                               transitionDuration: Duration.zero,
                               reverseTransitionDuration: Duration.zero,
                             ),
-                          );
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => RunningWorkoutPage(
-                                userWorkouts: restoredWorkouts,
-                                initialSeconds: restoredSeconds,
-                              ),
+                          )
+                        : IconButton(
+                            icon: const Icon(
+                              Icons.play_arrow,
+                              color: Colors.white,
+                              size: 34,
                             ),
-                          );
-                        } catch (e) {
-                          debugPrint("Hiba a visszatöltéskor: $e");
-                        }
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-            if (_activeSessionId != null && _activeSessionId!.isNotEmpty)
-              Container(
-                margin: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(
-                    255,
-                    50,
-                    146,
-                    255,
-                  ).withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  leading: const Icon(
-                    Icons.group,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                  title: Text(
-                    lang.getText("shared_workout_in_progress"),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  trailing: _isLoadingSharedWorkout
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                            onPressed: _resumeSharedWorkout,
                           ),
-                        )
-                      : IconButton(
-                          icon: const Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 34,
-                          ),
-                          onPressed: _resumeSharedWorkout,
-                        ),
+                  ),
                 ),
               ),
 
