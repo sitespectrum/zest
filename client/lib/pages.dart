@@ -280,9 +280,8 @@ class _PagesState extends State<Pages>
               child: TopoBackground(foreground: _currentColor),
             ),
           ),
-
           PageView(
-            physics: BouncingScrollPhysics(),
+            physics: const BouncingScrollPhysics(),
             controller: _pageController,
             onPageChanged: (index) {
               setState(() {
@@ -298,7 +297,6 @@ class _PagesState extends State<Pages>
           ),
         ],
       ),
-
       bottomNavigationBar: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -500,52 +498,12 @@ class _PagesState extends State<Pages>
                       ),
                       onPressed: () {
                         try {
-                          final decoded = jsonDecode(sessionData);
-                          List<ExerciseDto> restoredWorkouts = [];
-                          int restoredSeconds = 0;
-
-                          if (decoded is List) {
-                            restoredWorkouts = decoded
-                                .map((e) => ExerciseDto.fromJson(e))
-                                .toList();
-                          } else if (decoded is Map) {
-                            int savedSeconds = decoded['elapsedSeconds'] ?? 0;
-                            int timestamp =
-                                decoded['timestamp'] ??
-                                DateTime.now().millisecondsSinceEpoch;
-
-                            int diffSeconds =
-                                (DateTime.now().millisecondsSinceEpoch -
-                                    timestamp) ~/
-                                1000;
-
-                            restoredSeconds = savedSeconds + diffSeconds;
-                            restoredWorkouts = (decoded['exercises'] as List)
-                                .map((e) => ExerciseDto.fromJson(e))
-                                .toList();
-                          }
-
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (context, animation, secondaryAnimation) =>
-                                      CWorkoutPage(
-                                        selectedDay: DateTime.now(),
-                                        restoredExercises: restoredWorkouts,
-                                      ),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          )
-                        : IconButton(
-                            icon: const Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              size: 34,
-                            ),
-                            onPressed: _resumeSharedWorkout,
-                          ),
+                          _resumeSharedWorkout();
+                        } catch (e) {
+                          debugPrint("Hiba a visszatöltéskor: $e");
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),
