@@ -322,7 +322,7 @@ class _AddMealPageState extends State<AddMealPage> {
     final cleanName = stripHtmlTags(meal.name);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Container(
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 45, 45, 45),
@@ -605,7 +605,7 @@ class _AddMealPageState extends State<AddMealPage> {
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(60),
               child: Container(
-                margin: const EdgeInsets.all(0),
+                margin: const EdgeInsets.only(left: 2),
                 child: AppBar(
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -677,7 +677,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 20,
                     vertical: 8,
                   ),
                   child: Row(

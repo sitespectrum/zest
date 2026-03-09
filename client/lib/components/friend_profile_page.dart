@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -237,71 +238,139 @@ class _FriendProfilePageState extends State<FriendProfilePage>
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-      appBar: AppBar(
-        title: Row(
+      body: SafeArea(
+        child: Column(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.green,
-              backgroundImage:
-                  (widget.friendImage != null && widget.friendImage!.isNotEmpty)
-                  ? MemoryImage(base64Decode(widget.friendImage!))
-                  : null,
-              child: (widget.friendImage == null || widget.friendImage!.isEmpty)
-                  ? const Icon(Icons.person, size: 20, color: Colors.white)
-                  : null,
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 10.0,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Color.fromRGBO(45, 45, 45, 0.5),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back),
+                              color: Colors.white,
+                              padding: const EdgeInsets.only(right: 10),
+                              constraints: const BoxConstraints(),
+                              style: IconButton.styleFrom(
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                            ),
+
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 50,
+                                    backgroundColor: Colors.green,
+                                    backgroundImage:
+                                        (widget.friendImage != null &&
+                                            widget.friendImage!.isNotEmpty)
+                                        ? MemoryImage(
+                                            base64Decode(widget.friendImage!),
+                                          )
+                                        : null,
+                                    child:
+                                        (widget.friendImage == null ||
+                                            widget.friendImage!.isEmpty)
+                                        ? const Icon(
+                                            Icons.person,
+                                            size: 24,
+                                            color: Colors.white,
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    widget.friendName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(width: 24),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(50, 64, 255, 50),
+                            border: Border.all(
+                              color: const Color.fromARGB(100, 64, 255, 50),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            labelStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            splashFactory: NoSplash.splashFactory,
+                            indicator: BoxDecoration(
+                              color: const Color.fromARGB(100, 64, 255, 50),
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            indicatorPadding: const EdgeInsets.all(4),
+                            dividerHeight: 0,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.grey,
+                            indicatorColor: Colors.transparent,
+                            tabs: [
+                              Tab(text: lang.getText("workout_templates")),
+                              Tab(text: lang.getText("meal_templates")),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 10),
-            Text(
-              widget.friendName,
-              style: const TextStyle(color: Colors.white),
+            Expanded(
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.green),
+                    )
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [_buildWorkoutList(lang), _buildMealList(lang)],
+                    ),
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
-          child: Container(
-            margin: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(50, 64, 255, 50),
-              border: Border.all(
-                color: const Color.fromARGB(100, 64, 255, 50),
-                width: 1,
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              splashFactory: NoSplash.splashFactory,
-              indicator: BoxDecoration(
-                color: const Color.fromARGB(100, 64, 255, 50),
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicatorPadding: const EdgeInsets.all(4),
-              dividerHeight: 0,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Colors.green,
-              tabs: [
-                Tab(text: lang.getText("workout_templates")),
-                Tab(text: lang.getText("meal_templates")),
-              ],
-            ),
-          ),
-        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.green))
-          : TabBarView(
-              controller: _tabController,
-              children: [_buildWorkoutList(lang), _buildMealList(lang)],
-            ),
-
       bottomNavigationBar:
           friends.any(
             (f) =>
@@ -345,7 +414,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
 
         return Card(
           color: const Color.fromARGB(255, 45, 45, 45),
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
           child: ListTile(
             leading: const Icon(Icons.fitness_center, color: Colors.green),
             title: Text(
