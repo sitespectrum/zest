@@ -502,11 +502,17 @@ public class WebSocketHandler
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ZestDbContext>();
-            var sessionExists = await context.SharedWorkoutSessions.AnyAsync(s => s.SessionId == sessionId);
 
-            if (sessionExists)
+            var session = await context.SharedWorkoutSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+
+            if (session != null)
             {
-                var lobbyState = new WorkoutGameState { SessionId = sessionId, Status = "Lobby" };
+                var lobbyState = new WorkoutGameState
+                {
+                    SessionId = sessionId,
+                    Status = "Lobby",
+                    HostId = session.HostId
+                };
                 var msg = JsonSerializer.Serialize(new { type = "sync-workout-state", data = lobbyState }, options);
                 await SendToSingleUser(sessionId, userId, msg);
             }
