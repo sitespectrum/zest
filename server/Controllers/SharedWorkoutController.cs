@@ -142,6 +142,21 @@ public class WorkoutSessionController : ControllerBase
         if (participant != null)
         {
             _context.SessionParticipants.Remove(participant);
+
+            if (session.HostId == userId)
+            {
+                var nextParticipant = session.Participants.Where(p => p.UserId != userId).OrderBy(p => p.Id).FirstOrDefault();
+                if (nextParticipant != null)
+                {
+                    session.HostId = nextParticipant.UserId;
+                    nextParticipant.Role = Role.Host;
+                }
+                else
+                {
+                    _context.SharedWorkoutSessions.Remove(session);
+                }
+            }
+
             await _context.SaveChangesAsync();
         }
 
@@ -310,19 +325,19 @@ public class WorkoutSessionController : ControllerBase
     }
 
     [HttpGet("ws/{sessionId}/{userId}")]
-public async Task ConnectWebSocket(string sessionId, int userId)
-{
-    if (HttpContext.WebSockets.IsWebSocketRequest)
+    public async Task ConnectWebSocket(string sessionId, int userId)
     {
-        using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-        
-        await _wsHandler.HandleConnection(sessionId.ToUpper(), userId, webSocket);
+        if (HttpContext.WebSockets.IsWebSocketRequest)
+        {
+            using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+
+            await _wsHandler.HandleConnection(sessionId.ToUpper(), userId, webSocket);
+        }
+        else
+        {
+            HttpContext.Response.StatusCode = 400;
+        }
     }
-    else
-    {
-        HttpContext.Response.StatusCode = 400;
-    }
-}
 
     private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {
