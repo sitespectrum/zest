@@ -125,6 +125,18 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
       setState(() {
         gameState = data['data'];
       });
+
+      SharedPreferences.getInstance().then((prefs) {
+        int storedUserId = prefs.getInt('userId') ?? 0;
+        bool amIHost = data['data']['hostId'] == storedUserId;
+        if (amIHost && !isHost) {
+          prefs.setBool('is_host', true);
+          if (mounted) setState(() => isHost = true);
+        } else if (!amIHost && isHost) {
+          prefs.setBool('is_host', false);
+          if (mounted) setState(() => isHost = false);
+        }
+      });
     } else if (data['type'] == 'workout-finished') {
       if (mounted) {
         Navigator.pop(context, {'status': 'finished', 'data': data['data']});

@@ -212,6 +212,28 @@ Widget hostSessionDrawer(BuildContext context) {
           } else {
             fetchParticipants();
           }
+        } else if (data['type'] == 'promoted-to-host') {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_host', true);
+          isHost.value = true;
+
+          if (context.mounted) {
+            CustomSnackbar.show(
+              context,
+              "Te lettél az új Host!",
+              backgroundColor: Colors.green,
+            );
+          }
+          fetchParticipants();
+        } else if (data['type'] == 'sync-workout-state') {
+          final hostId = data['data']['hostId'];
+          bool amIHost = hostId == myUserId.value;
+          if (isHost.value != amIHost) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('is_host', amIHost);
+            isHost.value = amIHost;
+          }
+          fetchParticipants();
         }
       });
     }

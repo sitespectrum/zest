@@ -565,6 +565,22 @@ public class WebSocketHandler
             .OrderBy(p => p.Id)
             .FirstOrDefaultAsync();
 
+        var session = await context.SharedWorkoutSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+        if (session != null && session.HostId == userId)
+        {
+            if (nextParticipant != null)
+            {
+                session.HostId = nextParticipant.UserId;
+                nextParticipant.Role = Role.Host;
+                await context.SaveChangesAsync();
+            }
+            else
+            {
+                context.SharedWorkoutSessions.Remove(session);
+                await context.SaveChangesAsync();
+            }
+        }
+
         if (_gameStates.TryGetValue(sessionId, out var state))
         {
             var player = state.Players.FirstOrDefault(p => p.UserId == userId);
@@ -599,20 +615,11 @@ public class WebSocketHandler
         }
         else
         {
-            if (nextParticipant != null)
+            if (nextParticipant != null && session != null && session.HostId == nextParticipant.UserId)
             {
                 var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
                 var msg = JsonSerializer.Serialize(new { type = "promoted-to-host" }, options);
                 await SendToSingleUser(sessionId, nextParticipant.UserId, msg);
-            }
-            else
-            {
-                var session = await context.SharedWorkoutSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
-                if (session != null)
-                {
-                    context.SharedWorkoutSessions.Remove(session);
-                    await context.SaveChangesAsync();
-                }
             }
         }
     }
