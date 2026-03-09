@@ -62,11 +62,13 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 
   Future<void> _saveDraft() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (userWorkouts.isEmpty) {
       await prefs.remove('draft_workout');
     } else {
-      final jsonString = jsonEncode(userWorkouts.map((e) => e.toJson()).toList());
+      final jsonString = jsonEncode(
+        userWorkouts.map((e) => e.toJson()).toList(),
+      );
       await prefs.setString('draft_workout', jsonString);
     }
   }
@@ -679,7 +681,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(60),
               child: Container(
-                margin: const EdgeInsets.all(0),
+                margin: const EdgeInsets.only(left: 2),
                 child: AppBar(
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

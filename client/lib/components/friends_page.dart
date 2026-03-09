@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:ui';
 import 'package:client/components/ui/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -251,62 +252,107 @@ class _FriendsPageState extends State<FriendsPage>
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-      appBar: AppBar(
-        title: Text(
-          lang.getText("friends_title"),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
-          child: Container(
-            margin: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(50, 64, 255, 50),
-              border: Border.all(
-                color: const Color.fromARGB(100, 64, 255, 50),
-                width: 1,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 10.0,
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              splashFactory: NoSplash.splashFactory,
-              indicator: BoxDecoration(
-                color: const Color.fromARGB(100, 64, 255, 50),
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicatorPadding: const EdgeInsets.all(4),
-              dividerHeight: 0,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Colors.green,
-              tabs: [
-                Tab(text: lang.getText("my_friends")),
-                Tab(
-                  text:
-                      "${lang.getText("requests")} (${pendingRequests.length})",
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Color.fromRGBO(45, 45, 45, 0.5),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back),
+                              color: Colors.white,
+                              padding: const EdgeInsets.only(right: 10),
+                              constraints: const BoxConstraints(),
+                              style: IconButton.styleFrom(
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                            ),
+                            Text(
+                              lang.getText("friends_title"),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(50, 64, 255, 50),
+                            border: Border.all(
+                              color: const Color.fromARGB(100, 64, 255, 50),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            labelStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            splashFactory: NoSplash.splashFactory,
+                            indicator: BoxDecoration(
+                              color: const Color.fromARGB(100, 64, 255, 50),
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            indicatorPadding: const EdgeInsets.all(4),
+                            dividerHeight: 0,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.grey,
+                            indicatorColor: Colors.transparent,
+                            tabs: [
+                              Tab(text: lang.getText("my_friends")),
+                              Tab(
+                                text:
+                                    "${lang.getText("requests")} (${pendingRequests.length})",
+                              ),
+                              Tab(text: lang.getText("search")),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                Tab(text: lang.getText("search")),
-              ],
+              ),
             ),
-          ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildFriendsList(lang),
+                  _buildRequestsList(lang),
+                  _buildSearchPage(lang),
+                ],
+              ),
+            ),
+          ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildFriendsList(lang),
-          _buildRequestsList(lang),
-          _buildSearchPage(lang),
-        ],
       ),
     );
   }
@@ -326,14 +372,18 @@ class _FriendsPageState extends State<FriendsPage>
         final friend = friends[index];
         return Card(
           color: const Color.fromARGB(255, 45, 45, 45),
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: Colors.green,
-              backgroundImage: (friend['profilePicture'] != null && friend['profilePicture'].toString().isNotEmpty)
+              backgroundImage:
+                  (friend['profilePicture'] != null &&
+                      friend['profilePicture'].toString().isNotEmpty)
                   ? MemoryImage(base64Decode(friend['profilePicture']))
                   : null,
-              child: (friend['profilePicture'] == null || friend['profilePicture'].toString().isEmpty)
+              child:
+                  (friend['profilePicture'] == null ||
+                      friend['profilePicture'].toString().isEmpty)
                   ? const Icon(Icons.person, color: Colors.white)
                   : null,
             ),
@@ -393,14 +443,18 @@ class _FriendsPageState extends State<FriendsPage>
         final req = pendingRequests[index];
         return Card(
           color: const Color.fromARGB(255, 45, 45, 45),
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: Colors.green,
-              backgroundImage: (req['profilePicture'] != null && req['profilePicture'].toString().isNotEmpty)
+              backgroundImage:
+                  (req['profilePicture'] != null &&
+                      req['profilePicture'].toString().isNotEmpty)
                   ? MemoryImage(base64Decode(req['profilePicture']))
                   : null,
-              child: (req['profilePicture'] == null || req['profilePicture'].toString().isEmpty)
+              child:
+                  (req['profilePicture'] == null ||
+                      req['profilePicture'].toString().isEmpty)
                   ? const Icon(Icons.person, color: Colors.white)
                   : null,
             ),
@@ -442,7 +496,7 @@ class _FriendsPageState extends State<FriendsPage>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(20),
           child: TextField(
             controller: searchController,
             style: const TextStyle(color: Colors.white),
@@ -475,11 +529,18 @@ class _FriendsPageState extends State<FriendsPage>
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.green,
-                        backgroundImage: (user['profilePicture'] != null && user['profilePicture'].toString().isNotEmpty)
+                        backgroundImage:
+                            (user['profilePicture'] != null &&
+                                user['profilePicture'].toString().isNotEmpty)
                             ? MemoryImage(base64Decode(user['profilePicture']))
                             : null,
-                        child: (user['profilePicture'] == null || user['profilePicture'].toString().isEmpty)
-                            ? const Icon(Icons.person_add_alt, color: Colors.white) 
+                        child:
+                            (user['profilePicture'] == null ||
+                                user['profilePicture'].toString().isEmpty)
+                            ? const Icon(
+                                Icons.person_add_alt,
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                       title: Text(
