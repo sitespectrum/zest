@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using System.Text.Json;
 using Zest.Api.Data;
@@ -15,13 +16,15 @@ public class WorkoutSessionController : ControllerBase
 {
     private readonly ZestDbContext _context;
     private readonly WebSocketHandler _wsHandler;
+    private readonly IMemoryCache _cache;
 
     private static readonly HttpClient _httpClient = new HttpClient();
 
-    public WorkoutSessionController(ZestDbContext context, WebSocketHandler wsHandler)
+    public WorkoutSessionController(ZestDbContext context, WebSocketHandler wsHandler, IMemoryCache cache)
     {
         _context = context;
         _wsHandler = wsHandler;
+        _cache = cache;
     }
 
     [HttpGet("nearby")]
@@ -267,6 +270,14 @@ public class WorkoutSessionController : ControllerBase
     {
         Console.WriteLine($"=> MEGHÍVÓ VÉGPONT ELINDULT! Session: {sessionId}, Target: {targetUserId}");
 
+        string cacheKey = $"invite_cooldown_{sessionId}_{targetUserId}";
+
+        if (_cache.TryGetValue(cacheKey, out _))
+        {
+            Console.WriteLine($"[Spam védelem] A(z) {targetUserId} felhasználó már kapott meghívót az elmúlt 30 másodpercben.");
+            return StatusCode(429, new { Message = "Kérlek, várj 30 másodpercet a következő meghívásig!" });
+        }
+
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdClaim, out int currentUserId)) return Unauthorized("Érvénytelen felhasználó.");
 
@@ -314,6 +325,11 @@ public class WorkoutSessionController : ControllerBase
             {
                 Console.WriteLine($"Kritikus OneSignal hiba: {responseBody}");
             }
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromSeconds(30));
+
+            _cache.Set(cacheKey, true, cacheEntryOptions);
 
             return Ok(new { Message = "Meghívó elküldve!" });
         }
