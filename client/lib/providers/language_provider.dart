@@ -285,6 +285,9 @@ class LanguageProvider with ChangeNotifier {
       'finish_exercise': 'Gyakorlat befejezése',
       'already_connected': 'Már csatlakozva vagy egy eseményhez!',
       'shared_workout_in_progress': 'Közös edzés folyamatban',
+      'host_leave_description':
+          'Kiléphetsz (más veszi át a Host szerepet), vagy teljesen be is fejezheted az edzést mindenki számára.',
+      'end_workout_for_all': 'Befejezés mindenkinek',
     },
     'en': {
       'register_button_main': "Register",
@@ -529,6 +532,9 @@ class LanguageProvider with ChangeNotifier {
       'finish_exercise': 'Finish exercise',
       'already_connected': 'Already connected to a session!',
       'shared_workout_in_progress': 'Shared workout in progress',
+      'host_leave_description':
+          'You can leave (someone else becomes Host), or completely end the workout for everyone.',
+      'end_workout_for_all': 'End for everyone',
     },
   };
 }
