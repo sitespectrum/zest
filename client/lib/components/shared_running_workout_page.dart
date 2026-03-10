@@ -195,7 +195,9 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
           ),
         ),
         content: Text(
-          lang.getText('leave_workout_description'),
+          isHost
+              ? lang.getText('host_leave_description')
+              : lang.getText('leave_workout_description'),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -226,13 +228,11 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
                 Navigator.pop(context);
                 Navigator.pop(context);
               },
-              child: Text(lang.getText("end_workout")),
+              child: Text(lang.getText("end_workout_for_all")),
             ),
 
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: isHost ? Colors.orange : Colors.redAccent,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
             onPressed: () {
               WebSocketService().sendAction('leave-shared-workout', {});
               SharedPreferences.getInstance().then((prefs) {
@@ -243,11 +243,7 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
               Navigator.pop(context);
               Navigator.pop(context);
             },
-            child: Text(
-              isHost
-                  ? "Kilépés (Host átadása)"
-                  : (lang.getText("leave_workout")),
-            ),
+            child: Text(lang.getText("leave_workout")),
           ),
         ],
       ),
