@@ -31,6 +31,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
   List<dynamic> workouts = [];
   List<dynamic> meals = [];
   List<dynamic> friends = [];
+  bool isFriendsLoading = true;
   bool isLoading = true;
 
   @override
@@ -42,6 +43,7 @@ class _FriendProfilePageState extends State<FriendProfilePage>
   }
 
   Future<void> fetchFriends() async {
+    if (mounted) setState(() => isFriendsLoading = true);
     final token = await _getToken();
     if (token == null) return;
 
@@ -232,152 +234,166 @@ class _FriendProfilePageState extends State<FriendProfilePage>
     }
   }
 
+  Future<void> _handleRefresh() async {
+    await fetchFriendData();
+    await fetchFriends();
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 10.0,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Color.fromRGBO(45, 45, 45, 0.5),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back),
-                              color: Colors.white,
-                              padding: const EdgeInsets.only(right: 10),
-                              constraints: const BoxConstraints(),
-                              style: IconButton.styleFrom(
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      body: RefreshIndicator(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 10.0,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        color: Color.fromRGBO(45, 45, 45, 0.5),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                color: Colors.white,
+                                padding: const EdgeInsets.only(right: 10),
+                                constraints: const BoxConstraints(),
+                                style: IconButton.styleFrom(
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
                               ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
 
-                            Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 50,
-                                    backgroundColor: Colors.green,
-                                    backgroundImage:
-                                        (widget.friendImage != null &&
-                                            widget.friendImage!.isNotEmpty)
-                                        ? MemoryImage(
-                                            base64Decode(widget.friendImage!),
-                                          )
-                                        : null,
-                                    child:
-                                        (widget.friendImage == null ||
-                                            widget.friendImage!.isEmpty)
-                                        ? const Icon(
-                                            Icons.person,
-                                            size: 24,
-                                            color: Colors.white,
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    widget.friendName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 50,
+                                      backgroundColor: Colors.green,
+                                      backgroundImage:
+                                          (widget.friendImage != null &&
+                                              widget.friendImage!.isNotEmpty)
+                                          ? MemoryImage(
+                                              base64Decode(widget.friendImage!),
+                                            )
+                                          : null,
+                                      child:
+                                          (widget.friendImage == null ||
+                                              widget.friendImage!.isEmpty)
+                                          ? const Icon(
+                                              Icons.person,
+                                              size: 24,
+                                              color: Colors.white,
+                                            )
+                                          : null,
                                     ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      widget.friendName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
 
-                            const SizedBox(width: 24),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(50, 64, 255, 50),
-                            border: Border.all(
-                              color: const Color.fromARGB(100, 64, 255, 50),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: TabBar(
-                            controller: _tabController,
-                            labelStyle: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            splashFactory: NoSplash.splashFactory,
-                            indicator: BoxDecoration(
-                              color: const Color.fromARGB(100, 64, 255, 50),
-                              shape: BoxShape.rectangle,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            indicatorPadding: const EdgeInsets.all(4),
-                            dividerHeight: 0,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: Colors.grey,
-                            indicatorColor: Colors.transparent,
-                            tabs: [
-                              Tab(text: lang.getText("workout_templates")),
-                              Tab(text: lang.getText("meal_templates")),
+                              const SizedBox(width: 24),
                             ],
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(50, 64, 255, 50),
+                              border: Border.all(
+                                color: const Color.fromARGB(100, 64, 255, 50),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: TabBar(
+                              controller: _tabController,
+                              labelStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              splashFactory: NoSplash.splashFactory,
+                              indicator: BoxDecoration(
+                                color: const Color.fromARGB(100, 64, 255, 50),
+                                shape: BoxShape.rectangle,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              indicatorPadding: const EdgeInsets.all(4),
+                              dividerHeight: 0,
+                              labelColor: Colors.white,
+                              unselectedLabelColor: Colors.grey,
+                              indicatorColor: Colors.transparent,
+                              tabs: [
+                                Tab(text: lang.getText("workout_templates")),
+                                Tab(text: lang.getText("meal_templates")),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: Colors.green),
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [_buildWorkoutList(lang), _buildMealList(lang)],
-                    ),
-            ),
-          ],
+              Expanded(
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.green),
+                      )
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildWorkoutList(lang),
+                          _buildMealList(lang),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
+        onRefresh: () => fetchFriendData(),
       ),
       bottomNavigationBar:
           friends.any(
-            (f) =>
-                f['id'] == widget.friendId ||
-                f['friendId'] == widget.friendId ||
-                f['userId'] == widget.friendId,
-          )
+                (f) =>
+                    f['id'] == widget.friendId ||
+                    f['friendId'] == widget.friendId ||
+                    f['userId'] == widget.friendId,
+              ) ||
+              isLoading ||
+              isFriendsLoading
           ? null
           : SafeArea(
               child: Container(
@@ -396,91 +412,125 @@ class _FriendProfilePageState extends State<FriendProfilePage>
 
   Widget _buildWorkoutList(LanguageProvider lang) {
     if (workouts.isEmpty) {
-      return Center(
-        child: Text(
-          lang.getText("no_public_workouts"),
-          style: const TextStyle(color: Colors.white70),
+      return RefreshIndicator(
+        color: Colors.green,
+        onRefresh: _handleRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.4,
+              child: Center(
+                child: Text(
+                  lang.getText("no_public_workouts"),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
-    return ListView.builder(
-      itemCount: workouts.length,
-      itemBuilder: (context, index) {
-        final w = workouts[index];
-        final String name =
-            (w['customName'] == null || w['customName'].toString().isEmpty)
-            ? lang.getText("anonymous_workout")
-            : w['customName'];
+    return RefreshIndicator(
+      color: Colors.green,
+      onRefresh: _handleRefresh,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: workouts.length,
+        itemBuilder: (context, index) {
+          final w = workouts[index];
+          final String name =
+              (w['customName'] == null || w['customName'].toString().isEmpty)
+              ? lang.getText("anonymous_workout")
+              : w['customName'];
 
-        return Card(
-          color: const Color.fromARGB(255, 45, 45, 45),
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-          child: ListTile(
-            leading: const Icon(Icons.fitness_center, color: Colors.green),
-            title: Text(
-              name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+          return Card(
+            color: const Color.fromARGB(255, 45, 45, 45),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            child: ListTile(
+              leading: const Icon(Icons.fitness_center, color: Colors.green),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                "${w['exercises'].length} ${lang.getText("exercises_count")} • ${w['durationMinutes']} ${lang.getText("minutes")}",
+                style: const TextStyle(color: Colors.grey),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.download, color: Colors.blueAccent),
+                onPressed: () => importWorkout(w, lang),
+                tooltip: lang.getText("save_to_my_templates"),
               ),
             ),
-            subtitle: Text(
-              "${w['exercises'].length} ${lang.getText("exercises_count")} • ${w['durationMinutes']} ${lang.getText("minutes")}",
-              style: const TextStyle(color: Colors.grey),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.download, color: Colors.blueAccent),
-              onPressed: () => importWorkout(w, lang),
-              tooltip: lang.getText("save_to_my_templates"),
-            ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
   Widget _buildMealList(LanguageProvider lang) {
     if (meals.isEmpty) {
-      return Center(
-        child: Text(
-          lang.getText("no_public_meals"),
-          style: const TextStyle(color: Colors.white70),
+      return RefreshIndicator(
+        color: Colors.green,
+        onRefresh: _handleRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.4,
+              child: Center(
+                child: Text(
+                  lang.getText("no_public_meals"),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
-    return ListView.builder(
-      itemCount: meals.length,
-      itemBuilder: (context, index) {
-        final m = meals[index];
-        final String name =
-            (m['customName'] == null || m['customName'].toString().isEmpty)
-            ? lang.getText("anonymous_meal")
-            : m['customName'];
+    return RefreshIndicator(
+      color: Colors.green,
+      onRefresh: _handleRefresh,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: meals.length,
+        itemBuilder: (context, index) {
+          final m = meals[index];
+          final String name =
+              (m['customName'] == null || m['customName'].toString().isEmpty)
+              ? lang.getText("anonymous_meal")
+              : m['customName'];
 
-        return Card(
-          color: const Color.fromARGB(255, 45, 45, 45),
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: ListTile(
-            leading: const Icon(Icons.restaurant_menu, color: Colors.orange),
-            title: Text(
-              name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+          return Card(
+            color: const Color.fromARGB(255, 45, 45, 45),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            child: ListTile(
+              leading: const Icon(Icons.restaurant_menu, color: Colors.orange),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                "${m['totalCalories']} kcal • ${m['meals'].length} ${lang.getText("ingredients_count")}",
+                style: const TextStyle(color: Colors.grey),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.download, color: Colors.blueAccent),
+                onPressed: () => importMeal(m, lang),
+                tooltip: lang.getText("save_to_my_templates"),
               ),
             ),
-            subtitle: Text(
-              "${m['totalCalories']} kcal • ${m['meals'].length} ${lang.getText("ingredients_count")}",
-              style: const TextStyle(color: Colors.grey),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.download, color: Colors.blueAccent),
-              onPressed: () => importMeal(m, lang),
-              tooltip: lang.getText("save_to_my_templates"),
-            ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
