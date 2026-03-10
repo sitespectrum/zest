@@ -252,243 +252,281 @@ class _FriendsPageState extends State<FriendsPage>
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 30, 30, 30),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10.0,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Color.fromRGBO(45, 45, 45, 0.5),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back),
-                              color: Colors.white,
-                              padding: const EdgeInsets.only(right: 10),
-                              constraints: const BoxConstraints(),
-                              style: IconButton.styleFrom(
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
-                            Text(
-                              lang.getText("friends_title"),
-                              style: const TextStyle(
+      body: RefreshIndicator(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10.0,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        color: Color.fromRGBO(45, 45, 45, 0.5),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back),
                                 color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                                padding: const EdgeInsets.only(right: 10),
+                                constraints: const BoxConstraints(),
+                                style: IconButton.styleFrom(
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
                               ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(50, 64, 255, 50),
-                            border: Border.all(
-                              color: const Color.fromARGB(100, 64, 255, 50),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: TabBar(
-                            controller: _tabController,
-                            labelStyle: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            splashFactory: NoSplash.splashFactory,
-                            indicator: BoxDecoration(
-                              color: const Color.fromARGB(100, 64, 255, 50),
-                              shape: BoxShape.rectangle,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            indicatorPadding: const EdgeInsets.all(4),
-                            dividerHeight: 0,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: Colors.grey,
-                            indicatorColor: Colors.transparent,
-                            tabs: [
-                              Tab(text: lang.getText("my_friends")),
-                              Tab(
-                                text:
-                                    "${lang.getText("requests")} (${pendingRequests.length})",
+                              Text(
+                                lang.getText("friends_title"),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              Tab(text: lang.getText("search")),
                             ],
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(50, 64, 255, 50),
+                              border: Border.all(
+                                color: const Color.fromARGB(100, 64, 255, 50),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: TabBar(
+                              controller: _tabController,
+                              labelStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              splashFactory: NoSplash.splashFactory,
+                              indicator: BoxDecoration(
+                                color: const Color.fromARGB(100, 64, 255, 50),
+                                shape: BoxShape.rectangle,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              indicatorPadding: const EdgeInsets.all(4),
+                              dividerHeight: 0,
+                              labelColor: Colors.white,
+                              unselectedLabelColor: Colors.grey,
+                              indicatorColor: Colors.transparent,
+                              tabs: [
+                                Tab(text: lang.getText("my_friends")),
+                                Tab(
+                                  text:
+                                      "${lang.getText("requests")} (${pendingRequests.length})",
+                                ),
+                                Tab(text: lang.getText("search")),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildFriendsList(lang),
-                  _buildRequestsList(lang),
-                  _buildSearchPage(lang),
-                ],
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildFriendsList(lang),
+                    _buildRequestsList(lang),
+                    _buildSearchPage(lang),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        onRefresh: () async => {fetchFriends(), fetchRequests()},
       ),
     );
   }
 
   Widget _buildFriendsList(LanguageProvider lang) {
     if (friends.isEmpty) {
-      return Center(
-        child: Text(
-          lang.getText("no_friends_yet"),
-          style: const TextStyle(color: Colors.white70),
+      return RefreshIndicator(
+        color: Colors.green,
+        onRefresh: () => fetchFriends(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.4,
+              child: Center(
+                child: Text(
+                  lang.getText("no_friends_yet"),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
-    return ListView.builder(
-      itemCount: friends.length,
-      itemBuilder: (context, index) {
-        final friend = friends[index];
-        return Card(
-          color: const Color.fromARGB(255, 45, 45, 45),
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.green,
-              backgroundImage:
-                  (friend['profilePicture'] != null &&
-                      friend['profilePicture'].toString().isNotEmpty)
-                  ? MemoryImage(base64Decode(friend['profilePicture']))
-                  : null,
-              child:
-                  (friend['profilePicture'] == null ||
-                      friend['profilePicture'].toString().isEmpty)
-                  ? const Icon(Icons.person, color: Colors.white)
-                  : null,
-            ),
-            title: Text(
-              friend['userName'],
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+    return RefreshIndicator(
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: friends.length,
+        itemBuilder: (context, index) {
+          final friend = friends[index];
+          return Card(
+            color: const Color.fromARGB(255, 45, 45, 45),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.green,
+                backgroundImage:
+                    (friend['profilePicture'] != null &&
+                        friend['profilePicture'].toString().isNotEmpty)
+                    ? MemoryImage(base64Decode(friend['profilePicture']))
+                    : null,
+                child:
+                    (friend['profilePicture'] == null ||
+                        friend['profilePicture'].toString().isEmpty)
+                    ? const Icon(Icons.person, color: Colors.white)
+                    : null,
+              ),
+              title: Text(
+                friend['userName'],
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.account_box,
+                      color: Colors.blueAccent,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FriendProfilePage(
+                            friendId: friend['id'],
+                            friendName: friend['userName'],
+                            friendImage: friend['profilePicture'],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: () =>
+                        _confirmDelete(friend['id'], friend['userName']),
+                  ),
+                ],
               ),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.account_box, color: Colors.blueAccent),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FriendProfilePage(
-                          friendId: friend['id'],
-                          friendName: friend['userName'],
-                          friendImage: friend['profilePicture'],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.redAccent,
-                  ),
-                  onPressed: () =>
-                      _confirmDelete(friend['id'], friend['userName']),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+          );
+        },
+      ),
+      onRefresh: () => fetchFriends(),
     );
   }
 
   Widget _buildRequestsList(LanguageProvider lang) {
     if (pendingRequests.isEmpty) {
-      return Center(
-        child: Text(
-          lang.getText("no_pending_requests"),
-          style: const TextStyle(color: Colors.white70),
+      return RefreshIndicator(
+        color: Colors.green,
+        onRefresh: () => fetchRequests(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.4,
+              child: Center(
+                child: Text(
+                  lang.getText("no_pending_requests"),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
-    return ListView.builder(
-      itemCount: pendingRequests.length,
-      itemBuilder: (context, index) {
-        final req = pendingRequests[index];
-        return Card(
-          color: const Color.fromARGB(255, 45, 45, 45),
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.green,
-              backgroundImage:
-                  (req['profilePicture'] != null &&
-                      req['profilePicture'].toString().isNotEmpty)
-                  ? MemoryImage(base64Decode(req['profilePicture']))
-                  : null,
-              child:
-                  (req['profilePicture'] == null ||
-                      req['profilePicture'].toString().isEmpty)
-                  ? const Icon(Icons.person, color: Colors.white)
-                  : null,
-            ),
-            title: Text(
-              req['userName'],
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+    return RefreshIndicator(
+      child: ListView.builder(
+        itemCount: pendingRequests.length,
+        itemBuilder: (context, index) {
+          final req = pendingRequests[index];
+          return Card(
+            color: const Color.fromARGB(255, 45, 45, 45),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.green,
+                backgroundImage:
+                    (req['profilePicture'] != null &&
+                        req['profilePicture'].toString().isNotEmpty)
+                    ? MemoryImage(base64Decode(req['profilePicture']))
+                    : null,
+                child:
+                    (req['profilePicture'] == null ||
+                        req['profilePicture'].toString().isEmpty)
+                    ? const Icon(Icons.person, color: Colors.white)
+                    : null,
+              ),
+              title: Text(
+                req['userName'],
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                lang.getText("friend_request_subtitle"),
+                style: const TextStyle(color: Colors.grey),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 30,
+                    ),
+                    onPressed: () => respondToRequest(req['requestId'], true),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.cancel, color: Colors.red, size: 30),
+                    onPressed: () => respondToRequest(req['requestId'], false),
+                  ),
+                ],
               ),
             ),
-            subtitle: Text(
-              lang.getText("friend_request_subtitle"),
-              style: const TextStyle(color: Colors.grey),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 30,
-                  ),
-                  onPressed: () => respondToRequest(req['requestId'], true),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.cancel, color: Colors.red, size: 30),
-                  onPressed: () => respondToRequest(req['requestId'], false),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+          );
+        },
+      ),
+      onRefresh: () => fetchRequests(),
     );
   }
 
