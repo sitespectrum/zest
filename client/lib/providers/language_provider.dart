@@ -288,6 +288,7 @@ class LanguageProvider with ChangeNotifier {
       'host_leave_description':
           'Kiléphetsz (más veszi át a Host szerepet), vagy teljesen be is fejezheted az edzést mindenki számára.',
       'end_workout_for_all': 'Befejezés mindenkinek',
+      'no_connection': 'Nincs internetkapcsolat',
     },
     'en': {
       'register_button_main': "Register",
@@ -535,6 +536,7 @@ class LanguageProvider with ChangeNotifier {
       'host_leave_description':
           'You can leave (someone else becomes Host), or completely end the workout for everyone.',
       'end_workout_for_all': 'End for everyone',
+      'no_connection': 'No internet connection',
     },
   };
 }
