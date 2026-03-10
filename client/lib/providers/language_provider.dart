@@ -288,10 +288,7 @@ class LanguageProvider with ChangeNotifier {
       'host_leave_description':
           'Kiléphetsz (más veszi át a Host szerepet), vagy teljesen be is fejezheted az edzést mindenki számára.',
       'end_workout_for_all': 'Befejezés mindenkinek',
-      'no_internet_title': 'Nincs internetkapcsolat',
-      'no_internet_message':
-          'Az alkalmazás használatához kérlek, csatlakozz egy Wi-Fi vagy mobil adathálózathoz.',
-      'waiting_for_network': 'Várakozás a hálózatra...',
+      'no_connection': 'Nincs internetkapcsolat',
     },
     'en': {
       'register_button_main': "Register",
@@ -539,10 +536,7 @@ class LanguageProvider with ChangeNotifier {
       'host_leave_description':
           'You can leave (someone else becomes Host), or completely end the workout for everyone.',
       'end_workout_for_all': 'End for everyone',
-      'no_internet_title': 'No internet connection',
-      'no_internet_message':
-          'To use the app, please connect to a Wi-Fi or mobile data network.',
-      'waiting_for_network': 'Waiting for network...',
+      'no_connection': 'No internet connection',
     },
   };
 }

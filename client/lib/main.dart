@@ -21,6 +21,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:client/providers/workout_provider.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:client/components/utils/connectivity_wrapper.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
@@ -34,6 +35,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load();
+
+  await Hive.initFlutter();
+  await Hive.openBox('cacheBox');
+  await Hive.openBox('queueBox');
 
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
   OneSignal.Debug.setAlertLevel(OSLogLevel.none);
@@ -249,10 +254,7 @@ class Myapp extends StatelessWidget {
         ),
       ),
       builder: (context, child) {
-        return ConnectivityWrapper(
-          child:
-              child!,
-        );
+        return ConnectivityWrapper(child: child!);
       },
 
       home: initialUsername != null
