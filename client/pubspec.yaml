@@ -65,6 +65,7 @@ dependencies:
   geolocator: ^14.0.2
   image_picker: ^1.2.1
   web_socket_channel: ^3.0.3
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1

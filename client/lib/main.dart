@@ -20,6 +20,7 @@ import "pages.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:client/providers/workout_provider.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:client/components/utils/connectivity_wrapper.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
@@ -247,7 +248,16 @@ class Myapp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
         ),
       ),
-      home: initialUsername != null ? Pages() : Scaffold(body: MainPage()),
+      builder: (context, child) {
+        return ConnectivityWrapper(
+          child:
+              child!,
+        );
+      },
+
+      home: initialUsername != null
+          ? const Pages()
+          : const Scaffold(body: MainPage()),
     );
   }
 }
