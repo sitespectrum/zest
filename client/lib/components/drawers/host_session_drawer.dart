@@ -161,7 +161,9 @@ Widget hostSessionDrawer(BuildContext context) {
         );
       }
     } finally {
-      isLoading.value = false;
+      if (context.mounted) {
+        isLoading.value = false;
+      }
     }
   }
 
