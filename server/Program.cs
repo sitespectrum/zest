@@ -40,7 +40,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient<IMealService, MealService>();
 
 builder.Services.AddSingleton<WebSocketHandler>();
