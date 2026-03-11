@@ -16,6 +16,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:client/constants.dart';
 import 'package:http/http.dart' as http;
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class RunningWorkoutPage extends StatefulWidget {
   final List<ExerciseDto> userWorkouts;
@@ -81,19 +83,67 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
       "IsCustom": false,
     };
 
-    final response = await http.post(
-      uri,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(dto),
-    );
+    final connectivityResult = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(
-        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    if (hasInternet) {
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(dto),
       );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          "${lang.getText("failed_to_save")} ${response.statusCode}",
+        );
+      }
+    } else {
+      final queueBox = Hive.box('queueBox');
+      await queueBox.add({
+        'url': uri.toString(),
+        'headers': headers,
+        'body': jsonEncode(dto),
+      });
+
+      final cacheBox = Hive.box('cacheBox');
+      final cachedWorkouts = cacheBox.get('user_workouts');
+
+      List<dynamic> workoutsList = [];
+      if (cachedWorkouts != null) {
+        workoutsList = jsonDecode(cachedWorkouts);
+      }
+
+      final mockWorkout = {
+        "id": DateTime.now().millisecondsSinceEpoch % 100000,
+        "userId": userId,
+        "workoutName": workoutName,
+        "customName": "",
+        "date": DateTime.now().toIso8601String(),
+        "totalLiftedWeight": totalVolume.toDouble(),
+        "totalBurntCalories": caloriesBurnt,
+        "durationMinutes": durationMinutes,
+        "isCustom": false,
+        "exercises": exercisesToSave
+            .map(
+              (e) => {
+                "id": DateTime.now().millisecondsSinceEpoch % 100000,
+                "exerciseId": e.id,
+                "exercise": e.toJson(),
+                "sets": e.sets.map((s) => s.toJson()).toList(),
+              },
+            )
+            .toList(),
+      };
+
+      workoutsList.insert(0, mockWorkout);
+      cacheBox.put('user_workouts', jsonEncode(workoutsList));
+
+      debugPrint("Offline mentés: Edzés a sorba ÉS a Cache-be is bekerült.");
     }
   }
 
@@ -143,19 +193,67 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
       "IsCustom": true,
     };
 
-    final response = await http.post(
-      uri,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(dto),
-    );
+    final connectivityResult = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(
-        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    if (hasInternet) {
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(dto),
       );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          "${lang.getText("failed_to_save")} ${response.statusCode}",
+        );
+      }
+    } else {
+      final queueBox = Hive.box('queueBox');
+      await queueBox.add({
+        'url': uri.toString(),
+        'headers': headers,
+        'body': jsonEncode(dto),
+      });
+
+      final cacheBox = Hive.box('cacheBox');
+      final cachedWorkouts = cacheBox.get('user_workouts');
+
+      List<dynamic> workoutsList = [];
+      if (cachedWorkouts != null) {
+        workoutsList = jsonDecode(cachedWorkouts);
+      }
+
+      final mockWorkout = {
+        "id": DateTime.now().millisecondsSinceEpoch % 100000,
+        "userId": userId,
+        "workoutName": "Offline Workout",
+        "customName": "",
+        "date": DateTime.now().toIso8601String(),
+        "totalLiftedWeight": totalVolume.toDouble(),
+        "totalBurntCalories": caloriesBurnt,
+        "durationMinutes": durationMinutes,
+        "isCustom": false,
+        "exercises": exercisesToSave
+            .map(
+              (e) => {
+                "id": DateTime.now().millisecondsSinceEpoch % 100000,
+                "exerciseId": e.id,
+                "exercise": e.toJson(),
+                "sets": e.sets.map((s) => s.toJson()).toList(),
+              },
+            )
+            .toList(),
+      };
+
+      workoutsList.insert(0, mockWorkout);
+      cacheBox.put('user_workouts', jsonEncode(workoutsList));
+
+      debugPrint("Offline mentés: Edzés a sorba ÉS a Cache-be is bekerült.");
     }
   }
 
@@ -234,8 +332,7 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
         final prefs = await SharedPreferences.getInstance();
         final sessionData = {
           'elapsedSeconds': workoutProvider.totalSeconds,
-          'timestamp': DateTime.now()
-              .millisecondsSinceEpoch,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
           'exercises': workoutProvider.userWorkouts
               .map((e) => e.toJson())
               .toList(),

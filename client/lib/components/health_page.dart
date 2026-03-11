@@ -18,6 +18,8 @@ import '../constants.dart';
 import 'custom_meal_page.dart';
 import 'profile_page.dart';
 import '../utils/scroll_behavior.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class HealthPage extends StatefulWidget {
   const HealthPage({super.key});
@@ -29,65 +31,112 @@ class HealthPage extends StatefulWidget {
 Future<List<UserMealDto>> fetchUserMeals() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
+  if (token == null) return [];
 
-  if (token == null) throw Exception("Nincs token");
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'user_meals';
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getUserMeals"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.map((e) => UserMealDto.fromJson(e)).toList();
-  } else {
-    throw Exception(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/meals/getUserMeals"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        cacheBox.put(cacheKey, response.body);
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => UserMealDto.fromJson(e)).toList();
+      }
+    } catch (e) {}
   }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) {
+    final List<dynamic> data = jsonDecode(cachedData);
+    return data.map((e) => UserMealDto.fromJson(e)).toList();
+  }
+  return [];
 }
 
 Future<Map<String, double>> fetchMacroGoals() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  if (token == null) throw Exception("Nincs token");
+  if (token == null) return {'carbsGoal': 0, 'fatGoal': 0, 'proteinGoal': 0};
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/auth/getUser"),
-    headers: {"Authorization": "Bearer $token"},
-  );
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'macro_goals';
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/auth/getUser"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        cacheBox.put(cacheKey, response.body);
+        final data = jsonDecode(response.body);
+        return {
+          'carbsGoal': (data['carbsGoal'] as num).toDouble(),
+          'fatGoal': (data['fatGoal'] as num).toDouble(),
+          'proteinGoal': (data['proteinGoal'] as num).toDouble(),
+        };
+      }
+    } catch (e) {}
+  }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) {
+    final data = jsonDecode(cachedData);
     return {
       'carbsGoal': (data['carbsGoal'] as num).toDouble(),
       'fatGoal': (data['fatGoal'] as num).toDouble(),
       'proteinGoal': (data['proteinGoal'] as num).toDouble(),
     };
-  } else {
-    throw Exception(response.body);
   }
+  return {'carbsGoal': 100, 'fatGoal': 50, 'proteinGoal': 100};
 }
 
 Future<Map<String, double>> fetchTodayNutrients() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  if (token == null) throw Exception("Nincs token");
+  if (token == null) return {'calories': 0, 'carbs': 0, 'fat': 0, 'protein': 0};
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/Meals/getTodayNutrients"),
-    headers: {"Authorization": "Bearer $token"},
-  );
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'today_nutrients';
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/Meals/getTodayNutrients"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        cacheBox.put(cacheKey, response.body);
+        final data = jsonDecode(response.body);
+        return {
+          'calories': (data['totalcalories'] as num).toDouble(),
+          'carbs': (data['totalcarbs'] as num).toDouble(),
+          'fat': (data['totalfat'] as num).toDouble(),
+          'protein': (data['totalprotein'] as num).toDouble(),
+        };
+      }
+    } catch (e) {}
+  }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) {
+    final data = jsonDecode(cachedData);
     return {
       'calories': (data['totalcalories'] as num).toDouble(),
       'carbs': (data['totalcarbs'] as num).toDouble(),
       'fat': (data['totalfat'] as num).toDouble(),
       'protein': (data['totalprotein'] as num).toDouble(),
     };
-  } else {
-    throw Exception(response.body);
   }
+  return {'calories': 0, 'carbs': 0, 'fat': 0, 'protein': 0};
 }
 
 class _HealthPageState extends State<HealthPage>

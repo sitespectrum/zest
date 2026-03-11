@@ -45,6 +45,17 @@ builder.Services.AddHttpClient<IMealService, MealService>();
 
 builder.Services.AddSingleton<WebSocketHandler>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAdminSite",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -59,6 +70,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowAdminSite");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

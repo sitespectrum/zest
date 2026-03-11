@@ -15,80 +15,136 @@ import 'add_meal_page.dart';
 import 'package:intl/intl.dart';
 import 'package:client/components/ui/custom_card.dart';
 import 'package:client/constants.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 Future<double> fetchCalorieGoal() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  if (token == null) throw Exception("Nincs token");
+  if (token == null) return 3000.0;
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/auth/getUser"),
-    headers: {"Authorization": "Bearer $token"},
-  );
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'calorie_goal';
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    final goal = data['calorieGoal'] ?? data['CalorieGoal'];
-    return (goal as num).toDouble();
-  } else {
-    throw Exception(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/auth/getUser"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final goal = data['calorieGoal'] ?? data['CalorieGoal'];
+        final goalDouble = (goal as num).toDouble();
+        cacheBox.put(cacheKey, goalDouble);
+        return goalDouble;
+      }
+    } catch (e) {
+      debugPrint("Szerver hiba, olvasás cache-ből...");
+    }
   }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) return (cachedData as num).toDouble();
+  return 3000.0;
 }
 
 Future<List<UserMealDto>> fetchUserMeals() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
+  if (token == null) return [];
 
-  if (token == null) throw Exception("Nincs token");
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'user_meals';
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getUserMeals"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.map((e) => UserMealDto.fromJson(e)).toList();
-  } else {
-    throw Exception(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/meals/getUserMeals"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        cacheBox.put(cacheKey, response.body);
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => UserMealDto.fromJson(e)).toList();
+      }
+    } catch (e) {
+      debugPrint("Szerver hiba, olvasás cache-ből...");
+    }
   }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) {
+    final List<dynamic> data = jsonDecode(cachedData);
+    return data.map((e) => UserMealDto.fromJson(e)).toList();
+  }
+  return [];
 }
 
 Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
+  if (token == null) return [];
 
-  if (token == null) throw Exception("Nincs token");
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'user_workouts';
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
-  } else {
-    throw Exception(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        cacheBox.put(cacheKey, response.body);
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+      }
+    } catch (e) {
+      debugPrint("Szerver hiba, olvasás cache-ből...");
+    }
   }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) {
+    final List<dynamic> data = jsonDecode(cachedData);
+    return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+  }
+  return [];
 }
 
 Future<double> fetchTodayCalories() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  if (token == null) throw Exception("Nincs token");
+  if (token == null) return 0.0;
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/meals/getTodayCalories"),
-    headers: {"Authorization": "Bearer $token"},
-  );
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'today_calories';
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return (data as num).toDouble();
-  } else {
-    throw Exception(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/meals/getTodayCalories"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final calDouble = (data as num).toDouble();
+        cacheBox.put(cacheKey, calDouble);
+        return calDouble;
+      }
+    } catch (e) {
+      debugPrint("Szerver hiba, olvasás cache-ből...");
+    }
   }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) return (cachedData as num).toDouble();
+  return 0.0;
 }
 
 class HomePage extends StatefulWidget {

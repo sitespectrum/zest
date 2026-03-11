@@ -28,6 +28,8 @@ import 'package:client/components/ui/custom_card.dart';
 import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/components/ui/custom_selector_button.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class CMealPage extends StatefulWidget {
   final DateTime selectedDay;
@@ -85,19 +87,82 @@ class _CMealPageState extends State<CMealPage> {
       "IsCustom": false,
     };
 
-    final response = await http.post(
-      uri,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(dto),
-    );
+    final connectivityResult = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(
-        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    if (hasInternet) {
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(dto),
       );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          "${lang.getText("failed_to_save")} ${response.statusCode}",
+        );
+      }
+    } else {
+      final queueBox = Hive.box('queueBox');
+      await queueBox.add({
+        'url': uri.toString(),
+        'headers': headers,
+        'body': jsonEncode(dto),
+      });
+
+      final cacheBox = Hive.box('cacheBox');
+
+      final cachedMeals = cacheBox.get('user_meals');
+      List<dynamic> mealsList = [];
+      if (cachedMeals != null) {
+        mealsList = jsonDecode(cachedMeals);
+      }
+
+      final mockMeal = {
+        "id": DateTime.now().millisecondsSinceEpoch % 100000,
+        "mealName": _mealtypes[mealindex],
+        "customName": "",
+        "totalCalories": totalCalories.toDouble(),
+        "totalProtein": totalProtein,
+        "totalCarbs": totalCarbs,
+        "totalFat": totalFat,
+        "eatenAt": widget.selectedDay.toIso8601String(),
+        "isCustom": false,
+        "meals": meals.map((m) => m.toJson()).toList(),
+      };
+
+      mealsList.insert(0, mockMeal);
+      cacheBox.put('user_meals', jsonEncode(mealsList));
+
+      final todayCalories = cacheBox.get('today_calories');
+      if (todayCalories != null) {
+        cacheBox.put(
+          'today_calories',
+          (todayCalories as num).toDouble() + totalCalories,
+        );
+      }
+
+      final todayNutrientsStr = cacheBox.get('today_nutrients');
+      if (todayNutrientsStr != null) {
+        final Map<String, dynamic> todayNutrients = jsonDecode(
+          todayNutrientsStr,
+        );
+        todayNutrients['totalcalories'] =
+            (todayNutrients['totalcalories'] ?? 0) + totalCalories;
+        todayNutrients['totalprotein'] =
+            (todayNutrients['totalprotein'] ?? 0) + totalProtein;
+        todayNutrients['totalcarbs'] =
+            (todayNutrients['totalcarbs'] ?? 0) + totalCarbs;
+        todayNutrients['totalfat'] =
+            (todayNutrients['totalfat'] ?? 0) + totalFat;
+        cacheBox.put('today_nutrients', jsonEncode(todayNutrients));
+      }
+
+      debugPrint("Offline mentés: Étkezés a sorba ÉS a Cache-be is bekerült.");
     }
   }
 
@@ -164,19 +229,33 @@ class _CMealPageState extends State<CMealPage> {
       "IsCustom": true,
     };
 
-    final response = await http.post(
-      uri,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(dto),
-    );
+    final connectivityResult = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(
-        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    if (hasInternet) {
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(dto),
       );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          "${lang.getText("failed_to_save")} ${response.statusCode}",
+        );
+      }
+    } else {
+      final queueBox = Hive.box('queueBox');
+      await queueBox.add({
+        'url': uri.toString(),
+        'headers': headers,
+        'body': jsonEncode(dto),
+      });
+      debugPrint("Offline mentés: Étkezés a sorba rakva.");
     }
   }
 
@@ -218,19 +297,33 @@ class _CMealPageState extends State<CMealPage> {
       "IsCustom": false,
     };
 
-    final response = await http.post(
-      uri,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(dto),
-    );
+    final connectivityResult = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(
-        "${lang.getText("failed_to_save")} ${response.statusCode} ${response.body}",
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    if (hasInternet) {
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(dto),
       );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          "${lang.getText("failed_to_save")} ${response.statusCode}",
+        );
+      }
+    } else {
+      final queueBox = Hive.box('queueBox');
+      await queueBox.add({
+        'url': uri.toString(),
+        'headers': headers,
+        'body': jsonEncode(dto),
+      });
+      debugPrint("Offline mentés: Étkezés a sorba rakva.");
     }
   }
 
@@ -267,23 +360,34 @@ class _CMealPageState extends State<CMealPage> {
   Future<List<CustomUserMealDto>> fetchCustomUserMeals() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
+    if (token == null) return [];
 
-    if (token == null) throw Exception("Nincs token");
+    final cacheBox = Hive.box('cacheBox');
+    const cacheKey = 'custom_user_meals';
 
-    final response = await http.get(
-      Uri.parse("$apiUrl/api/meals/getCustomUserMeals"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
-    } else {
-      throw Exception(
-        "${lang.getText("failed_to_fetch_meals")} ${response.body}",
-      );
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (!connectivityResult.contains(ConnectivityResult.none)) {
+      try {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/meals/getCustomUserMeals"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+        if (response.statusCode == 200) {
+          cacheBox.put(cacheKey, response.body);
+          final List<dynamic> data = jsonDecode(response.body);
+          return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
+        }
+      } catch (e) {
+        debugPrint("Szerver hiba, olvasás cache-ből...");
+      }
     }
+
+    final cachedData = cacheBox.get(cacheKey);
+    if (cachedData != null) {
+      final List<dynamic> data = jsonDecode(cachedData);
+      return data.map((e) => CustomUserMealDto.fromJson(e)).toList();
+    }
+    return [];
   }
 
   Future<void> startCloudNfcSharing(BuildContext context) async {

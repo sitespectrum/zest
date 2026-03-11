@@ -13,6 +13,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 import 'dart:math';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class AddMealPage extends StatefulWidget {
   final bool addToTemplate;
@@ -147,23 +149,36 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   Future<List<UserMealDto>> fetchUserMeals() async {
-    final lang = Provider.of<LanguageProvider>(context);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
+    if (token == null) return [];
 
-    if (token == null) throw Exception("Nincs token");
+    final cacheBox = Hive.box('cacheBox');
+    const cacheKey = 'user_meals';
 
-    final response = await http.get(
-      Uri.parse("$apiUrl/api/meals/getUserMeals"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => UserMealDto.fromJson(e)).toList();
-    } else {
-      throw Exception(lang.getText("failed_to_fetch_meals"));
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (!connectivityResult.contains(ConnectivityResult.none)) {
+      try {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/meals/getUserMeals"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+        if (response.statusCode == 200) {
+          cacheBox.put(cacheKey, response.body);
+          final List<dynamic> data = jsonDecode(response.body);
+          return data.map((e) => UserMealDto.fromJson(e)).toList();
+        }
+      } catch (e) {
+        debugPrint("Szerver hiba, olvasás cache-ből...");
+      }
     }
+
+    final cachedData = cacheBox.get(cacheKey);
+    if (cachedData != null) {
+      final List<dynamic> data = jsonDecode(cachedData);
+      return data.map((e) => UserMealDto.fromJson(e)).toList();
+    }
+    return [];
   }
 
   Future<int?> addFoodToTemplate(
