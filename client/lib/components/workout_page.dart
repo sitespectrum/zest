@@ -14,6 +14,8 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:client/components/ui/custom_card.dart';
 import 'package:client/utils/scroll_behavior.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class WorkoutPage extends StatefulWidget {
   const WorkoutPage({super.key});
@@ -25,20 +27,34 @@ class WorkoutPage extends StatefulWidget {
 Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
+  if (token == null) return [];
 
-  if (token == null) throw Exception("Nincs token");
+  final cacheBox = Hive.box('cacheBox');
+  const cacheKey = 'user_workouts';
 
-  final response = await http.get(
-    Uri.parse("$apiUrl/api/Workout/getUserWorkouts"),
-    headers: {"Authorization": "Bearer $token"},
-  );
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
-  } else {
-    throw Exception(response.body);
+  var connectivityResult = await Connectivity().checkConnectivity();
+  if (!connectivityResult.contains(ConnectivityResult.none)) {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrl/api/Workout/getUserWorkouts"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      if (response.statusCode == 200) {
+        cacheBox.put(cacheKey, response.body);
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+      }
+    } catch (e) {
+      debugPrint("Szerver hiba, olvasás cache-ből...");
+    }
   }
+
+  final cachedData = cacheBox.get(cacheKey);
+  if (cachedData != null) {
+    final List<dynamic> data = jsonDecode(cachedData);
+    return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+  }
+  return [];
 }
 
 class _WorkoutPageState extends State<WorkoutPage>

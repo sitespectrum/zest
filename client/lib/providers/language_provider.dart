@@ -289,6 +289,8 @@ class LanguageProvider with ChangeNotifier {
           'Kiléphetsz (más veszi át a Host szerepet), vagy teljesen be is fejezheted az edzést mindenki számára.',
       'end_workout_for_all': 'Befejezés mindenkinek',
       'no_connection': 'Nincs internetkapcsolat',
+      'shared_workout_needs_internet':
+          'A közös edzéshez internetkapcsolat szükséges!',
     },
     'en': {
       'register_button_main': "Register",
@@ -537,6 +539,8 @@ class LanguageProvider with ChangeNotifier {
           'You can leave (someone else becomes Host), or completely end the workout for everyone.',
       'end_workout_for_all': 'End for everyone',
       'no_connection': 'No internet connection',
+      'shared_workout_needs_internet':
+          'Internet connection is required for shared workouts!',
     },
   };
 }

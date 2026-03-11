@@ -13,6 +13,8 @@ import '../providers/language_provider.dart';
 import '../constants.dart';
 import 'dart:math';
 import 'package:client/components/ui/custom_snackbar.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class AddWorkoutPage extends StatefulWidget {
   final bool addToTemplate;
@@ -97,19 +99,39 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
         context,
         listen: false,
       ).languageCode;
+      final cacheBox = Hive.box('cacheBox');
+      final cacheKey = 'muscle_groups_$langCode';
 
-      final response = await http.get(
-        Uri.parse("$apiUrl/api/Workout/muscle-groups?lang=$langCode"),
-      );
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (!connectivityResult.contains(ConnectivityResult.none)) {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/Workout/muscle-groups?lang=$langCode"),
+        );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          cacheBox.put(cacheKey, response.body);
+          final List<dynamic> data = jsonDecode(response.body);
+          if (mounted) {
+            setState(() {
+              muscleFilters = data.cast<String>().toList();
+              isFilterLoading = false;
+            });
+          }
+          return;
+        }
+      }
+
+      final cachedData = cacheBox.get(cacheKey);
+      if (cachedData != null) {
+        final List<dynamic> data = jsonDecode(cachedData);
         if (mounted) {
           setState(() {
             muscleFilters = data.cast<String>().toList();
             isFilterLoading = false;
           });
         }
+      } else {
+        if (mounted) setState(() => isFilterLoading = false);
       }
     } catch (e) {
       print("Hiba az izomcsoportok betöltésekor: $e");
@@ -128,39 +150,51 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     });
 
     try {
-      final uri = Uri.parse(
-        '$apiUrl/api/Workout/filter-by-muscle?muscle=${Uri.encodeQueryComponent(muscle)}',
-      );
+      final cacheBox = Hive.box('cacheBox');
+      final cacheKey = 'muscle_filter_$muscle';
 
-      final response = await http.get(uri);
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (!connectivityResult.contains(ConnectivityResult.none)) {
+        final uri = Uri.parse(
+          '$apiUrl/api/Workout/filter-by-muscle?muscle=${Uri.encodeQueryComponent(muscle)}',
+        );
 
-      if (response.statusCode == 200) {
-        final dynamic decoded = jsonDecode(response.body);
+        final response = await http.get(uri);
 
-        if (decoded == null) {
-          setState(() => searchResults = []);
+        if (response.statusCode == 200) {
+          cacheBox.put(cacheKey, response.body);
+          final dynamic decoded = jsonDecode(response.body);
+
+          if (decoded != null && decoded is List) {
+            final rawResults = decoded
+                .map((e) => ExerciseDto.fromJson(e))
+                .toList();
+            setState(() {
+              searchResults = _sortWithTopPriority(rawResults);
+            });
+          } else {
+            setState(() => searchResults = []);
+          }
           return;
         }
+      }
 
-        if (decoded is! List) {
-          setState(() => searchResults = []);
-          return;
+      final cachedData = cacheBox.get(cacheKey);
+      if (cachedData != null) {
+        final dynamic decoded = jsonDecode(cachedData);
+        if (decoded is List) {
+          final rawResults = decoded
+              .map((e) => ExerciseDto.fromJson(e))
+              .toList();
+          setState(() {
+            searchResults = _sortWithTopPriority(rawResults);
+          });
         }
-
-        final rawResults = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
-        final sortedResults = _sortWithTopPriority(rawResults);
-
-        setState(() {
-          searchResults = sortedResults;
-        });
       } else {
-        setState(() {
-          searchResults = [];
-        });
+        setState(() => searchResults = []);
       }
     } catch (e, stackTrace) {
       print("Szűrési hiba: $e");
-      print(stackTrace);
       setState(() => searchResults = []);
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -228,23 +262,38 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   }
 
   Future<List<UserWorkoutDto>> fetchUserWorkouts() async {
-    final lang = Provider.of<LanguageProvider>(context);
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
     if (token == null) throw Exception("Nincs token");
 
-    final response = await http.get(
-      Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
-      headers: {"Authorization": "Bearer $token"},
-    );
+    final cacheBox = Hive.box('cacheBox');
+    const cacheKey = 'user_workouts';
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
-    } else {
-      throw Exception(lang.getText("failed_to_fetch_meals"));
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (!connectivityResult.contains(ConnectivityResult.none)) {
+      try {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/workout/getUserWorkouts"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+        if (response.statusCode == 200) {
+          cacheBox.put(cacheKey, response.body);
+          final List<dynamic> data = jsonDecode(response.body);
+          return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+        }
+      } catch (e) {
+        debugPrint("Szerver hiba, olvasás cache-ből...");
+      }
     }
+
+    final cachedData = cacheBox.get(cacheKey);
+    if (cachedData != null) {
+      final List<dynamic> data = jsonDecode(cachedData);
+      return data.map((e) => UserWorkoutDto.fromJson(e)).toList();
+    }
+    return [];
   }
 
   Future<void> _addExerciseWrapper(ExerciseDto exercise) async {
@@ -550,18 +599,33 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     });
 
     try {
-      String url = '$apiUrl/api/Workout/search?q=$q';
-      if (selectedFilter != null) {
-        url += '&muscle=$selectedFilter';
+      final cacheBox = Hive.box('cacheBox');
+      final cacheKey = 'search_${q}_$selectedFilter';
+
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (!connectivityResult.contains(ConnectivityResult.none)) {
+        String url = '$apiUrl/api/Workout/search?q=$q';
+        if (selectedFilter != null) {
+          url += '&muscle=$selectedFilter';
+        }
+        final uri = Uri.parse(url);
+
+        final response = await http.get(uri);
+
+        if (response.statusCode == 200) {
+          cacheBox.put(cacheKey, response.body);
+          final List<dynamic> decoded = jsonDecode(response.body);
+          var results = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
+
+          setState(() => searchResults = results);
+          return;
+        }
       }
-      final uri = Uri.parse(url);
 
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final List<dynamic> decoded = jsonDecode(response.body);
+      final cachedData = cacheBox.get(cacheKey);
+      if (cachedData != null) {
+        final List<dynamic> decoded = jsonDecode(cachedData);
         var results = decoded.map((e) => ExerciseDto.fromJson(e)).toList();
-
         setState(() => searchResults = results);
       } else {
         setState(() => searchResults = []);

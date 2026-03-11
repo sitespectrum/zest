@@ -8,6 +8,8 @@ import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:client/components/drawers/join_session_drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:client/components/ui/custom_snackbar.dart';
 
 part "host_guest_drawer.g.dart";
 
@@ -75,15 +77,33 @@ Widget hostGuestDrawer(BuildContext context) {
             children: [
               Expanded(
                 child: CustomButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      elevation: 0,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const HostSessionDrawer(),
-                    );
+                  onPressed: () async {
+                    final results = await Connectivity().checkConnectivity();
+                    bool hasConnection =
+                        !results.contains(ConnectivityResult.none) ||
+                        results.length > 1;
+
+                    if (!hasConnection) {
+                      if (context.mounted) {
+                        CustomSnackbar.show(
+                          context,
+                          lang.getText("shared_workout_needs_internet"),
+                          backgroundColor: Colors.red,
+                        );
+                      }
+                      return;
+                    }
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        elevation: 0,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const HostSessionDrawer(),
+                      );
+                    }
                   },
                   title: lang.getText("host"),
                   iconData: Icons.wifi_tethering_rounded,
@@ -92,14 +112,32 @@ Widget hostGuestDrawer(BuildContext context) {
               ),
               Expanded(
                 child: CustomButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const JoinSessionDrawer(),
-                    );
+                  onPressed: () async {
+                    final results = await Connectivity().checkConnectivity();
+                    bool hasConnection =
+                        !results.contains(ConnectivityResult.none) ||
+                        results.length > 1;
+
+                    if (!hasConnection) {
+                      if (context.mounted) {
+                        CustomSnackbar.show(
+                          context,
+                          lang.getText("shared_workout_needs_internet"),
+                          backgroundColor: Colors.red,
+                        );
+                      }
+                      return;
+                    }
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const JoinSessionDrawer(),
+                      );
+                    }
                   },
                   title: lang.getText("join"),
                   iconData: Icons.link_rounded,

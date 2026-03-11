@@ -18,6 +18,8 @@ import 'package:image_picker/image_picker.dart';
 import 'friends_page.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:client/utils/scroll_behavior.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class ProfilePage extends StatefulWidget {
   static final ValueNotifier<int> refreshNotifier = ValueNotifier(0);
@@ -59,16 +61,37 @@ class _ProfilePageState extends State<ProfilePage>
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
     if (token == null) return;
-    try {
-      final response = await http.get(
-        Uri.parse("$apiUrl/api/auth/getUser"),
-        headers: {"Authorization": "Bearer $token"},
-      );
-      if (response.statusCode == 200) {
-        setState(() => userData = jsonDecode(response.body));
+
+    final cacheBox = Hive.box('cacheBox');
+    const cacheKey = 'user_data';
+
+    var connectivityResult = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+
+    if (hasInternet) {
+      try {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/auth/getUser"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+        if (response.statusCode == 200) {
+          cacheBox.put(cacheKey, response.body);
+          if (mounted) {
+            setState(() => userData = jsonDecode(response.body));
+          }
+          return;
+        }
+      } catch (e) {
+        debugPrint("Szerver hiba az adatok letöltésekor: $e");
       }
-    } catch (e) {
-      debugPrint("Hiba az adatok letöltésekor: $e");
+    }
+
+    final cachedData = cacheBox.get(cacheKey);
+    if (cachedData != null) {
+      debugPrint("Offline: Profil adatok betöltve a Hive Cache-ből!");
+      if (mounted) {
+        setState(() => userData = jsonDecode(cachedData));
+      }
     }
   }
 
@@ -88,33 +111,62 @@ class _ProfilePageState extends State<ProfilePage>
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('jwt_token');
 
-      final response = await http.post(
-        Uri.parse("$apiUrl/api/auth/uploadImage"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(base64Image),
-      );
+      final headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      };
 
-      if (response.statusCode == 200) {
-        setState(() {
-          if (userData != null) {
-            userData!['profilePicture'] = base64Image;
+      var connectivityResult = await Connectivity().checkConnectivity();
+      bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+
+      if (hasInternet) {
+        final response = await http.post(
+          Uri.parse("$apiUrl/api/auth/uploadImage"),
+          headers: headers,
+          body: jsonEncode(base64Image),
+        );
+
+        if (response.statusCode == 200) {
+          _updateLocalProfilePic(base64Image);
+          if (mounted) {
+            CustomSnackbar.show(
+              context,
+              "Profilkép frissítve!",
+              backgroundColor: Colors.green,
+            );
           }
+        }
+      } else {
+        final queueBox = Hive.box('queueBox');
+        await queueBox.add({
+          'url': "$apiUrl/api/auth/uploadImage",
+          'headers': headers,
+          'body': jsonEncode(base64Image),
         });
+
+        _updateLocalProfilePic(base64Image);
         if (mounted) {
           CustomSnackbar.show(
             context,
-            "Profilkép frissítve!",
+            "Profilkép elmentve offline!",
             backgroundColor: Colors.green,
           );
         }
-      } else {
-        debugPrint("Hiba a feltöltéskor: ${response.statusCode}");
       }
     } catch (e) {
       debugPrint("Hiba: $e");
+    }
+  }
+
+  void _updateLocalProfilePic(String base64Image) {
+    setState(() {
+      if (userData != null) {
+        userData!['profilePicture'] = base64Image;
+      }
+    });
+    final cacheBox = Hive.box('cacheBox');
+    if (userData != null) {
+      cacheBox.put('user_data', jsonEncode(userData));
     }
   }
 
@@ -486,46 +538,103 @@ class _ProfilePageState extends State<ProfilePage>
     final token = prefs.getString('jwt_token');
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
-    final response = await http.post(
-      Uri.parse("$apiUrl/api/auth/details"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({
-        "userId": userData!['id'],
-        "userName": name,
-        "height": height,
-        "weight": weight,
-        "birth": birth.toIso8601String(),
-        "gender": gender,
-        "goal": goal,
-        "activity": activity,
-        "calorieGoal": calorieGoal,
-        "proteinGoal": proteinGoal,
-        "carbsGoal": carbsGoal,
-        "fatGoal": fatGoal,
-      }),
-    );
+    final requestBody = {
+      "userId": userData!['id'],
+      "userName": name,
+      "height": height,
+      "weight": weight,
+      "birth": birth.toIso8601String(),
+      "gender": gender,
+      "goal": goal,
+      "activity": activity,
+      "calorieGoal": calorieGoal,
+      "proteinGoal": proteinGoal,
+      "carbsGoal": carbsGoal,
+      "fatGoal": fatGoal,
+    };
 
-    if (response.statusCode == 200) {
-      await prefs.setString("username", name);
-      setState(() => username = name);
-      await _fetchUserData();
-      ProfilePage.refreshNotifier.value++;
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+
+    var connectivityResult = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+
+    if (hasInternet) {
+      final response = await http.post(
+        Uri.parse("$apiUrl/api/auth/details"),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        await prefs.setString("username", name);
+        setState(() => username = name);
+        await _fetchUserData();
+        ProfilePage.refreshNotifier.value++;
+
+        if (newPassword.isNotEmpty) {
+          await http.put(
+            Uri.parse("$apiUrl/api/auth/updatePassword"),
+            headers: headers,
+            body: jsonEncode({"newPassword": newPassword}),
+          );
+          await _logout();
+          return false;
+        }
+
+        if (mounted) {
+          CustomSnackbar.show(
+            context,
+            lang.getText("data_successfully_updated"),
+            backgroundColor: Colors.green,
+          );
+        }
+        return true;
+      }
+    } else {
+      final queueBox = Hive.box('queueBox');
+      await queueBox.add({
+        'url': "$apiUrl/api/auth/details",
+        'headers': headers,
+        'body': jsonEncode(requestBody),
+      });
 
       if (newPassword.isNotEmpty) {
-        await http.put(
-          Uri.parse("$apiUrl/api/auth/updatePassword"),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer $token",
-          },
-          body: jsonEncode({"newPassword": newPassword}),
-        );
-        await _logout();
-        return false;
+        await queueBox.add({
+          'url': "$apiUrl/api/auth/updatePassword",
+          'headers': headers,
+          'body': jsonEncode({"newPassword": newPassword}),
+        });
       }
+
+      final cacheBox = Hive.box('cacheBox');
+      if (userData != null) {
+        userData!['userName'] = name;
+        userData!['height'] = height;
+        userData!['weight'] = weight;
+        userData!['birth'] = birth.toIso8601String();
+        userData!['calorieGoal'] = calorieGoal;
+        userData!['proteinGoal'] = proteinGoal;
+        userData!['carbsGoal'] = carbsGoal;
+        userData!['fatGoal'] = fatGoal;
+        cacheBox.put('user_data', jsonEncode(userData));
+      }
+
+      cacheBox.put('calorie_goal', calorieGoal);
+      cacheBox.put(
+        'macro_goals',
+        jsonEncode({
+          'carbsGoal': carbsGoal,
+          'fatGoal': fatGoal,
+          'proteinGoal': proteinGoal,
+        }),
+      );
+
+      await prefs.setString("username", name);
+      setState(() => username = name);
+      ProfilePage.refreshNotifier.value++;
 
       if (mounted) {
         CustomSnackbar.show(
