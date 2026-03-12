@@ -319,12 +319,24 @@ class MainPage extends HookWidget {
 
                     SizedBox(height: screenHeight * 0.005),
 
-                    Text(
-                      "Zest",
-                      style: TextStyle(
-                        fontSize: 50,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                    Text.rich(
+                      const TextSpan(
+                        text: "Zest",
+                        style: TextStyle(
+                          fontSize: 50,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2.0,
+                          fontFamily: 'Roboto',
+                        ),
+                        children: [
+                          TextSpan(
+                            text: ".",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 64, 255, 50),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
