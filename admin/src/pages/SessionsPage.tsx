@@ -24,11 +24,12 @@ const SessionsPage = () => {
     fetchSessions();
   }, []);
 
-  const handleDelete = async (id: number, sessionId: string) => {
+  // Itt csak sessionId-t adunk át
+  const handleDelete = async (sessionId: string) => {
     if (!window.confirm(`Biztosan kényszerítve leállítod és törlöd a(z) ${sessionId} sessiont? Minden résztvevő azonnal ki lesz dobva!`)) return;
     try {
-      await deleteAdminSession(id);
-      setSessions(sessions.filter((s) => s.id !== id));
+      await deleteAdminSession(sessionId);
+      setSessions(sessions.filter((s) => s.sessionId !== sessionId));
     } catch (error: any) {
       if (error.message === "unauthorized") window.location.href = "/login";
       else alert("Hiba történt a törlés során.");
@@ -89,10 +90,9 @@ const SessionsPage = () => {
             </thead>
             <tbody>
               {filteredSessions.map((s) => (
-                <tr key={s.id} className="hover:bg-[#27272a]/50 transition border-b border-[#27272a]/50 group">
+                <tr key={s.sessionId} className="hover:bg-[#27272a]/50 transition border-b border-[#27272a]/50 group">
                   <td className="p-4 pl-6">
                     <p className="text-[#40ff32] font-mono font-bold tracking-widest">{s.sessionId}</p>
-                    <p className="text-gray-500 text-xs mt-1">DB ID: #{s.id}</p>
                   </td>
                   <td className="p-4">
                     <p className="font-bold text-white">{s.name}</p>
@@ -102,9 +102,9 @@ const SessionsPage = () => {
                   </td>
                   <td className="p-4">
                     <div className="flex flex-col gap-2 items-start">
-                      {/* Státusz Badge */}
-                      {s.status === "Waiting" && <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded font-bold uppercase tracking-wider border border-yellow-500/20 animate-pulse">Várakozás</span>}
-                      {s.status === "Running" && <span className="px-2 py-0.5 bg-[#40ff32]/20 text-[#40ff32] text-xs rounded font-bold uppercase tracking-wider border border-[#40ff32]/20 shadow-[0_0_8px_rgba(64,255,50,0.3)]">Élő / Fut</span>}
+                      {/* BEMAPPOLVA A C# ENUMOKHOZ (Lobby, In_Progress, Finished) */}
+                      {s.status === "Lobby" && <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded font-bold uppercase tracking-wider border border-yellow-500/20 animate-pulse">Lobby (Várakozás)</span>}
+                      {s.status === "In_Progress" && <span className="px-2 py-0.5 bg-[#40ff32]/20 text-[#40ff32] text-xs rounded font-bold uppercase tracking-wider border border-[#40ff32]/20 shadow-[0_0_8px_rgba(64,255,50,0.3)]">Élő / Fut</span>}
                       {s.status === "Finished" && <span className="px-2 py-0.5 bg-gray-500/20 text-gray-400 text-xs rounded font-bold uppercase tracking-wider border border-gray-500/20">Befejezett</span>}
                       
                       <span className="text-sm text-gray-300">👥 {s.participantCount} résztvevő</span>
@@ -114,7 +114,7 @@ const SessionsPage = () => {
                     {new Date(s.createdAt).toLocaleString('hu-HU', { dateStyle: 'short', timeStyle: 'short' })}
                   </td>
                   <td className="p-4 pr-6 text-right">
-                    <button onClick={() => handleDelete(s.id, s.sessionId)} title="Kényszerített leállítás / Törlés" className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition">
+                    <button onClick={() => handleDelete(s.sessionId)} title="Kényszerített leállítás / Törlés" className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition">
                       <Trash2 size={18} />
                     </button>
                   </td>
