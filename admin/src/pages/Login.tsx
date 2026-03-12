@@ -50,7 +50,7 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Felhasználónév vagy Email</label>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Felhasználónév</label>
             <input
               type="text"
               required
@@ -74,7 +74,7 @@ const Login = () => {
             disabled={loading}
             className="w-full bg-[#40ff32] hover:bg-[#3ce62e] text-black font-bold py-3 rounded-xl transition mt-4 disabled:opacity-50"
           >
-            {loading ? "Bejelentkezés..." : "Belépés az Admin panelre"}
+            {loading ? "Bejelentkezés..." : "Belépés"}
           </button>
         </form>
       </div>
