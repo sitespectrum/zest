@@ -27,8 +27,8 @@ public class AdminController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] AdminLoginRequest request)
     {
-        var adminUser = Environment.GetEnvironmentVariable("ADMIN_USERNAME");
-        var adminPass = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+        var adminUser = Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? _configuration["ADMIN_USERNAME"];
+        var adminPass = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? _configuration["ADMIN_PASSWORD"];
 
         if (string.IsNullOrEmpty(adminUser) || string.IsNullOrEmpty(adminPass))
         {
@@ -70,9 +70,9 @@ public class AdminController : ControllerBase
                 u.Email,
                 u.Height,
                 u.Weight,
-                u.Goal,
-                u.Activity,
-                u.Gender,
+                Goal = u.Goal.ToString(),
+                Activity = u.Activity.ToString(),
+                Gender = u.Gender.ToString(),
                 u.Birth,
                 u.ProfilePicture
             })
@@ -105,10 +105,16 @@ public class AdminController : ControllerBase
         user.Email = request.Email;
         user.Height = request.Height;
         user.Weight = request.Weight;
-        user.Gender = request.Gender;
-        user.Goal = request.Goal;
-        user.Activity = request.Activity;
         user.Birth = request.Birth;
+
+        if (Enum.TryParse<Gender>(request.Gender, true, out var parsedGender))
+            user.Gender = parsedGender;
+
+        if (Enum.TryParse<Goal>(request.Goal, true, out var parsedGoal))
+            user.Goal = parsedGoal;
+
+        if (Enum.TryParse<Activity>(request.Activity, true, out var parsedActivity))
+            user.Activity = parsedActivity;
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Felhasználó adatai sikeresen frissítve." });
@@ -134,7 +140,7 @@ public class AdminController : ControllerBase
         if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
 
         var user = await _context.Users.FindAsync(id);
-        if (user == null) return NotFound("Felhasználó nem található.");
+        if (user == null) return NotFound(new { message = "Felhasználó nem található." });
 
         var friendships = await _context.Friendships.Where(f => f.RequesterId == id || f.AddresseeId == id).ToListAsync();
         _context.Friendships.RemoveRange(friendships);
