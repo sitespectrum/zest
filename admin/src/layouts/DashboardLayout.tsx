@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { Users, Dumbbell, Utensils, Activity, Menu, X, LogOut } from "lucide-react";
+import { Users, Dumbbell, Utensils, Activity, Menu, X, LogOut, Radio } from "lucide-react";
 
 const DashboardLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -22,17 +22,19 @@ const DashboardLayout = () => {
 
   const getPageTitle = () => {
     if (location.pathname.includes("users")) return "Felhasználók Kezelése";
-    if (location.pathname.includes("exercises")) return "Gyakorlatok Kezelése";
     if (location.pathname.includes("workouts")) return "Edzések Kezelése";
     if (location.pathname.includes("meals")) return "Étkezések Kezelése";
+    if (location.pathname.includes("exercises")) return "Gyakorlatok Kezelése";
+    if (location.pathname.includes("sessions")) return "Közös Edzések (Live)";
     return "Zest Admin Panel";
   };
 
   const navItems = [
     { path: "/users", label: "Felhasználók", icon: Users },
-    { path: "/exercises", label: "Gyakorlatok", icon: Dumbbell },
-    { path: "/workouts", label: "Edzések", icon: Activity },
+    { path: "/workouts", label: "Edzések", icon: Dumbbell },
     { path: "/meals", label: "Étkezések", icon: Utensils },
+    { path: "/exercises", label: "Gyakorlatok", icon: Activity },
+    { path: "/sessions", label: "Élő Sessionök", icon: Radio },
   ];
 
   return (
