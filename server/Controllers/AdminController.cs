@@ -513,7 +513,7 @@ public class AdminController : ControllerBase
         var notificationData = new
         {
             app_id = actualAppId,
-            included_segments = new[] { "Subscribed Users" },
+            included_segments = new[] { "Total Subscriptions" },
             target_channel = "push",
             headings = new { en = request.Title, hu = request.Title },
             contents = new { en = request.Message, hu = request.Message },
@@ -532,8 +532,15 @@ public class AdminController : ControllerBase
         var response = await httpClient.SendAsync(httpRequest);
         var responseBody = await response.Content.ReadAsStringAsync();
 
+        Console.WriteLine($"OneSignal API Válasz: {responseBody}");
+
         if (response.IsSuccessStatusCode)
         {
+            if (responseBody.Contains("\"recipients\":0"))
+            {
+                return BadRequest(new { message = "A OneSignal elfogadta a kérést, de 0 embernek küldte ki! (Lehet, hogy épp senki nincs feliratkozva értesítésekre?)" });
+            }
+
             return Ok(new { message = "Értesítés sikeresen kiküldve minden felhasználónak!" });
         }
         else
