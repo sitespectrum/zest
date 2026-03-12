@@ -3,16 +3,16 @@ import { Trash2, RefreshCw, Edit2, Plus, X } from "lucide-react";
 import { getExercises, deleteExercise, createExercise, updateExercise, type Exercise } from "../api/api";
 
 const emptyExercise: Omit<Exercise, "id"> = {
-  name: "", nameHu: "",
-  category: "", categoryHu: "",
-  equipment: "", equipmentHu: "",
-  force: "", forceHu: "",
-  level: "", levelHu: "",
-  mechanic: "", mechanicHu: "",
+  name: "", name_hu: "",
+  category: "", category_hu: "",
+  equipment: "", equipment_hu: "",
+  force: "", force_hu: "",
+  level: "", level_hu: "",
+  mechanic: "", mechanic_hu: "",
   metValue: 3.5,
-  primaryMuscles: [], primaryMusclesHu: [],
-  secondaryMuscles: [], secondaryMusclesHu: [],
-  instructions: [], instructionsHu: [],
+  primaryMuscles: [], primaryMuscles_hu: [],
+  secondaryMuscles: [], secondaryMuscles_hu: [],
+  instructions: [], instructions_hu: [],
   images: [],
 };
 
@@ -75,10 +75,14 @@ const ExercisesPage = () => {
     }
   };
 
-  const filteredExercises = exercises.filter(ex => 
-    ex.nameHu.toLowerCase().includes(search.toLowerCase()) || 
-    ex.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredExercises = exercises.filter(ex => {
+    const huName = ex.name_hu || "";
+    const enName = ex.name || "";
+    const searchLower = search.toLowerCase();
+
+    return huName.toLowerCase().includes(searchLower) || 
+           enName.toLowerCase().includes(searchLower);
+  });
 
   return (
     <div className="bg-[#18181b] border border-[#27272a] rounded-2xl shadow-2xl overflow-hidden flex flex-col relative h-[85vh]">
@@ -129,13 +133,13 @@ const ExercisesPage = () => {
                     </div>
                   </td>
                   <td className="p-4">
-                    <p className="font-bold text-[#40ff32] text-base">{ex.nameHu || "Nincs HU név"}</p>
+                    <p className="font-bold text-[#40ff32] text-base">{ex.name_hu || "Nincs HU név"}</p>
                     <p className="text-gray-400 text-sm">{ex.name}</p>
                   </td>
                   <td className="p-4">
                     <div className="flex flex-col gap-1">
-                      <span className="text-white text-sm">{ex.categoryHu}</span>
-                      <span className="text-gray-500 text-xs">{ex.equipmentHu}</span>
+                      <span className="text-white text-sm">{ex.category_hu || ex.category}</span>
+                      <span className="text-gray-500 text-xs">{ex.equipment_hu || ex.equipment}</span>
                     </div>
                   </td>
                   <td className="p-4 pr-6 text-right">
@@ -143,7 +147,7 @@ const ExercisesPage = () => {
                       <button onClick={() => openModal(ex)} className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl transition">
                         <Edit2 size={18} />
                       </button>
-                      <button onClick={() => handleDelete(ex.id, ex.nameHu)} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition">
+                      <button onClick={() => handleDelete(ex.id, ex.name_hu || ex.name)} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition">
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -160,7 +164,7 @@ const ExercisesPage = () => {
           <div className="bg-[#18181b] border border-[#27272a] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-[#27272a] flex justify-between items-center shrink-0">
               <h2 className="text-2xl font-bold text-white">
-                {"id" in editingExercise ? `Szerkesztés: ${editingExercise.nameHu}` : "Új Gyakorlat Létrehozása"}
+                {"id" in editingExercise ? `Szerkesztés: ${editingExercise.name_hu || editingExercise.name}` : "Új Gyakorlat Létrehozása"}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white transition">
                 <X size={24} />
@@ -173,7 +177,7 @@ const ExercisesPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Magyar Név <span className="text-red-500">*</span></label>
-                    <input required type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl focus:border-[#40ff32] outline-none" value={editingExercise.nameHu} onChange={e => setEditingExercise({...editingExercise, nameHu: e.target.value})} />
+                    <input required type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl focus:border-[#40ff32] outline-none" value={editingExercise.name_hu} onChange={e => setEditingExercise({...editingExercise, name_hu: e.target.value})} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Angol Név <span className="text-red-500">*</span></label>
@@ -184,15 +188,15 @@ const ExercisesPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Kategória (HU)</label>
-                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.categoryHu} onChange={e => setEditingExercise({...editingExercise, categoryHu: e.target.value})} />
+                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.category_hu || ''} onChange={e => setEditingExercise({...editingExercise, category_hu: e.target.value})} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Kategória (EN)</label>
-                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.category} onChange={e => setEditingExercise({...editingExercise, category: e.target.value})} />
+                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.category || ''} onChange={e => setEditingExercise({...editingExercise, category: e.target.value})} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Eszköz (HU)</label>
-                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.equipmentHu} onChange={e => setEditingExercise({...editingExercise, equipmentHu: e.target.value})} />
+                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.equipment_hu || ''} onChange={e => setEditingExercise({...editingExercise, equipment_hu: e.target.value})} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">MET Érték</label>
@@ -203,18 +207,18 @@ const ExercisesPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Fő Izomcsoportok (HU, vesszővel)</label>
-                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.primaryMusclesHu?.join(", ")} onChange={e => setEditingExercise({...editingExercise, primaryMusclesHu: e.target.value.split(",").map(s => s.trim())})} />
+                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={(editingExercise.primaryMuscles_hu || []).join(", ")} onChange={e => setEditingExercise({...editingExercise, primaryMuscles_hu: e.target.value.split(",").map(s => s.trim())})} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Másodlagos Izomcsoportok (HU, vesszővel)</label>
-                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={editingExercise.secondaryMusclesHu?.join(", ")} onChange={e => setEditingExercise({...editingExercise, secondaryMusclesHu: e.target.value.split(",").map(s => s.trim())})} />
+                    <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-white px-4 py-2.5 rounded-xl outline-none" value={(editingExercise.secondaryMuscles_hu || []).join(", ")} onChange={e => setEditingExercise({...editingExercise, secondaryMuscles_hu: e.target.value.split(",").map(s => s.trim())})} />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Kép fájlnevek (vesszővel elválasztva)</label>
                   <p className="text-xs text-gray-600 mb-2">Pl: Barbell_Bench_Press_1.jpg, Barbell_Bench_Press_2.jpg</p>
-                  <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-blue-400 px-4 py-2.5 rounded-xl outline-none font-mono text-sm" value={editingExercise.images?.join(", ")} onChange={e => setEditingExercise({...editingExercise, images: e.target.value.split(",").map(s => s.trim())})} />
+                  <input type="text" className="w-full bg-[#121212] border border-[#27272a] text-blue-400 px-4 py-2.5 rounded-xl outline-none font-mono text-sm" value={(editingExercise.images || []).join(", ")} onChange={e => setEditingExercise({...editingExercise, images: e.target.value.split(",").map(s => s.trim())})} />
                 </div>
 
               </form>

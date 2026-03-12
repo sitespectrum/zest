@@ -22,17 +22,17 @@ const DashboardLayout = () => {
 
   const getPageTitle = () => {
     if (location.pathname.includes("users")) return "Felhasználók Kezelése";
+    if (location.pathname.includes("exercises")) return "Gyakorlatok Kezelése";
     if (location.pathname.includes("workouts")) return "Edzések Kezelése";
     if (location.pathname.includes("meals")) return "Étkezések Kezelése";
-    if (location.pathname.includes("exercises")) return "Gyakorlatok Kezelése";
     return "Zest Admin Panel";
   };
 
   const navItems = [
     { path: "/users", label: "Felhasználók", icon: Users },
-    { path: "/workouts", label: "Edzések", icon: Dumbbell },
+    { path: "/exercises", label: "Gyakorlatok", icon: Dumbbell },
+    { path: "/workouts", label: "Edzések", icon: Activity },
     { path: "/meals", label: "Étkezések", icon: Utensils },
-    { path: "/exercises", label: "Gyakorlatok", icon: Activity },
   ];
 
   return (

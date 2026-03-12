@@ -58,7 +58,7 @@ public class AdminController : ControllerBase
     }
 
     // ==========================================
-    // --- USERS ---
+    // --- FELHASZNÁLÓK MODERÁLÁSA ---
     // ==========================================
 
     [HttpGet("users")]
@@ -171,7 +171,7 @@ public class AdminController : ControllerBase
     }
 
     // ==========================================
-    // --- EXERCISES ---
+    // --- GYAKORLATOK MODERÁLÁSA ---
     // ==========================================
 
     [HttpGet("exercises")]
@@ -246,5 +246,93 @@ public class AdminController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Gyakorlat sikeresen törölve." });
+    }
+
+    // ===================================================
+    // --- FELHASZNÁLÓI EDZÉSEK MODERÁLÁSA ---
+    // ===================================================
+
+    [HttpGet("workouts")]
+    public async Task<IActionResult> GetUserWorkouts()
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var workouts = await _context.UserWorkouts
+            .Include(w => w.User)
+            .Select(w => new
+            {
+                w.Id,
+                w.UserId,
+                UserName = w.User != null ? w.User.UserName : "Ismeretlen",
+                w.WorkoutName,
+                w.CustomName,
+                w.Date,
+                w.DurationMinutes,
+                w.TotalBurntCalories,
+                w.IsCustom
+            })
+            .OrderByDescending(w => w.Date)
+            .ToListAsync();
+
+        return Ok(workouts);
+    }
+
+    [HttpDelete("workouts/{id}")]
+    public async Task<IActionResult> DeleteUserWorkout(int id)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var workout = await _context.UserWorkouts.FindAsync(id);
+        if (workout == null) return NotFound(new { message = "Edzés nem található." });
+
+        var exercises = await _context.WorkoutExercises.Where(e => e.UserWorkoutId == id).ToListAsync();
+        _context.WorkoutExercises.RemoveRange(exercises);
+
+        _context.UserWorkouts.Remove(workout);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Edzés sikeresen törölve." });
+    }
+
+    // =====================================================
+    // --- FELHASZNÁLÓI ÉTKEZÉSEK MODERÁLÁSA ---
+    // =====================================================
+
+    [HttpGet("meals")]
+    public async Task<IActionResult> GetUserMeals()
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var meals = await _context.UserMeals
+            .Include(m => m.User)
+            .Select(m => new
+            {
+                m.Id,
+                m.UserId,
+                UserName = m.User != null ? m.User.UserName : "Ismeretlen",
+                MealName = m.MealName.ToString(),
+                m.CustomName,
+                m.EatenAt,
+                m.TotalCalories,
+                m.IsCustom
+            })
+            .OrderByDescending(m => m.EatenAt)
+            .ToListAsync();
+
+        return Ok(meals);
+    }
+
+    [HttpDelete("meals/{id}")]
+    public async Task<IActionResult> DeleteUserMeal(int id)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var meal = await _context.UserMeals.FindAsync(id);
+        if (meal == null) return NotFound(new { message = "Étkezés nem található." });
+
+        _context.UserMeals.Remove(meal);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Étkezés sikeresen törölve." });
     }
 }
