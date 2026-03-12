@@ -18,6 +18,8 @@ import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/providers/language_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_ble_peripheral/flutter_ble_peripheral.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 part "host_session_drawer.g.dart";
 
@@ -471,8 +473,10 @@ Widget hostSessionDrawer(BuildContext context) {
     if (shareId.value.isEmpty) return;
 
     if (isNfcActive.value) {
-      isNfcActive.value = false;
+      if (context.mounted) isNfcActive.value = false;
       await NfcHce.removeApduResponse(0);
+      final blePeripheral = FlutterBlePeripheral();
+      await blePeripheral.stop();
       if (context.mounted) {
         CustomSnackbar.show(
           context,
@@ -481,8 +485,110 @@ Widget hostSessionDrawer(BuildContext context) {
         );
       }
     } else {
-      isNfcActive.value = true;
-      final nfcState = await NfcHce.checkDeviceNfcState();
+      // 1. Bluetooth és Helymeghatározás engedélyek bekérése
+      Map<Permission, PermissionStatus> statuses = await [
+        Permission.bluetoothAdvertise,
+        Permission.bluetoothConnect,
+        Permission.location,
+      ].request();
+
+      if (statuses.values.any((status) => status.isDenied)) {
+        if (context.mounted) {
+          CustomSnackbar.show(
+            context,
+            lang.getText("missing_bt"),
+            backgroundColor: Colors.red,
+          );
+        }
+        return;
+      }
+
+      try {
+        if (context.mounted) isNfcActive.value = true;
+
+        // 2. BLUETOOTH SUGÁRZÁS ELINDÍTÁSA
+        final blePeripheral = FlutterBlePeripheral();
+        await blePeripheral.stop();
+
+        final AdvertiseData advertiseData = AdvertiseData(
+          includeDeviceName: false,
+          manufacturerId: 0xFFFF,
+          manufacturerData: Uint8List.fromList(utf8.encode(shareId.value)),
+          serviceUuid:
+              'bf27cf98-eda3-4875-99a3-537446d7e003', // Ugyanaz a csatorna, mint a gyakorlatoknál
+        );
+
+        await blePeripheral.start(advertiseData: advertiseData);
+
+        // 3. NFC KÁRTYA EMULÁCIÓ (Csak a sikeres koccintás jelzése)
+        await NfcHce.removeApduResponse(0);
+        await NfcHce.addApduResponse(0, [0x90, 0x00]);
+
+        await NfcHce.init(
+          aid: Uint8List.fromList([0xA0, 0x00, 0x00, 0x00, 0x04, 0x10, 0x10]),
+          permanentApduResponses: true,
+          listenOnlyConfiguredPorts: false,
+        );
+
+        // 4. VÁRAKOZÓ ABLAK
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (c) => AlertDialog(
+              backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.contactless_rounded,
+                    size: 80,
+                    color: Colors.blueAccent,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    lang.getText("touch_the_other_phone"),
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "NFC és Bluetooth aktív...",
+                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: CustomButton(
+                      onPressed: () async {
+                        isNfcActive.value = false;
+                        await NfcHce.removeApduResponse(0);
+                        await blePeripheral.stop(); // Bluetooth is leáll
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          CustomSnackbar.show(
+                            context,
+                            lang.getText("nfc_stopped"),
+                            backgroundColor: Colors.orange,
+                          );
+                        }
+                      },
+                      title: lang.getText("close"),
+                      variant: CustomButtonVariant.secondary,
+                      iconData: Icons.close,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          CustomSnackbar.show(context, "Hiba: $e", backgroundColor: Colors.red);
+        }
+      }
     }
   }
 
