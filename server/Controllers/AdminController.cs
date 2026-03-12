@@ -549,4 +549,138 @@ public class AdminController : ControllerBase
             return StatusCode((int)response.StatusCode, new { message = "Hiba a küldés során", details = responseBody });
         }
     }
+
+    // =======================================================
+    // --- GLOBÁLIS EDZÉSTERVEK---
+    // =======================================================
+
+    private async Task<int> GetOrCreateZestOfficialUserId()
+    {
+        var officialUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "official@zest.app");
+        if (officialUser == null)
+        {
+            officialUser = new User
+            {
+                UserName = "Zest Official",
+                Email = "official@zest.app",
+                PasswordHash = "LOCKED",
+                Gender = Gender.Férfi,
+                Activity = Activity.Közepesen_aktív,
+                Goal = Goal.Szintentartás,
+                Birth = DateTime.UtcNow
+            };
+            _context.Users.Add(officialUser);
+            await _context.SaveChangesAsync();
+        }
+        return officialUser.Id;
+    }
+
+    [HttpGet("templates")]
+    public async Task<IActionResult> GetGlobalTemplates()
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        int officialId = await GetOrCreateZestOfficialUserId();
+
+        var templates = await _context.UserWorkouts
+            .Include(w => w.Exercises)
+                .ThenInclude(e => e.Exercise)
+            .Include(w => w.Exercises)
+                .ThenInclude(e => e.Sets)
+            .Where(w => w.UserId == officialId && w.IsCustom == true)
+            .OrderByDescending(w => w.Date)
+            .Select(w => new
+            {
+                w.Id,
+                w.CustomName,
+                w.DurationMinutes,
+                w.TotalBurntCalories,
+                ExerciseCount = w.Exercises.Count,
+                Exercises = w.Exercises.Select(we => new
+                {
+                    we.ExerciseId,
+                    NameHu = we.Exercise != null ? we.Exercise.NameHu : "Ismeretlen",
+                    SetsCount = we.Sets.Count
+                })
+            })
+            .ToListAsync();
+
+        return Ok(templates);
+    }
+
+    public class AdminWorkoutSetDto
+    {
+        public double Weight { get; set; }
+        public int Reps { get; set; }
+    }
+
+    public class AdminWorkoutExerciseDto
+    {
+        public int ExerciseId { get; set; }
+        public List<AdminWorkoutSetDto> Sets { get; set; } = new();
+    }
+
+    public class CreateTemplateRequest
+    {
+        public string CustomName { get; set; } = string.Empty;
+        public int DurationMinutes { get; set; }
+        public int CaloriesBurnt { get; set; }
+        public List<AdminWorkoutExerciseDto> Exercises { get; set; } = new();
+    }
+
+    [HttpPost("templates")]
+    public async Task<IActionResult> CreateGlobalTemplate([FromBody] CreateTemplateRequest request)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        int officialId = await GetOrCreateZestOfficialUserId();
+
+        var userWorkout = new UserWorkouts
+        {
+            UserId = officialId,
+            CustomName = request.CustomName,
+            WorkoutName = request.CustomName,
+            Date = DateTime.UtcNow,
+            DurationMinutes = request.DurationMinutes,
+            TotalBurntCalories = request.CaloriesBurnt,
+            TotalLiftedWeight = 0,
+            IsCustom = true,
+            Exercises = request.Exercises.Select(e => new WorkoutExercise
+            {
+                ExerciseId = e.ExerciseId,
+                Sets = e.Sets.Select((s, index) => new WorkoutSet
+                {
+                    Weight = s.Weight,
+                    Reps = s.Reps,
+                    Order = index + 1,
+                    IsCompleted = false
+                }).ToList()
+            }).ToList()
+        };
+
+        _context.UserWorkouts.Add(userWorkout);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Hivatalos sablon sikeresen létrehozva." });
+    }
+
+    [HttpDelete("templates/{id}")]
+    public async Task<IActionResult> DeleteGlobalTemplate(int id)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        int officialId = await GetOrCreateZestOfficialUserId();
+
+        var workout = await _context.UserWorkouts
+            .Include(w => w.Exercises)
+            .ThenInclude(e => e.Sets)
+            .FirstOrDefaultAsync(w => w.Id == id && w.UserId == officialId);
+
+        if (workout == null) return NotFound(new { message = "Sablon nem található." });
+
+        _context.UserWorkouts.Remove(workout);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Sablon sikeresen törölve." });
+    }
 }

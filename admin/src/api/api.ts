@@ -324,3 +324,54 @@ export const sendGlobalNotification = async (title: string, message: string): Pr
     throw new Error(errorData.message || "Hiba az értesítés küldésekor");
   }
 };
+
+// === GLOBÁLIS EDZÉSTERVEK API ===
+
+export interface AdminTemplate {
+  id: number;
+  customName: string;
+  durationMinutes: number;
+  totalBurntCalories: number;
+  exerciseCount: number;
+  exercises: {
+    exerciseId: number;
+    nameHu: string;
+    setsCount: number;
+  }[];
+}
+
+export interface CreateTemplatePayload {
+  customName: string;
+  durationMinutes: number;
+  caloriesBurnt: number;
+  exercises: {
+    exerciseId: number;
+    sets: { weight: number; reps: number }[];
+  }[];
+}
+
+export const getAdminTemplates = async (): Promise<AdminTemplate[]> => {
+  const response = await fetch(`${API_BASE_URL}/templates`, { headers: getAuthHeaders() });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a sablonok lekérésekor");
+  return response.json();
+};
+
+export const createAdminTemplate = async (data: CreateTemplatePayload): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/templates`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a létrehozás során");
+};
+
+export const deleteAdminTemplate = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a törlés során");
+};

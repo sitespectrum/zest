@@ -52,6 +52,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   List<ExerciseDto> userWorkouts = [];
   late Future<List<CustomUserWorkoutDto>> futureCustomWorkouts;
+  late Future<List<CustomUserWorkoutDto>> futureOfficialWorkouts;
   bool showdelete = false;
   Timer? _debounce;
   String _nfcData = 'No data';
@@ -80,6 +81,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
     }
     WidgetsBinding.instance.addObserver(this);
     futureCustomWorkouts = fetchCustomUserWorkouts().catchError((e) {
+      return <CustomUserWorkoutDto>[];
+    });
+    futureOfficialWorkouts = fetchOfficialUserWorkouts().catchError((e) {
       return <CustomUserWorkoutDto>[];
     });
 
@@ -319,6 +323,27 @@ class _CWorkoutPageState extends State<CWorkoutPage>
     } else {
       throw Exception(
         "${lang.getText("failed_to_fetch_meals")} ${response.body}",
+      );
+    }
+  }
+
+  Future<List<CustomUserWorkoutDto>> fetchOfficialUserWorkouts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) throw Exception("Nincs token");
+
+    final response = await http.get(
+      Uri.parse("$apiUrl/api/Workout/official-templates"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((e) => CustomUserWorkoutDto.fromJson(e)).toList();
+    } else {
+      throw Exception(
+        "Hiba a hivatalos sablonok betöltésekor: ${response.body}",
       );
     }
   }
@@ -1572,278 +1597,462 @@ class _CWorkoutPageState extends State<CWorkoutPage>
               CustomCard(
                 title: lang.getText("my_templates"),
                 iconData: Icons.folder_copy_outlined,
-                height: 220,
-                child: FutureBuilder<List<CustomUserWorkoutDto>>(
-                  future: futureCustomWorkouts,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (snapshot.hasError) {
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                        child: Text(
-                          "Hiba történt: ${snapshot.error}",
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    }
-
-                    final templates = snapshot.data ?? [];
-
-                    if (templates.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Text(
-                            lang.getText("no_added_template_yet"),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
+                height: 350,
+                child: DefaultTabController(
+                  length: 2,
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: Colors.white24, width: 1),
                           ),
                         ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      itemCount: templates.length,
-                      itemBuilder: (context, index) {
-                        final template = templates[index];
-
-                        return GestureDetector(
-                          onTap: () async {
-                            final result = await showModalBottomSheet<bool>(
-                              context: context,
-                              builder: (context) {
-                                return WorkoutTemplateDrawer(
-                                  template,
-                                  userWorkouts,
-                                );
-                              },
-                            );
-
-                            if (result == true) {
-                              setState(() {});
-                            }
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: const Color.fromARGB(255, 55, 55, 55),
-                                borderRadius: BorderRadius.circular(12),
+                        child: TabBar(
+                          indicatorColor: workoutColorCode,
+                          labelColor: workoutColorCode,
+                          unselectedLabelColor: Colors.grey,
+                          tabs: const [
+                            Tab(text: "Saját"),
+                            Tab(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 16,
+                                    color: Colors.amber,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text("Zest"),
+                                ],
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            template.customName.isNotEmpty
-                                                ? template.customName
-                                                : lang.getText(
-                                                    "unknown_template",
-                                                  ),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            FutureBuilder<List<CustomUserWorkoutDto>>(
+                              future: futureCustomWorkouts,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+
+                                if (snapshot.hasError) {
+                                  return Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      12,
+                                      0,
+                                      12,
+                                      12,
+                                    ),
+                                    child: Text(
+                                      "Hiba történt: ${snapshot.error}",
+                                      style: const TextStyle(color: Colors.red),
+                                    ),
+                                  );
+                                }
+
+                                final templates = snapshot.data ?? [];
+
+                                if (templates.isEmpty) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 20,
+                                      ),
+                                      child: Text(
+                                        lang.getText("no_added_template_yet"),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                return ListView.builder(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  shrinkWrap: true,
+                                  itemCount: templates.length,
+                                  itemBuilder: (context, index) {
+                                    final template = templates[index];
+
+                                    return GestureDetector(
+                                      onTap: () async {
+                                        final result =
+                                            await showModalBottomSheet<bool>(
+                                              context: context,
+                                              builder: (context) {
+                                                return WorkoutTemplateDrawer(
+                                                  template,
+                                                  userWorkouts,
+                                                );
+                                              },
+                                            );
+
+                                        if (result == true) {
+                                          setState(() {});
+                                        }
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(
+                                              255,
+                                              55,
+                                              55,
+                                              55,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
                                             ),
                                           ),
-                                        ),
-                                        Center(
-                                          child: Container(
-                                            margin: EdgeInsets.only(top: 15),
-                                            child: CustomButton(
-                                              variant: CustomButtonVariant
-                                                  .primaryDelete,
-                                              onPressed: () async {
-                                                final confirmed = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => Dialog(
-                                                    backgroundColor:
-                                                        const Color.fromARGB(
-                                                          255,
-                                                          30,
-                                                          30,
-                                                          30,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        template
+                                                                .customName
+                                                                .isNotEmpty
+                                                            ? template
+                                                                  .customName
+                                                            : lang.getText(
+                                                                "unknown_template",
+                                                              ),
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            16,
-                                                          ),
-                                                      side: const BorderSide(
-                                                        color: Colors.white24,
                                                       ),
                                                     ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                            20,
-                                                          ),
-                                                      child: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          Text(
+                                                    Center(
+                                                      child: Container(
+                                                        margin:
+                                                            const EdgeInsets.only(
+                                                              top: 15,
+                                                            ),
+                                                        child: CustomButton(
+                                                          variant:
+                                                              CustomButtonVariant
+                                                                  .primaryDelete,
+                                                          onPressed: () async {
+                                                            final confirmed = await showDialog<bool>(
+                                                              context: context,
+                                                              builder: (context) => Dialog(
+                                                                backgroundColor:
+                                                                    const Color.fromARGB(
+                                                                      255,
+                                                                      30,
+                                                                      30,
+                                                                      30,
+                                                                    ),
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        16,
+                                                                      ),
+                                                                  side: const BorderSide(
+                                                                    color: Colors
+                                                                        .white24,
+                                                                  ),
+                                                                ),
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets.all(
+                                                                        20,
+                                                                      ),
+                                                                  child: Column(
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    children: [
+                                                                      Text(
+                                                                        lang.getText(
+                                                                          "delete",
+                                                                        ),
+                                                                        style: const TextStyle(
+                                                                          color:
+                                                                              Colors.white,
+                                                                          fontSize:
+                                                                              22,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            16,
+                                                                      ),
+                                                                      Text(
+                                                                        "${lang.getText("sure_delete_template")}\n'${template.customName}'?",
+                                                                        textAlign:
+                                                                            TextAlign.center,
+                                                                        style: const TextStyle(
+                                                                          color:
+                                                                              Colors.white70,
+                                                                          fontSize:
+                                                                              16,
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            24,
+                                                                      ),
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceEvenly,
+                                                                        children: [
+                                                                          TextButton(
+                                                                            onPressed: () => Navigator.pop(
+                                                                              context,
+                                                                              false,
+                                                                            ),
+                                                                            child: Text(
+                                                                              lang.getText(
+                                                                                "cancel",
+                                                                              ),
+                                                                              style: const TextStyle(
+                                                                                color: Colors.white54,
+                                                                                fontSize: 16,
+                                                                                fontWeight: FontWeight.bold,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          FilledButton(
+                                                                            onPressed: () => Navigator.pop(
+                                                                              context,
+                                                                              true,
+                                                                            ),
+                                                                            style: FilledButton.styleFrom(
+                                                                              backgroundColor: Colors.redAccent,
+                                                                              shape: RoundedRectangleBorder(
+                                                                                borderRadius: BorderRadius.circular(
+                                                                                  12,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                            child: Text(
+                                                                              lang.getText(
+                                                                                "delete",
+                                                                              ),
+                                                                              style: const TextStyle(
+                                                                                color: Colors.white,
+                                                                                fontWeight: FontWeight.bold,
+                                                                                fontSize: 16,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            );
+
+                                                            if (confirmed ==
+                                                                true) {
+                                                              final success =
+                                                                  await deleteUserWorkoutTemplate(
+                                                                    template.id,
+                                                                  );
+                                                              if (success) {
+                                                                setState(() {
+                                                                  templates
+                                                                      .removeAt(
+                                                                        index,
+                                                                      );
+                                                                });
+                                                                if (context
+                                                                    .mounted) {
+                                                                  CustomSnackbar.show(
+                                                                    context,
+                                                                    lang.getText(
+                                                                      "deleted_successfully",
+                                                                    ),
+                                                                    backgroundColor:
+                                                                        workoutColorCode,
+                                                                  );
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          child: Text(
                                                             lang.getText(
                                                               "delete",
                                                             ),
                                                             style:
                                                                 const TextStyle(
                                                                   color: Colors
-                                                                      .white,
-                                                                  fontSize: 22,
+                                                                      .redAccent,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .bold,
                                                                 ),
                                                           ),
-                                                          const SizedBox(
-                                                            height: 16,
-                                                          ),
-                                                          Text(
-                                                            "${lang.getText("sure_delete_template")}\n'${template.customName}'?",
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white70,
-                                                                  fontSize: 16,
-                                                                ),
-                                                          ),
-                                                          const SizedBox(
-                                                            height: 24,
-                                                          ),
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceEvenly,
-                                                            children: [
-                                                              TextButton(
-                                                                onPressed: () =>
-                                                                    Navigator.pop(
-                                                                      context,
-                                                                      false,
-                                                                    ),
-                                                                child: Text(
-                                                                  lang.getText(
-                                                                    "cancel",
-                                                                  ),
-                                                                  style: const TextStyle(
-                                                                    color: Colors
-                                                                        .white54,
-                                                                    fontSize:
-                                                                        16,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              FilledButton(
-                                                                onPressed: () =>
-                                                                    Navigator.pop(
-                                                                      context,
-                                                                      true,
-                                                                    ),
-                                                                style: FilledButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .redAccent,
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          12,
-                                                                        ),
-                                                                  ),
-                                                                ),
-                                                                child: Text(
-                                                                  lang.getText(
-                                                                    "delete",
-                                                                  ),
-                                                                  style: const TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                    fontSize:
-                                                                        16,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
-                                                );
-
-                                                if (confirmed == true) {
-                                                  final success =
-                                                      await deleteUserWorkoutTemplate(
-                                                        template.id,
-                                                      );
-
-                                                  if (success) {
-                                                    setState(() {
-                                                      templates.removeAt(index);
-                                                    });
-
-                                                    if (context.mounted) {
-                                                      CustomSnackbar.show(
-                                                        context,
-                                                        lang.getText(
-                                                          "deleted_successfully",
-                                                        ),
-                                                        backgroundColor:
-                                                            workoutColorCode,
-                                                      );
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              child: Text(
-                                                lang.getText("delete"),
-                                                style: TextStyle(
-                                                  color: Colors.redAccent,
-                                                  fontWeight: FontWeight.bold,
+                                                  ],
                                                 ),
-                                              ),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  '${lang.getText('exercises')}: ${template.exercises.length} \n${template.exercises.map((e) => e.exercise?.getName(langCode) ?? "").join(' | ')}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${lang.getText('exercises')}: ${template.exercises.length} \n${template.exercises.map((e) => e.exercise?.getName(langCode) ?? "").join(' | ')}',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                    );
+                                  },
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+
+                            FutureBuilder<List<CustomUserWorkoutDto>>(
+                              future: futureOfficialWorkouts,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.amber,
+                                    ),
+                                  );
+                                }
+                                if (snapshot.hasError) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Text(
+                                      "Hiba: ${snapshot.error}",
+                                      style: const TextStyle(color: Colors.red),
+                                    ),
+                                  );
+                                }
+                                final templates = snapshot.data ?? [];
+                                if (templates.isEmpty) {
+                                  return const Center(
+                                    child: Text(
+                                      "Jelenleg nincs hivatalos sablon.",
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                  );
+                                }
+
+                                return ListView.builder(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  shrinkWrap: true,
+                                  itemCount: templates.length,
+                                  itemBuilder: (context, index) {
+                                    final template = templates[index];
+                                    return GestureDetector(
+                                      onTap: () async {
+                                        final result =
+                                            await showModalBottomSheet<bool>(
+                                              context: context,
+                                              builder: (context) =>
+                                                  WorkoutTemplateDrawer(
+                                                    template,
+                                                    userWorkouts,
+                                                  ),
+                                            );
+                                        if (result == true) setState(() {});
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(
+                                              255,
+                                              30,
+                                              30,
+                                              30,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.amber.withOpacity(
+                                                0.3,
+                                              ),
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.star,
+                                                    color: Colors.amber,
+                                                    size: 22,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      template.customName,
+                                                      style: const TextStyle(
+                                                        color: Colors.amber,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                '${lang.getText('exercises')}: ${template.exercises.length} \n${template.exercises.map((e) => e.exercise?.getName(langCode) ?? "").join(' | ')}',
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -8,6 +8,7 @@ import MealsPage from "./pages/MealsPage";
 import SessionsPage from "./pages/SessionsPage";
 import DashboardPage from "./pages/DashboardPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import TemplatesPage from "./pages/TemplatesPage";
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
           <Route path="sessions" element={<SessionsPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="templates" element={<TemplatesPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
