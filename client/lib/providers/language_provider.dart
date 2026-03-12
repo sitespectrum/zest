@@ -78,7 +78,7 @@ class LanguageProvider with ChangeNotifier {
       'workout_page': 'Edzés',
       'previous_workouts': 'Korábbi edzések',
       'previous_meals': 'Korábbi étkezések',
-      'my_templates': 'Sablonjaim',
+      'my_templates': 'Saját sablonjaim',
       'health_page': 'Egészség',
       'nutrients_consumed': 'Bevitt tápanyagok',
       'protein': 'Fehérje',
@@ -291,6 +291,9 @@ class LanguageProvider with ChangeNotifier {
       'no_connection': 'Nincs internetkapcsolat',
       'shared_workout_needs_internet':
           'A közös edzéshez internetkapcsolat szükséges!',
+      'templates': 'Sablonok',
+      'official_templates': 'Hivatalos',
+      'no_official_template_yet': 'Még nincs hivatalos sablon.',
     },
     'en': {
       'register_button_main': "Register",
@@ -541,6 +544,9 @@ class LanguageProvider with ChangeNotifier {
       'no_connection': 'No internet connection',
       'shared_workout_needs_internet':
           'Internet connection is required for shared workouts!',
+      'templates': 'Templates',
+      'official_templates': 'Official',
+      'no_official_template_yet': 'No official template yet.',
     },
   };
 }
