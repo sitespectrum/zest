@@ -57,6 +57,10 @@ public class AdminController : ControllerBase
         return authHeader == expectedToken;
     }
 
+    // ==========================================
+    // --- USERS ---
+    // ==========================================
+
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers()
     {
@@ -164,5 +168,83 @@ public class AdminController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Felhasználó sikeresen törölve." });
+    }
+
+    // ==========================================
+    // --- EXERCISES ---
+    // ==========================================
+
+    [HttpGet("exercises")]
+    public async Task<IActionResult> GetExercises()
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var exercises = await _context.Exercises.ToListAsync();
+        return Ok(exercises);
+    }
+
+    [HttpPost("exercises")]
+    public async Task<IActionResult> CreateExercise([FromBody] Exercise request)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        _context.Exercises.Add(request);
+        await _context.SaveChangesAsync();
+
+        return Ok(request);
+    }
+
+    [HttpPut("exercises/{id}")]
+    public async Task<IActionResult> UpdateExercise(int id, [FromBody] Exercise request)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var exercise = await _context.Exercises.FindAsync(id);
+        if (exercise == null) return NotFound(new { message = "Gyakorlat nem található." });
+
+        exercise.Name = request.Name;
+        exercise.NameHu = request.NameHu;
+        exercise.Category = request.Category;
+        exercise.CategoryHu = request.CategoryHu;
+        exercise.Equipment = request.Equipment;
+        exercise.EquipmentHu = request.EquipmentHu;
+        exercise.Force = request.Force;
+        exercise.ForceHu = request.ForceHu;
+        exercise.Level = request.Level;
+        exercise.LevelHu = request.LevelHu;
+        exercise.Mechanic = request.Mechanic;
+        exercise.MechanicHu = request.MechanicHu;
+        exercise.MetValue = request.MetValue;
+
+        exercise.PrimaryMuscles = request.PrimaryMuscles;
+        exercise.PrimaryMusclesHu = request.PrimaryMusclesHu;
+        exercise.SecondaryMuscles = request.SecondaryMuscles;
+        exercise.SecondaryMusclesHu = request.SecondaryMusclesHu;
+        exercise.Instructions = request.Instructions;
+        exercise.InstructionsHu = request.InstructionsHu;
+        exercise.Images = request.Images;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Gyakorlat sikeresen frissítve." });
+    }
+
+    [HttpDelete("exercises/{id}")]
+    public async Task<IActionResult> DeleteExercise(int id)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var exercise = await _context.Exercises.FindAsync(id);
+        if (exercise == null) return NotFound(new { message = "Gyakorlat nem található." });
+
+        var workoutExercises = await _context.WorkoutExercises.Where(we => we.ExerciseId == id).ToListAsync();
+        _context.WorkoutExercises.RemoveRange(workoutExercises);
+
+        var sharedSessionExercises = await _context.SharedSessionExercises.Where(se => se.ExerciseId == id).ToListAsync();
+        _context.SharedSessionExercises.RemoveRange(sharedSessionExercises);
+
+        _context.Exercises.Remove(exercise);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Gyakorlat sikeresen törölve." });
     }
 }

@@ -2,8 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import DashboardLayout from "./layouts/DashboardLayout";
 import UsersPage from "./pages/UsersPage";
-import PlaceholderPage from "./pages/PlaceholderPage";
-import { Dumbbell, Utensils, Activity } from "lucide-react";
+import ExercisesPage from "./pages/ExercisesPage";
 
 const App = () => {
   return (
@@ -15,10 +14,7 @@ const App = () => {
           <Route index element={<Navigate to="/users" replace />} />
           
           <Route path="users" element={<UsersPage />} />
-          
-          <Route path="workouts" element={<PlaceholderPage icon={Dumbbell} name="Edzések" />} />
-          <Route path="meals" element={<PlaceholderPage icon={Utensils} name="Étkezések" />} />
-          <Route path="exercises" element={<PlaceholderPage icon={Activity} name="Gyakorlatok" />} />
+          <Route path="exercises" element={<ExercisesPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

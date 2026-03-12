@@ -92,3 +92,66 @@ export const removeUserProfilePicture = async (id: number): Promise<void> => {
   if (response.status === 401) throw new Error("unauthorized");
   if (!response.ok) throw new Error("Hiba történt a profilkép törlése során");
 };
+
+export interface Exercise {
+  id: number;
+  name: string;
+  nameHu: string;
+  category: string;
+  categoryHu: string;
+  equipment: string;
+  equipmentHu: string;
+  force: string;
+  forceHu: string;
+  level: string;
+  levelHu: string;
+  mechanic: string;
+  mechanicHu: string;
+  metValue: number;
+  primaryMuscles: string[];
+  primaryMusclesHu: string[];
+  secondaryMuscles: string[];
+  secondaryMusclesHu: string[];
+  instructions: string[];
+  instructionsHu: string[];
+  images: string[];
+}
+
+// === EXERCISES API ===
+
+export const getExercises = async (): Promise<Exercise[]> => {
+  const response = await fetch(`${API_BASE_URL}/exercises`, { headers: getAuthHeaders() });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a gyakorlatok lekérésekor");
+  return response.json();
+};
+
+export const createExercise = async (data: Omit<Exercise, "id">): Promise<Exercise> => {
+  const response = await fetch(`${API_BASE_URL}/exercises`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba történt a létrehozás során");
+  return response.json();
+};
+
+export const updateExercise = async (id: number, data: Exercise): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/exercises/${id}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba történt a frissítés során");
+};
+
+export const deleteExercise = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/exercises/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba történt a törlés során");
+};
