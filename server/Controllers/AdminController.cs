@@ -335,4 +335,53 @@ public class AdminController : ControllerBase
 
         return Ok(new { message = "Étkezés sikeresen törölve." });
     }
+
+    // =======================================================
+    // --- KÖZÖS EDZÉSEK FELÜGYELETE ---
+    // =======================================================
+
+    [HttpGet("sessions")]
+    public async Task<IActionResult> GetSessions()
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var sessions = await _context.SharedWorkoutSessions
+            .Include(s => s.Host)
+            .Include(s => s.Participants)
+            .Select(s => new
+            {
+                s.Id,
+                s.SessionId,
+                s.Name,
+                HostName = s.Host != null ? s.Host.UserName : "Ismeretlen",
+                s.IsPublic,
+                s.CreatedAt,
+                Status = s.Status.ToString(),
+                ParticipantCount = s.Participants.Count()
+            })
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync();
+
+        return Ok(sessions);
+    }
+
+    [HttpDelete("sessions/{id}")]
+    public async Task<IActionResult> DeleteSession(int id)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var session = await _context.SharedWorkoutSessions.FindAsync(id);
+        if (session == null) return NotFound(new { message = "Session nem található." });
+
+        var participations = await _context.SessionParticipants.Where(p => p.SessionId == id).ToListAsync();
+        _context.SessionParticipants.RemoveRange(participations);
+
+        var exercises = await _context.SharedSessionExercises.Where(e => e.SessionId == id).ToListAsync();
+        _context.SharedSessionExercises.RemoveRange(exercises);
+
+        _context.SharedWorkoutSessions.Remove(session);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Session sikeresen leállítva és törölve." });
+    }
 }

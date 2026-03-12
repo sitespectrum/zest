@@ -216,3 +216,32 @@ export const deleteAdminMeal = async (id: number): Promise<void> => {
   if (response.status === 401) throw new Error("unauthorized");
   if (!response.ok) throw new Error("Hiba a törlés során");
 };
+
+// === KÖZÖS EDZÉSEK INTERFÉSZ ÉS API ===
+
+export interface AdminSession {
+  id: number;
+  sessionId: string;
+  name: string;
+  hostName: string;
+  isPublic: boolean;
+  createdAt: string;
+  status: string;
+  participantCount: number;
+}
+
+export const getAdminSessions = async (): Promise<AdminSession[]> => {
+  const response = await fetch(`${API_BASE_URL}/sessions`, { headers: getAuthHeaders() });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a sessionök lekérésekor");
+  return response.json();
+};
+
+export const deleteAdminSession = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/sessions/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a törlés során");
+};
