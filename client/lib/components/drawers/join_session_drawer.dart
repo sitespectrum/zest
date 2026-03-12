@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:client/components/custom_workout_page.dart';
 import 'package:client/constants.dart';
@@ -17,6 +18,9 @@ import 'package:client/components/ui/custom_button.dart';
 import 'package:client/components/ui/custom_drawer.dart';
 import 'package:client/components/ui/custom_textfield.dart';
 import 'package:client/components/ui/custom_snackbar.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:convert';
 
 part 'join_session_drawer.g.dart';
 
@@ -107,9 +111,7 @@ Widget joinSessionDrawer(BuildContext context) {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CWorkoutPage(
-                selectedDay: DateTime.now(),
-              ),
+              builder: (context) => CWorkoutPage(selectedDay: DateTime.now()),
             ),
           );
         }
@@ -132,7 +134,7 @@ Widget joinSessionDrawer(BuildContext context) {
   Future<void> startQrScanning() async {
     bool hasScanned = false;
 
-    final String? scannedCode = await Navigator.of(context).push<String>(
+    final String? scannedCodeRaw = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (context) {
           return AiBarcodeScanner(
@@ -153,13 +155,52 @@ Widget joinSessionDrawer(BuildContext context) {
       ),
     );
 
-    if (scannedCode != null && scannedCode.isNotEmpty && context.mounted) {
-      controller.text = scannedCode;
-      await joinSession(scannedCode);
+    if (scannedCodeRaw != null &&
+        scannedCodeRaw.isNotEmpty &&
+        context.mounted) {
+      // --- NUKLEÁRIS TISZTÍTÁS ---
+      // 1. Csak a betűket, számokat és kötőjelet hagyjuk meg (Eltünteti a láthatatlan karaktereket!)
+      String cleanCode = scannedCodeRaw.replaceAll(
+        RegExp(r'[^a-zA-Z0-9\-]'),
+        '',
+      );
+
+      // 2. Levágjuk a "ZJ-" előtagot, hogy a TextField ne duplázza meg
+      cleanCode = cleanCode.replaceFirst('ZJ-', '');
+
+      controller.text = cleanCode;
+      await joinSession("ZJ-$cleanCode");
     }
   }
 
+  List<int> hexToBytes(String hex) {
+    hex = hex.replaceAll(' ', '').toUpperCase();
+    List<int> bytes = [];
+    for (int i = 0; i < hex.length; i += 2) {
+      bytes.add(int.parse(hex.substring(i, i + 2), radix: 16));
+    }
+    return bytes;
+  }
+
   Future<void> startNfcScanning() async {
+    // 1. Engedélyek ellenőrzése
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.location,
+    ].request();
+
+    if (statuses.values.any((status) => status.isDenied)) {
+      if (context.mounted) {
+        CustomSnackbar.show(
+          context,
+          lang.getText("missing_bt"),
+          backgroundColor: Colors.red,
+        );
+      }
+      return;
+    }
+
     try {
       var availability = await FlutterNfcKit.nfcAvailability;
       if (availability != NFCAvailability.available) {
@@ -178,31 +219,27 @@ Widget joinSessionDrawer(BuildContext context) {
           context: context,
           barrierDismissible: false,
           builder: (c) => AlertDialog(
-            backgroundColor: Color.fromARGB(255, 30, 30, 30),
+            backgroundColor: const Color.fromARGB(255, 30, 30, 30),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.nfc, size: 80, color: Colors.green),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Text(
                   lang.getText("touch_the_other_phone"),
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: CustomButton(
                     onPressed: () {
-                      FlutterBluePlus.stopScan();
+                      FlutterNfcKit.finish();
                       Navigator.pop(context);
                     },
-                    child: Text(
-                      lang.getText("close"),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    title: lang.getText("close"),
+                    variant: CustomButtonVariant.secondary,
+                    iconData: Icons.close,
                   ),
                 ),
               ],
@@ -211,56 +248,98 @@ Widget joinSessionDrawer(BuildContext context) {
         );
       }
 
-      var tag = await FlutterNfcKit.poll(
+      // 2. NFC csak a fizikai koccintás érzékelésére (Nincs adatátvitel, így nincs "kapcsolódás sikertelen" hiba!)
+      await FlutterNfcKit.poll(
         timeout: const Duration(seconds: 15),
         iosMultipleTagMessage: "Több NFC kártya észlelve.",
         iosAlertMessage: "Érintsd a telefonod a másik készülékhez.",
       );
-
-      String scannedCode = "";
-
-      if (tag.ndefAvailable == true) {
-        var records = await FlutterNfcKit.readNDEFRecords();
-        if (records.isNotEmpty) {
-          var payload = records.first.payload;
-          if (payload != null) {
-            scannedCode = utf8.decode(payload as List<int>);
-          }
-        }
-      } else {
-        String response =
-            await FlutterNfcKit.transceive("00A4040007F0394148148100")
-                as String;
-
-        List<int> bytes = [];
-        for (int i = 0; i < response.length; i += 2) {
-          bytes.add(int.parse(response.substring(i, i + 2), radix: 16));
-        }
-        scannedCode = utf8.decode(bytes).replaceAll(RegExp(r'\x00'), '');
-      }
-
       await FlutterNfcKit.finish();
 
-      if (scannedCode.isNotEmpty && context.mounted) {
-        controller.text = scannedCode;
-        await joinSession(scannedCode);
-      } else if (context.mounted) {
-        CustomSnackbar.show(
-          context,
-          "Nem található adat az NFC jelben.",
-          backgroundColor: Colors.orange,
+      if (context.mounted) {
+        Navigator.pop(context); // Első ablak bezárul
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (c) => const AlertDialog(
+            backgroundColor: Color.fromARGB(255, 30, 30, 30),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Colors.green),
+                SizedBox(height: 20),
+                Text(
+                  "Adatok fogadása Bluetooth-on...",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
         );
       }
-    } catch (e) {
-      await FlutterNfcKit.finish(
-        iosErrorMessage: "Hiba történt az olvasás során.",
+
+      // 3. BLUETOOTH KERESÉS INDÍTÁSA
+      bool found = false;
+
+      await FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 8),
+        withServices: [Guid("bf27cf98-eda3-4875-99a3-537446d7e003")],
       );
+
+      var subscription = FlutterBluePlus.scanResults.listen((results) async {
+        for (ScanResult r in results) {
+          final manufacturerData = r.advertisementData.manufacturerData;
+
+          if (manufacturerData.containsKey(0xFFFF)) {
+            try {
+              String id = utf8.decode(manufacturerData[0xFFFF]!);
+
+              if (!found) {
+                found = true;
+                FlutterBluePlus.stopScan();
+
+                if (context.mounted)
+                  Navigator.pop(context); // Töltőablak bezárása
+
+                // Nukleáris tisztítás (Biztonsági okokból)
+                String cleanCode = id.replaceAll(RegExp(r'[^a-zA-Z0-9\-]'), '');
+                cleanCode = cleanCode.replaceFirst('ZJ-', '');
+
+                if (cleanCode.isNotEmpty && context.mounted) {
+                  controller.text = cleanCode;
+                  await joinSession("ZJ-$cleanCode");
+                }
+              }
+              return;
+            } catch (e) {
+              // Dekódolási hiba ignorálása, keres tovább
+            }
+          }
+        }
+      });
+
+      await Future.delayed(const Duration(seconds: 8));
+
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
+      subscription.cancel();
+
+      if (!found) {
+        if (context.mounted) {
+          Navigator.pop(context);
+          CustomSnackbar.show(
+            context,
+            "Nem sikerült azonosítani az edzést.",
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } catch (e) {
+      await FlutterNfcKit.finish();
       if (context.mounted) {
-        CustomSnackbar.show(
-          context,
-          "Hiba az NFC olvasásakor: $e",
-          backgroundColor: Colors.red,
-        );
+        Navigator.pop(context);
+        // Ha túl hamar vette el a telefont (Tag lost), azt most már a Bluetooth úgyis kompenzálja!
       }
     }
   }
