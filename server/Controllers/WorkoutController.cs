@@ -315,6 +315,24 @@ public class WorkoutController : ControllerBase
         return Ok(workouts);
     }
 
+    [HttpGet("official-templates")]
+    public async Task<IActionResult> GetOfficialTemplates()
+    {
+        var officialUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "official@zest.app");
+        if (officialUser == null) return Ok(new List<object>());
+
+        var templates = await _context.UserWorkouts
+            .Include(w => w.Exercises)
+                .ThenInclude(e => e.Exercise)
+            .Include(w => w.Exercises)
+                .ThenInclude(e => e.Sets)
+            .Where(w => w.UserId == officialUser.Id && w.IsCustom == true)
+            .OrderByDescending(w => w.Date)
+            .ToListAsync();
+
+        return Ok(templates);
+    }
+
     [HttpGet("muscle-groups")]
     public async Task<IActionResult> GetMuscleGroups([FromQuery] string lang = "hu")
     {
@@ -734,7 +752,7 @@ public class WorkoutController : ControllerBase
                         }).ToList()
             })
             .ToListAsync();
-        
+
         return Ok(history);
     }
 
