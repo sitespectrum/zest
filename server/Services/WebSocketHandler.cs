@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using Zest.Api.Data;
 using Zest.Api.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ZestApi.Services;
 
@@ -58,10 +59,12 @@ public class WebSocketHandler
     private readonly ConcurrentDictionary<WebSocket, int> _socketUsers = new();
     private readonly ConcurrentDictionary<string, WorkoutGameState> _gameStates = new();
     private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public WebSocketHandler(IServiceProvider serviceProvider)
+    public WebSocketHandler(IServiceProvider serviceProvider, IServiceScopeFactory scopeFactory)
     {
         _serviceProvider = serviceProvider;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task HandleConnection(string sessionId, int userId, WebSocket webSocket)
@@ -209,6 +212,15 @@ public class WebSocketHandler
 
         if (exercises.Count == 0 || participants.Count == 0) return;
 
+        var sessionToUpdate = await context.SharedWorkoutSessions
+            .FirstOrDefaultAsync(s => s.SessionId == sessionId);
+
+        if (sessionToUpdate != null)
+        {
+            sessionToUpdate.Status = Status.In_Progress;
+            await context.SaveChangesAsync();
+        }
+
         var gameState = new WorkoutGameState
         {
             SessionId = sessionId,
@@ -335,6 +347,15 @@ public class WebSocketHandler
 
         if (isWorkoutFinished)
         {
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ZestDbContext>();
+            var sessionToUpdate = await context.SharedWorkoutSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+            if (sessionToUpdate != null)
+            {
+                sessionToUpdate.Status = Status.Finished;
+                await context.SaveChangesAsync();
+            }
+
             await BroadcastGameState(sessionId, "workout-finished", state);
             _gameStates.TryRemove(sessionId, out _);
         }
