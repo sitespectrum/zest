@@ -350,7 +350,6 @@ public class AdminController : ControllerBase
             .Include(s => s.Participants)
             .Select(s => new
             {
-                s.Id,
                 s.SessionId,
                 s.Name,
                 HostName = s.Host != null ? s.Host.UserName : "Ismeretlen",
@@ -365,18 +364,18 @@ public class AdminController : ControllerBase
         return Ok(sessions);
     }
 
-    [HttpDelete("sessions/{id}")]
-    public async Task<IActionResult> DeleteSession(int id)
+    [HttpDelete("sessions/{sessionId}")]
+    public async Task<IActionResult> DeleteSession(string sessionId)
     {
         if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
 
-        var session = await _context.SharedWorkoutSessions.FindAsync(id);
+        var session = await _context.SharedWorkoutSessions.FindAsync(sessionId);
         if (session == null) return NotFound(new { message = "Session nem található." });
 
-        var participations = await _context.SessionParticipants.Where(p => p.SessionId == id).ToListAsync();
+        var participations = await _context.SessionParticipants.Where(p => p.SessionId == sessionId).ToListAsync();
         _context.SessionParticipants.RemoveRange(participations);
 
-        var exercises = await _context.SharedSessionExercises.Where(e => e.SessionId == id).ToListAsync();
+        var exercises = await _context.SharedSessionExercises.Where(e => e.SessionId == sessionId).ToListAsync();
         _context.SharedSessionExercises.RemoveRange(exercises);
 
         _context.SharedWorkoutSessions.Remove(session);

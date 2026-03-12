@@ -217,10 +217,9 @@ export const deleteAdminMeal = async (id: number): Promise<void> => {
   if (!response.ok) throw new Error("Hiba a törlés során");
 };
 
-// === KÖZÖS EDZÉSEK INTERFÉSZ ÉS API ===
+// === KÖZÖS EDZÉSEK (SESSIONS) INTERFÉSZ ÉS API ===
 
 export interface AdminSession {
-  id: number;
   sessionId: string;
   name: string;
   hostName: string;
@@ -237,8 +236,8 @@ export const getAdminSessions = async (): Promise<AdminSession[]> => {
   return response.json();
 };
 
-export const deleteAdminSession = async (id: number): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/sessions/${id}`, {
+export const deleteAdminSession = async (sessionId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
