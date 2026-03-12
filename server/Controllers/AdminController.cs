@@ -383,4 +383,33 @@ public class AdminController : ControllerBase
 
         return Ok(new { message = "Session sikeresen leállítva és törölve." });
     }
+
+    // ==========================================
+    // --- DASHBOARD STATISZTIKA ---
+    // ==========================================
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetDashboardStats()
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        var today = DateTime.UtcNow.Date;
+
+        var stats = new
+        {
+            TotalUsers = await _context.Users.CountAsync(),
+
+            TotalWorkouts = await _context.UserWorkouts.CountAsync(),
+            TodayWorkouts = await _context.UserWorkouts.CountAsync(w => w.Date >= today),
+
+            TotalMeals = await _context.UserMeals.CountAsync(),
+            TodayMeals = await _context.UserMeals.CountAsync(m => m.EatenAt >= today),
+
+            ActiveSessions = await _context.SharedWorkoutSessions.CountAsync(s => s.Status == Status.In_Progress || s.Status == Status.Lobby),
+
+            TotalExercises = await _context.Exercises.CountAsync()
+        };
+
+        return Ok(stats);
+    }
 }

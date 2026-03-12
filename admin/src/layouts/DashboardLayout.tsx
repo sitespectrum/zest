@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { Users, Dumbbell, Utensils, Activity, Menu, X, LogOut, Radio } from "lucide-react";
+import { Users, Dumbbell, Utensils, Activity, Menu, X, LogOut, Radio, LayoutDashboard } from "lucide-react";
 
 const DashboardLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -30,6 +30,7 @@ const DashboardLayout = () => {
   };
 
   const navItems = [
+    { path: "/dashboard", label: "Áttekintés", icon: LayoutDashboard },
     { path: "/users", label: "Felhasználók", icon: Users },
     { path: "/workouts", label: "Edzések", icon: Dumbbell },
     { path: "/meals", label: "Étkezések", icon: Utensils },
