@@ -307,3 +307,20 @@ export const getUserDetails = async (id: number): Promise<UserDetails> => {
   if (!response.ok) throw new Error("Hiba a felhasználó részleteinek lekérésekor");
   return response.json();
 };
+
+// === ÉRTESÍTÉSEK (NOTIFICATIONS) API ===
+
+export const sendGlobalNotification = async (title: string, message: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/broadcast`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ title, message }),
+  });
+
+  if (response.status === 401) throw new Error("unauthorized");
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Hiba az értesítés küldésekor");
+  }
+};

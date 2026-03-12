@@ -482,4 +482,61 @@ public class AdminController : ControllerBase
 
         return Ok(stats);
     }
+
+    // =======================================================
+    // --- GLOBÁLIS ÉRTESÍTÉSEK (PUSH NOTIFICATIONS) ---
+    // =======================================================
+
+    public class BroadcastNotificationRequest
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+    }
+
+    [HttpPost("notifications/broadcast")]
+    public async Task<IActionResult> BroadcastNotification([FromBody] BroadcastNotificationRequest request)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
+
+        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Message))
+            return BadRequest(new { message = "Cím és üzenet megadása kötelező!" });
+
+        string actualAppId = Environment.GetEnvironmentVariable("ONESIGNAL_APP_ID") ?? _configuration["ONESIGNAL_APP_ID"] ?? "";
+        string restApiKey = Environment.GetEnvironmentVariable("ONESIGNAL_REST_API_KEY") ?? _configuration["ONESIGNAL_REST_API_KEY"] ?? "";
+
+        if (string.IsNullOrEmpty(actualAppId) || string.IsNullOrEmpty(restApiKey))
+            return StatusCode(500, new { message = "Szerver hiba: OneSignal kulcsok nincsenek beállítva!" });
+
+        var notificationData = new
+        {
+            app_id = actualAppId,
+            included_segments = new[] { "Subscribed Users" },
+            target_channel = "push",
+            headings = new { en = request.Title, hu = request.Title },
+            contents = new { en = request.Message, hu = request.Message },
+            android_accent_color = "FF40FF32",
+            small_icon = "ic_stat_onesignal_default"
+        };
+
+        using var httpClient = new HttpClient();
+        var httpRequest = new HttpRequestMessage(HttpMethod.Post, "https://onesignal.com/api/v1/notifications");
+        httpRequest.Headers.Add("Authorization", $"Basic {restApiKey}");
+        httpRequest.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        var jsonContent = JsonSerializer.Serialize(notificationData);
+        httpRequest.Content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+        var response = await httpClient.SendAsync(httpRequest);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
+        {
+            return Ok(new { message = "Értesítés sikeresen kiküldve minden felhasználónak!" });
+        }
+        else
+        {
+            Console.WriteLine($"OneSignal Hiba: {responseBody}");
+            return StatusCode((int)response.StatusCode, new { message = "Hiba a küldés során", details = responseBody });
+        }
+    }
 }
