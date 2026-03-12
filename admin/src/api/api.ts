@@ -96,24 +96,24 @@ export const removeUserProfilePicture = async (id: number): Promise<void> => {
 export interface Exercise {
   id: number;
   name: string;
-  nameHu: string;
+  name_hu: string;
   category: string;
-  categoryHu: string;
+  category_hu: string;
   equipment: string;
-  equipmentHu: string;
+  equipment_hu: string;
   force: string;
-  forceHu: string;
+  force_hu: string;
   level: string;
-  levelHu: string;
+  level_hu: string;
   mechanic: string;
-  mechanicHu: string;
+  mechanic_hu: string;
   metValue: number;
   primaryMuscles: string[];
-  primaryMusclesHu: string[];
+  primaryMuscles_hu: string[];
   secondaryMuscles: string[];
-  secondaryMusclesHu: string[];
+  secondaryMuscles_hu: string[];
   instructions: string[];
-  instructionsHu: string[];
+  instructions_hu: string[];
   images: string[];
 }
 
@@ -154,4 +154,65 @@ export const deleteExercise = async (id: number): Promise<void> => {
   });
   if (response.status === 401) throw new Error("unauthorized");
   if (!response.ok) throw new Error("Hiba történt a törlés során");
+};
+
+// === EDZÉSEK ÉS ÉTKEZÉSEK (USER ADATOK) INTERFÉSZEI ===
+
+export interface AdminWorkout {
+  id: number;
+  userId: number;
+  userName: string;
+  workoutName: string;
+  customName: string;
+  date: string;
+  durationMinutes: number;
+  totalBurntCalories: number;
+  isCustom: boolean;
+}
+
+export interface AdminMeal {
+  id: number;
+  userId: number;
+  userName: string;
+  mealName: string;
+  customName: string;
+  eatenAt: string;
+  totalCalories: number;
+  isCustom: boolean;
+}
+
+// === EDZÉSEK API ===
+
+export const getAdminWorkouts = async (): Promise<AdminWorkout[]> => {
+  const response = await fetch(`${API_BASE_URL}/workouts`, { headers: getAuthHeaders() });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba az edzések lekérésekor");
+  return response.json();
+};
+
+export const deleteAdminWorkout = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/workouts/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a törlés során");
+};
+
+// === ÉTKEZÉSEK API ===
+
+export const getAdminMeals = async (): Promise<AdminMeal[]> => {
+  const response = await fetch(`${API_BASE_URL}/meals`, { headers: getAuthHeaders() });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba az étkezések lekérésekor");
+  return response.json();
+};
+
+export const deleteAdminMeal = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/meals/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a törlés során");
 };

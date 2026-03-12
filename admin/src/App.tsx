@@ -3,6 +3,8 @@ import Login from "./pages/Login";
 import DashboardLayout from "./layouts/DashboardLayout";
 import UsersPage from "./pages/UsersPage";
 import ExercisesPage from "./pages/ExercisesPage";
+import WorkoutsPage from "./pages/WorkoutsPage";
+import MealsPage from "./pages/MealsPage";
 
 const App = () => {
   return (
@@ -15,6 +17,8 @@ const App = () => {
           
           <Route path="users" element={<UsersPage />} />
           <Route path="exercises" element={<ExercisesPage />} />
+          <Route path="workouts" element={<WorkoutsPage />} />
+          <Route path="meals" element={<MealsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
