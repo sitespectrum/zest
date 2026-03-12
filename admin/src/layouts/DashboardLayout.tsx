@@ -27,7 +27,7 @@ const DashboardLayout = () => {
     if (location.pathname.includes("exercises")) return "Gyakorlatok Kezelése";
     if (location.pathname.includes("sessions")) return "Közös Edzések (Live)";
     if (location.pathname.includes("notifications")) return "Globális Értesítések";
-    if (location.pathname.includes("templates")) return "Globális Sablonok";
+    if (location.pathname.includes("templates")) return "Hivatalos Sablonok";
     return "Zest Admin Panel";
   };
 
@@ -35,7 +35,7 @@ const DashboardLayout = () => {
     { path: "/dashboard", label: "Áttekintés", icon: LayoutDashboard },
     { path: "/notifications", label: "Értesítések", icon: Bell },
     { path: "/users", label: "Felhasználók", icon: Users },
-    { path: "/templates", label: "Globális Sablonok", icon: Trophy },
+    { path: "/templates", label: "Hivatalos Sablonok", icon: Trophy },
     { path: "/workouts", label: "Edzések", icon: Dumbbell },
     { path: "/meals", label: "Étkezések", icon: Utensils },
     { path: "/exercises", label: "Gyakorlatok", icon: Activity },

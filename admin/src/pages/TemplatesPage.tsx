@@ -106,7 +106,7 @@ const TemplatesPage = () => {
       <div className="p-6 border-b border-[#27272a] bg-[#121212]/50 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Trophy className="text-yellow-400" /> Globális Edzéstervek
+            <Trophy className="text-yellow-400" /> Hivatalos Edzéstervek
           </h2>
           <p className="text-sm text-gray-500 mt-1">Ezeket a sablonokat minden felhasználó látni fogja.</p>
         </div>
@@ -127,7 +127,7 @@ const TemplatesPage = () => {
           </div>
         ) : templates.length === 0 ? (
           <div className="text-center text-gray-500 py-12 border-2 border-dashed border-[#27272a] rounded-2xl">
-            Még nincs egyetlen globális sablon sem. Hozz létre egyet!
+            Még nincs egyetlen hivatalos sablon sem. Hozz létre egyet!
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -164,7 +164,7 @@ const TemplatesPage = () => {
           <div className="bg-[#18181b] border border-[#27272a] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col">
             <div className="p-6 border-b border-[#27272a] flex justify-between items-center shrink-0">
               <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Trophy className="text-yellow-400" /> Globális Sablon Létrehozása
+                <Trophy className="text-yellow-400" /> Hivatalos Sablon Létrehozása
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white transition">
                 <X size={24} />
