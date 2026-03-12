@@ -85,6 +85,76 @@ public class AdminController : ControllerBase
         return Ok(users);
     }
 
+    // --- FELHASZNÁLÓ RÉSZLETES ADATAI ---
+    [HttpGet("users/{id}/details")]
+    public async Task<IActionResult> GetUserDetails(int id)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
+
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound(new { message = "Felhasználó nem található." });
+
+        var friends = await _context.Friendships
+            .Where(f => (f.RequesterId == id || f.AddresseeId == id) && f.Status == FriendshipStatus.Accepted)
+            .Select(f => f.RequesterId == id ? f.Addressee.UserName : f.Requester.UserName)
+            .ToListAsync();
+
+        var recentWorkouts = await _context.UserWorkouts
+            .Where(w => w.UserId == id)
+            .OrderByDescending(w => w.Date)
+            .Take(5)
+            .Select(w => new
+            {
+                w.Id,
+                w.WorkoutName,
+                w.CustomName,
+                w.Date,
+                w.DurationMinutes,
+                w.TotalBurntCalories
+            })
+            .ToListAsync();
+
+        var recentMeals = await _context.UserMeals
+            .Where(m => m.UserId == id)
+            .OrderByDescending(m => m.EatenAt)
+            .Take(5)
+            .Select(m => new
+            {
+                m.Id,
+                MealName = m.MealName.ToString(),
+                m.CustomName,
+                m.EatenAt,
+                m.TotalCalories,
+                m.TotalProtein,
+                m.TotalCarbs,
+                m.TotalFat
+            })
+            .ToListAsync();
+
+        var totalWorkouts = await _context.UserWorkouts.CountAsync(w => w.UserId == id);
+        var totalMeals = await _context.UserMeals.CountAsync(m => m.UserId == id);
+
+        return Ok(new
+        {
+            user.Id,
+            user.UserName,
+            user.Email,
+            user.ProfilePicture,
+            user.Height,
+            user.Weight,
+            Gender = user.Gender.ToString(),
+            Goal = user.Goal.ToString(),
+            Activity = user.Activity.ToString(),
+            user.Birth,
+            FriendsCount = friends.Count,
+            FriendsList = friends,
+            TotalWorkouts = totalWorkouts,
+            TotalMeals = totalMeals,
+            RecentWorkouts = recentWorkouts,
+            RecentMeals = recentMeals
+        });
+    }
+
     public class AdminUserUpdateRequest
     {
         public string UserName { get; set; } = string.Empty;
