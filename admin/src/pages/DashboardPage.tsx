@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { Users, Dumbbell, Utensils, Activity, Radio, RefreshCw, TrendingUp } from "lucide-react";
+import { Users, Dumbbell, Utensils, Activity, Radio, RefreshCw } from "lucide-react";
 import { getAdminStats, type AdminStats } from "../api/api";
 
 const DashboardPage = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const adminName = localStorage.getItem("admin_name") || "Admin";
 
   const fetchStats = async () => {
     setLoading(true);
@@ -37,22 +36,18 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Üdvözlő Banner */}
-      <div className="bg-gradient-to-r from-[#18181b] to-[#121212] border border-[#27272a] rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-          <TrendingUp size={150} />
+      
+      {/* Új, letisztult Fejléc */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#18181b] border border-[#27272a] rounded-3xl p-6 shadow-xl">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Rendszer Áttekintés</h1>
+          <p className="text-gray-400 text-sm mt-1">A Zest alkalmazás legfontosabb adatai és valós idejű statisztikái.</p>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-tight">
-          Üdvözlünk, <span className="text-[#40ff32]">{adminName}</span>! 👋
-        </h1>
-        <p className="text-gray-400 text-lg max-w-2xl">
-          Itt láthatod a Zest alkalmazásod legfontosabb adatait és a felhasználók mai aktivitását valós időben.
-        </p>
         <button 
           onClick={fetchStats}
-          className="mt-6 px-6 py-2.5 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-xl transition flex items-center gap-2 font-medium"
+          className="px-5 py-2.5 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-xl transition flex items-center gap-2 font-medium"
         >
-          <RefreshCw size={18} /> Adatok frissítése
+          <RefreshCw size={18} /> Frissítés
         </button>
       </div>
 

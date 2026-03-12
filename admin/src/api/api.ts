@@ -263,3 +263,47 @@ export const getAdminStats = async (): Promise<AdminStats> => {
   if (!response.ok) throw new Error("Hiba a statisztikák lekérésekor");
   return response.json();
 };
+
+// === DEEP DIVE INTERFÉSZ ÉS API ===
+
+export interface UserDetails {
+  id: number;
+  userName: string;
+  email: string;
+  profilePicture?: string;
+  height: number;
+  weight: number;
+  gender: string;
+  goal: string;
+  activity: string;
+  birth: string;
+  friendsCount: number;
+  friendsList: string[];
+  totalWorkouts: number;
+  totalMeals: number;
+  recentWorkouts: {
+    id: number;
+    workoutName: string;
+    customName: string;
+    date: string;
+    durationMinutes: number;
+    totalBurntCalories: number;
+  }[];
+  recentMeals: {
+    id: number;
+    mealName: string;
+    customName: string;
+    eatenAt: string;
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs: number;
+    totalFat: number;
+  }[];
+}
+
+export const getUserDetails = async (id: number): Promise<UserDetails> => {
+  const response = await fetch(`${API_BASE_URL}/users/${id}/details`, { headers: getAuthHeaders() });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a felhasználó részleteinek lekérésekor");
+  return response.json();
+};
