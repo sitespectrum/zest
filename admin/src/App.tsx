@@ -6,6 +6,7 @@ import ExercisesPage from "./pages/ExercisesPage";
 import WorkoutsPage from "./pages/WorkoutsPage";
 import MealsPage from "./pages/MealsPage";
 import SessionsPage from "./pages/SessionsPage";
+import DashboardPage from "./pages/DashboardPage";
 
 const App = () => {
   return (
@@ -14,13 +15,14 @@ const App = () => {
         <Route path="/login" element={<Login />} />
 
         <Route path="/" element={<DashboardLayout />}>
-          <Route index element={<Navigate to="/users" replace />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
           
           <Route path="users" element={<UsersPage />} />
           <Route path="exercises" element={<ExercisesPage />} />
           <Route path="workouts" element={<WorkoutsPage />} />
           <Route path="meals" element={<MealsPage />} />
           <Route path="sessions" element={<SessionsPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

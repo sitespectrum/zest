@@ -244,3 +244,22 @@ export const deleteAdminSession = async (sessionId: string): Promise<void> => {
   if (response.status === 401) throw new Error("unauthorized");
   if (!response.ok) throw new Error("Hiba a törlés során");
 };
+
+// === DASHBOARD STATISZTIKA API ===
+
+export interface AdminStats {
+  totalUsers: number;
+  totalWorkouts: number;
+  todayWorkouts: number;
+  totalMeals: number;
+  todayMeals: number;
+  activeSessions: number;
+  totalExercises: number;
+}
+
+export const getAdminStats = async (): Promise<AdminStats> => {
+  const response = await fetch(`${API_BASE_URL}/stats`, { headers: getAuthHeaders() });
+  if (response.status === 401) throw new Error("unauthorized");
+  if (!response.ok) throw new Error("Hiba a statisztikák lekérésekor");
+  return response.json();
+};
