@@ -72,11 +72,60 @@ public class AdminController : ControllerBase
                 u.Weight,
                 u.Goal,
                 u.Activity,
-                u.Gender
+                u.Gender,
+                u.Birth,
+                u.ProfilePicture
             })
             .ToListAsync();
 
         return Ok(users);
+    }
+
+    public class AdminUserUpdateRequest
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public int Height { get; set; }
+        public int Weight { get; set; }
+        public string Gender { get; set; } = string.Empty;
+        public string Goal { get; set; } = string.Empty;
+        public string Activity { get; set; } = string.Empty;
+        public DateTime Birth { get; set; }
+    }
+
+    [HttpPut("users/{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] AdminUserUpdateRequest request)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
+
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound(new { message = "Felhasználó nem található." });
+
+        user.UserName = request.UserName;
+        user.Email = request.Email;
+        user.Height = request.Height;
+        user.Weight = request.Weight;
+        user.Gender = request.Gender;
+        user.Goal = request.Goal;
+        user.Activity = request.Activity;
+        user.Birth = request.Birth;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Felhasználó adatai sikeresen frissítve." });
+    }
+
+    [HttpDelete("users/{id}/profile-picture")]
+    public async Task<IActionResult> RemoveProfilePicture(int id)
+    {
+        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
+
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound(new { message = "Felhasználó nem található." });
+
+        user.ProfilePicture = null;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Profilkép sikeresen törölve." });
     }
 
     [HttpDelete("users/{id}")]

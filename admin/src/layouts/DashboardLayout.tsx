@@ -6,7 +6,6 @@ const DashboardLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const adminName = localStorage.getItem("admin_name") || "A";
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
@@ -81,7 +80,6 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-gray-400 font-medium">{adminName}</span>
             <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition" title="Kijelentkezés">
               <LogOut size={20} />
             </button>
