@@ -1614,7 +1614,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                           unselectedLabelColor: Colors.grey,
                           tabs: [
                             Tab(text: lang.getText("my_templates")),
-                            Tab(text: lang.getText("official_templates")),
+                            Tab(text: lang.getText("featured_templates")),
                           ],
                         ),
                       ),
@@ -1947,7 +1947,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                 if (templates.isEmpty) {
                                   return Center(
                                     child: Text(
-                                      lang.getText("no_official_template_yet"),
+                                      lang.getText("no_featured_template_yet"),
                                       style: TextStyle(color: Colors.white70),
                                     ),
                                   );

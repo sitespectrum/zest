@@ -292,8 +292,8 @@ class LanguageProvider with ChangeNotifier {
       'shared_workout_needs_internet':
           'A közös edzéshez internetkapcsolat szükséges!',
       'templates': 'Sablonok',
-      'official_templates': 'Hivatalos',
-      'no_official_template_yet': 'Még nincs hivatalos sablon.',
+      'featured_templates': 'Hivatalos',
+      'no_featured_template_yet': 'Még nincs hivatalos sablon.',
     },
     'en': {
       'register_button_main': "Register",
@@ -545,8 +545,8 @@ class LanguageProvider with ChangeNotifier {
       'shared_workout_needs_internet':
           'Internet connection is required for shared workouts!',
       'templates': 'Templates',
-      'official_templates': 'Official',
-      'no_official_template_yet': 'No official template yet.',
+      'featured_templates': 'Featured',
+      'no_featured_template_yet': 'No featured template yet.',
     },
   };
 }
