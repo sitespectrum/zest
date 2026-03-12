@@ -1595,7 +1595,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
               SizedBox(height: 20),
 
               CustomCard(
-                title: lang.getText("my_templates"),
+                title: lang.getText("templates"),
                 iconData: Icons.folder_copy_outlined,
                 height: 350,
                 child: DefaultTabController(
@@ -1612,22 +1612,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                           indicatorColor: workoutColorCode,
                           labelColor: workoutColorCode,
                           unselectedLabelColor: Colors.grey,
-                          tabs: const [
-                            Tab(text: "Saját"),
-                            Tab(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.star,
-                                    size: 16,
-                                    color: Colors.amber,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text("Zest"),
-                                ],
-                              ),
-                            ),
+                          tabs: [
+                            Tab(text: lang.getText("my_templates")),
+                            Tab(text: lang.getText("official_templates")),
                           ],
                         ),
                       ),
@@ -1958,9 +1945,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                 }
                                 final templates = snapshot.data ?? [];
                                 if (templates.isEmpty) {
-                                  return const Center(
+                                  return Center(
                                     child: Text(
-                                      "Jelenleg nincs hivatalos sablon.",
+                                      lang.getText("no_official_template_yet"),
                                       style: TextStyle(color: Colors.white70),
                                     ),
                                   );
