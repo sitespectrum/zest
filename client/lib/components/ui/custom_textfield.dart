@@ -23,6 +23,7 @@ Widget customTextField(
   bool isCustomMeal = false,
   bool isUpperCase = false,
   String? fixedPrefix,
+  IconButton? iconButton,
 }) {
   final lang = Provider.of<LanguageProvider>(context);
   return TextField(
@@ -32,14 +33,14 @@ Widget customTextField(
     controller: controller,
     obscureText: isPassword,
     keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-    textCapitalization: isUpperCase 
-        ? TextCapitalization.characters 
+    textCapitalization: isUpperCase
+        ? TextCapitalization.characters
         : TextCapitalization.none,
     inputFormatters: isUpperCase
         ? [
             TextInputFormatter.withFunction((oldValue, newValue) {
               return newValue.copyWith(text: newValue.text.toUpperCase());
-            })
+            }),
           ]
         : null,
     decoration: InputDecoration(
@@ -55,11 +56,11 @@ Widget customTextField(
         color: Colors.white,
         fontWeight: FontWeight.bold,
       ),
-      prefixText: fixedPrefix, 
+      prefixText: fixedPrefix,
       prefixStyle: const TextStyle(
-        color: Colors.white, 
-        fontSize: 16, 
-        fontWeight: FontWeight.normal
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.normal,
       ),
       prefixIcon: prefixIcon != null
           ? Icon(prefixIcon, color: Colors.white70)
@@ -70,6 +71,7 @@ Widget customTextField(
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
+      suffixIcon: iconButton,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       focusedBorder: OutlineInputBorder(
         borderSide: BorderSide(

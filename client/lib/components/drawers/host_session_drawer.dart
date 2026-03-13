@@ -485,7 +485,6 @@ Widget hostSessionDrawer(BuildContext context) {
         );
       }
     } else {
-      // 1. Bluetooth és Helymeghatározás engedélyek bekérése
       Map<Permission, PermissionStatus> statuses = await [
         Permission.bluetoothAdvertise,
         Permission.bluetoothConnect,
@@ -506,7 +505,6 @@ Widget hostSessionDrawer(BuildContext context) {
       try {
         if (context.mounted) isNfcActive.value = true;
 
-        // 2. BLUETOOTH SUGÁRZÁS ELINDÍTÁSA
         final blePeripheral = FlutterBlePeripheral();
         await blePeripheral.stop();
 
@@ -514,13 +512,11 @@ Widget hostSessionDrawer(BuildContext context) {
           includeDeviceName: false,
           manufacturerId: 0xFFFF,
           manufacturerData: Uint8List.fromList(utf8.encode(shareId.value)),
-          serviceUuid:
-              'bf27cf98-eda3-4875-99a3-537446d7e003', // Ugyanaz a csatorna, mint a gyakorlatoknál
+          serviceUuid: 'bf27cf98-eda3-4875-99a3-537446d7e003',
         );
 
         await blePeripheral.start(advertiseData: advertiseData);
 
-        // 3. NFC KÁRTYA EMULÁCIÓ (Csak a sikeres koccintás jelzése)
         await NfcHce.removeApduResponse(0);
         await NfcHce.addApduResponse(0, [0x90, 0x00]);
 
@@ -530,7 +526,6 @@ Widget hostSessionDrawer(BuildContext context) {
           listenOnlyConfiguredPorts: false,
         );
 
-        // 4. VÁRAKOZÓ ABLAK
         if (context.mounted) {
           showDialog(
             context: context,
@@ -564,7 +559,7 @@ Widget hostSessionDrawer(BuildContext context) {
                       onPressed: () async {
                         isNfcActive.value = false;
                         await NfcHce.removeApduResponse(0);
-                        await blePeripheral.stop(); // Bluetooth is leáll
+                        await blePeripheral.stop();
                         if (context.mounted) {
                           Navigator.pop(context);
                           CustomSnackbar.show(

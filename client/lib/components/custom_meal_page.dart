@@ -965,17 +965,17 @@ class _CMealPageState extends State<CMealPage> {
                                                       color:
                                                           const Color.fromARGB(
                                                             50,
-                                                            64,
                                                             255,
-                                                            50,
+                                                            156,
+                                                            122,
                                                           ),
                                                       border: Border.all(
                                                         color:
                                                             const Color.fromARGB(
-                                                              100,
-                                                              64,
                                                               255,
-                                                              50,
+                                                              255,
+                                                              115,
+                                                              69,
                                                             ),
                                                         width: 1,
                                                       ),
@@ -996,9 +996,9 @@ class _CMealPageState extends State<CMealPage> {
                                                         color:
                                                             const Color.fromARGB(
                                                               100,
-                                                              64,
                                                               255,
-                                                              50,
+                                                              115,
+                                                              69,
                                                             ),
                                                         shape:
                                                             BoxShape.rectangle,
@@ -1063,17 +1063,17 @@ class _CMealPageState extends State<CMealPage> {
                                                                           ),
                                                                         ),
                                                                         backgroundColor: const Color.fromARGB(
-                                                                          65,
                                                                           50,
-                                                                          142,
                                                                           255,
+                                                                          156,
+                                                                          122,
                                                                         ),
-                                                                        side: const BorderSide(
-                                                                          color: Color.fromARGB(
-                                                                            100,
-                                                                            50,
-                                                                            142,
+                                                                        side: BorderSide(
+                                                                          color: const Color.fromARGB(
                                                                             255,
+                                                                            255,
+                                                                            115,
+                                                                            69,
                                                                           ),
                                                                         ),
                                                                       ),
@@ -1136,9 +1136,12 @@ class _CMealPageState extends State<CMealPage> {
                                                                   onPressed: () {
                                                                     startNfcReceivingCloud();
                                                                   },
+                                                                  variant:
+                                                                      CustomButtonVariant
+                                                                          .primaryMeal,
                                                                   title: lang
                                                                       .getText(
-                                                                        "recive_workout",
+                                                                        "recive_meal",
                                                                       ),
                                                                   iconData: Icons
                                                                       .call_received_rounded,
@@ -1149,7 +1152,7 @@ class _CMealPageState extends State<CMealPage> {
                                                           Padding(
                                                             padding:
                                                                 const EdgeInsets.symmetric(
-                                                                  horizontal: 5,
+                                                                  horizontal: 0,
                                                                 ),
                                                             child: Column(
                                                               spacing: 24,
@@ -1263,6 +1266,8 @@ class _CMealPageState extends State<CMealPage> {
                                                                             context,
                                                                           );
                                                                         },
+                                                                        variant:
+                                                                            CustomButtonVariant.primaryMeal,
                                                                         title: lang.getText(
                                                                           "scan",
                                                                         ),
