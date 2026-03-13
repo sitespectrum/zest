@@ -242,264 +242,269 @@ class _DetailsPageState extends State<DetailsPage>
     super.build(context);
     final lang = Provider.of<LanguageProvider>(context);
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              PreferredSize(
-                preferredSize: const Size.fromHeight(60),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 5,
-                  ),
-                  child: AppBar(
-                    title: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(45, 45, 45, 0.5),
+    return SafeArea(
+      child: PopScope(
+        canPop: false,
+        child: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                PreferredSize(
+                  preferredSize: const Size.fromHeight(60),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 5,
+                    ),
+                    child: AppBar(
+                      title: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: 10.0,
+                              sigmaY: 10.0,
                             ),
-                            child: Text(
-                              lang.getText("my_details"),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(45, 45, 45, 0.5),
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    automaticallyImplyLeading: false,
-                    backgroundColor: Colors.transparent,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: CustomTextField(
-                        heightcontroller,
-                        lang.getText("height"),
-                        isNumber: true,
-                        isSuffix: true,
-                        suffix: " cm",
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: CustomTextField(
-                        weightcontroller,
-                        lang.getText("weight"),
-                        isNumber: true,
-                        isSuffix: true,
-                        suffix: " kg",
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildStyledField(
-                        controller: birthcontroller,
-                        label: lang.getText("born_in"),
-                        icon: Icons.calendar_today,
-                        onTap: _selectDate,
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: _buildStyledDropdown(
-                        label: lang.getText("gender"),
-                        value: gendercontroller.text.isNotEmpty
-                            ? gendercontroller.text
-                            : null,
-                        items: [
-                          DropdownMenuItem(
-                            value: "Férfi",
-                            child: Text(lang.getText("male")),
-                          ),
-                          DropdownMenuItem(
-                            value: "Nő",
-                            child: Text(lang.getText("female")),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            gendercontroller.text = value ?? "";
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              CustomCard(
-                title: lang.getText("goals"),
-                child: Padding(
-                  padding: const EdgeInsets.all(0),
-                  child: Column(
-                    children: List.generate(_goals.length, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 15),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _gselectedIndex = index;
-                              goalcontroller.text = _goals[index];
-                              if (index == 0)
-                                IncreaseOrDecreaseCalories = 500;
-                              else if (index == 2)
-                                IncreaseOrDecreaseCalories = -500;
-                              else
-                                IncreaseOrDecreaseCalories = 0;
-                            });
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              color: _gselectedIndex == index
-                                  ? const Color.fromARGB(50, 64, 255, 50)
-                                  : const Color.fromARGB(255, 58, 58, 58),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Color.fromARGB(100, 64, 255, 50),
-                              ),
-                            ),
-                            child: Center(
                               child: Text(
-                                [
-                                  lang.getText("bulking"),
-                                  lang.getText("level_maintenance"),
-                                  lang.getText("weight_loss"),
-                                ][index],
+                                lang.getText("my_details"),
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 18,
+                                  fontSize: 26,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      );
-                    }),
+                      ),
+                      automaticallyImplyLeading: false,
+                      backgroundColor: Colors.transparent,
+                    ),
                   ),
                 ),
-              ),
 
-              CustomCard(
-                title: lang.getText("activity"),
-                child: Padding(
-                  padding: const EdgeInsets.all(0),
-                  child: Column(
-                    children: List.generate(_activity.length, (index) {
-                      final titles = [
-                        lang.getText("slightly_active"),
-                        lang.getText("moderately_active"),
-                        lang.getText("very_active"),
-                        lang.getText("extremely_active"),
-                      ];
-                      final descs = [
-                        lang.getText("slightly_active_desc"),
-                        lang.getText("moderately_active_desc"),
-                        lang.getText("very_active_desc"),
-                        lang.getText("extremely_active_desc"),
-                      ];
+                const SizedBox(height: 10),
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 15),
-                        child: GestureDetector(
-                          onTap: () {
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CustomTextField(
+                          heightcontroller,
+                          lang.getText("height"),
+                          isNumber: true,
+                          isSuffix: true,
+                          suffix: " cm",
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: CustomTextField(
+                          weightcontroller,
+                          lang.getText("weight"),
+                          isNumber: true,
+                          isSuffix: true,
+                          suffix: " kg",
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildStyledField(
+                          controller: birthcontroller,
+                          label: lang.getText("born_in"),
+                          icon: Icons.calendar_today,
+                          onTap: _selectDate,
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: _buildStyledDropdown(
+                          label: lang.getText("gender"),
+                          value: gendercontroller.text.isNotEmpty
+                              ? gendercontroller.text
+                              : null,
+                          items: [
+                            DropdownMenuItem(
+                              value: "Férfi",
+                              child: Text(lang.getText("male")),
+                            ),
+                            DropdownMenuItem(
+                              value: "Nő",
+                              child: Text(lang.getText("female")),
+                            ),
+                          ],
+                          onChanged: (value) {
                             setState(() {
-                              _aselectedIndex = index;
-                              activitycontroller.text = _activity[index];
-                              multiplier = [1.375, 1.55, 1.725, 1.9][index];
+                              gendercontroller.text = value ?? "";
                             });
                           },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              color: _aselectedIndex == index
-                                  ? const Color.fromARGB(50, 64, 255, 50)
-                                  : const Color.fromARGB(255, 58, 58, 58),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Color.fromARGB(100, 64, 255, 50),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                CustomCard(
+                  title: lang.getText("goals"),
+                  child: Padding(
+                    padding: const EdgeInsets.all(0),
+                    child: Column(
+                      children: List.generate(_goals.length, (index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 15),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _gselectedIndex = index;
+                                goalcontroller.text = _goals[index];
+                                if (index == 0)
+                                  IncreaseOrDecreaseCalories = 500;
+                                else if (index == 2)
+                                  IncreaseOrDecreaseCalories = -500;
+                                else
+                                  IncreaseOrDecreaseCalories = 0;
+                              });
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: _gselectedIndex == index
+                                    ? const Color.fromARGB(50, 64, 255, 50)
+                                    : const Color.fromARGB(255, 58, 58, 58),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Color.fromARGB(100, 64, 255, 50),
+                                ),
                               ),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  titles[index],
+                              child: Center(
+                                child: Text(
+                                  [
+                                    lang.getText("bulking"),
+                                    lang.getText("level_maintenance"),
+                                    lang.getText("weight_loss"),
+                                  ][index],
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  descs[index],
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: _aselectedIndex == index
-                                        ? Colors.white
-                                        : Colors.grey,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
 
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(20),
-          child: CustomButton(
-            onPressed: () async {
-              submitDetails();
-            },
-            child: Text(
-              lang.getText("finish_register"),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                CustomCard(
+                  title: lang.getText("activity"),
+                  child: Padding(
+                    padding: const EdgeInsets.all(0),
+                    child: Column(
+                      children: List.generate(_activity.length, (index) {
+                        final titles = [
+                          lang.getText("slightly_active"),
+                          lang.getText("moderately_active"),
+                          lang.getText("very_active"),
+                          lang.getText("extremely_active"),
+                        ];
+                        final descs = [
+                          lang.getText("slightly_active_desc"),
+                          lang.getText("moderately_active_desc"),
+                          lang.getText("very_active_desc"),
+                          lang.getText("extremely_active_desc"),
+                        ];
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 15),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _aselectedIndex = index;
+                                activitycontroller.text = _activity[index];
+                                multiplier = [1.375, 1.55, 1.725, 1.9][index];
+                              });
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: _aselectedIndex == index
+                                    ? const Color.fromARGB(50, 64, 255, 50)
+                                    : const Color.fromARGB(255, 58, 58, 58),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Color.fromARGB(100, 64, 255, 50),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    titles[index],
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    descs[index],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _aselectedIndex == index
+                                          ? Colors.white
+                                          : Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          bottomNavigationBar: Padding(
+            padding: const EdgeInsets.all(20),
+            child: CustomButton(
+              onPressed: () async {
+                submitDetails();
+              },
+              child: Text(
+                lang.getText("finish_register"),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

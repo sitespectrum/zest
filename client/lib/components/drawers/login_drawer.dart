@@ -22,6 +22,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool isChecked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,8 +42,19 @@ class _LoginDrawerState extends State<LoginDrawer> {
               CustomTextField(
                 _passwordController,
                 lang.getText("password_hint"),
-                isPassword: true,
+                isPassword: isChecked ? false : true,
+                iconButton: IconButton(
+                  onPressed: () => isChecked
+                      ? setState(() {
+                          isChecked = false;
+                        })
+                      : setState(() {
+                          isChecked = true;
+                        }),
+                  icon: Icon(Icons.remove_red_eye),
+                ),
               ),
+              SizedBox(height: 5),
             ],
           ),
 
@@ -90,7 +102,7 @@ class _LoginDrawerState extends State<LoginDrawer> {
                   context: context,
                   builder: (_) => AlertDialog(
                     title: const Text("Hiba"),
-                    content: const Text("Hibás email vagy jelszó!"),
+                    content: const Text("Hibás felhasználónév vagy jelszó!"),
                   ),
                 );
               }

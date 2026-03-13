@@ -469,7 +469,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
                         return ChoiceChip(
                           label: Text(
-                            "$name (${weight.toStringAsFixed(0)}g/ml)",
+                            "$name (${weight.toStringAsFixed(0)}g | ml)",
                             style: TextStyle(
                               color: isSelected ? Colors.black : Colors.white,
                             ),

@@ -35,6 +35,14 @@ class _FriendsPageState extends State<FriendsPage>
     fetchRequests();
   }
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _tabController.dispose();
+    searchController.dispose();
+    super.dispose();
+  }
+
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('jwt_token');
@@ -81,6 +89,7 @@ class _FriendsPageState extends State<FriendsPage>
   }
 
   Future<void> searchUsers(String query) async {
+    if (!mounted) return;
     if (query.isEmpty) {
       setState(() => searchResults = []);
       return;
@@ -92,7 +101,7 @@ class _FriendsPageState extends State<FriendsPage>
 
     try {
       final response = await http.get(
-        Uri.parse("$apiUrl/api/Friends/search?query=$query"),
+        Uri.parse("$apiUrl/api/Friends/search?query=${query.toLowerCase()}"),
         headers: {"Authorization": "Bearer $token"},
       );
 
@@ -130,11 +139,13 @@ class _FriendsPageState extends State<FriendsPage>
         searchResults.removeWhere((u) => u['id'] == userId);
       });
     } else {
-      CustomSnackbar.show(
-        context,
-        "${lang.getText("error_occurred")}: ${response.body}",
-        backgroundColor: Colors.red,
-      );
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          "${lang.getText("error_occurred")}: ${response.body}",
+          backgroundColor: Colors.red,
+        );
+      }
     }
   }
 
@@ -193,18 +204,22 @@ class _FriendsPageState extends State<FriendsPage>
           backgroundColor: Colors.green,
         );
       } else {
+        if (mounted) {
+          CustomSnackbar.show(
+            context,
+            lang.getText("error_occurred"),
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         CustomSnackbar.show(
           context,
           lang.getText("error_occurred"),
           backgroundColor: Colors.red,
         );
       }
-    } catch (e) {
-      CustomSnackbar.show(
-        context,
-        lang.getText("error_occurred"),
-        backgroundColor: Colors.red,
-      );
     }
   }
 

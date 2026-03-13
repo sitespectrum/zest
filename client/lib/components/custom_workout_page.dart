@@ -1020,17 +1020,17 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                                       color:
                                                           const Color.fromARGB(
                                                             50,
-                                                            64,
-                                                            255,
                                                             50,
+                                                            146,
+                                                            255,
                                                           ),
                                                       border: Border.all(
                                                         color:
                                                             const Color.fromARGB(
-                                                              100,
-                                                              64,
-                                                              255,
+                                                              150,
                                                               50,
+                                                              146,
+                                                              255,
                                                             ),
                                                         width: 1,
                                                       ),
@@ -1051,9 +1051,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                                         color:
                                                             const Color.fromARGB(
                                                               100,
-                                                              64,
-                                                              255,
                                                               50,
+                                                              146,
+                                                              255,
                                                             ),
                                                         shape:
                                                             BoxShape.rectangle,
@@ -1195,6 +1195,9 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                                                       .getText(
                                                                         "recive_workout",
                                                                       ),
+                                                                  variant:
+                                                                      CustomButtonVariant
+                                                                          .primaryWorkout,
                                                                   iconData: Icons
                                                                       .call_received_rounded,
                                                                 ),
@@ -1204,7 +1207,7 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                                           Padding(
                                                             padding:
                                                                 const EdgeInsets.symmetric(
-                                                                  horizontal: 5,
+                                                                  horizontal: 0,
                                                                 ),
                                                             child: Column(
                                                               spacing: 24,

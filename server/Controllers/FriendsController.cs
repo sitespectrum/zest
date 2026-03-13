@@ -40,7 +40,7 @@ public class FriendsController : ControllerBase
         excludedUserIds.Add(currentUserId);
 
         var users = await _context.Users
-            .Where(u => u.UserName.Contains(query) && !excludedUserIds.Contains(u.Id))
+            .Where(u => u.UserName.ToLower().Contains(query.ToLower()) && !excludedUserIds.Contains(u.Id))
             .Select(u => new { u.Id, u.UserName, u.Email, u.ProfilePicture })
             .Take(10)
             .ToListAsync();

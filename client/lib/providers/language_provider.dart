@@ -176,8 +176,9 @@ class LanguageProvider with ChangeNotifier {
       'share': 'Megosztás',
       'share_via_NFC': 'Megosztás NFC-n keresztül',
       'recive_workout': 'Edzés fogadása',
+      'recive_meal': 'Étkezés fogadása',
       'or': 'Vagy',
-      'scan': 'QR kód belolvasása',
+      'scan': 'QR kód beolvasása',
       'no_qr_code_yet': 'Még nincs QR kód',
       'no_added_workout_yet': 'Nincsenek hozzáadott edzések',
       'distance': 'Távolság',
@@ -294,6 +295,7 @@ class LanguageProvider with ChangeNotifier {
       'templates': 'Sablonok',
       'official_templates': 'Hivatalos',
       'no_official_template_yet': 'Még nincs hivatalos sablon.',
+      'show_password': 'Jelszó mutatása',
     },
     'en': {
       'register_button_main': "Register",
@@ -430,6 +432,7 @@ class LanguageProvider with ChangeNotifier {
       'share': 'Share',
       'share_via_NFC': 'Share via NFC',
       'recive_workout': 'Recive workout',
+      'recive_meal': 'Recive meals',
       'or': 'Or',
       'scan': 'Scan QR code',
       'no_qr_code_yet': 'No QR code yet',
@@ -547,6 +550,7 @@ class LanguageProvider with ChangeNotifier {
       'templates': 'Templates',
       'official_templates': 'Official',
       'no_official_template_yet': 'No official template yet.',
+      'show_password': 'Show password',
     },
   };
 }

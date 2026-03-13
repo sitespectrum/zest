@@ -46,266 +46,268 @@ Widget recentWDrawer(
     }
   }
 
-  return CustomDrawer(
-    child: SizedBox(
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.history,
-                      color: Color.fromARGB(150, 50, 146, 255),
-                      size: 28,
+  return SafeArea(
+    child: CustomDrawer(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.history,
+                        color: Color.fromARGB(150, 50, 146, 255),
+                        size: 28,
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lastWorkout.workoutName.isNotEmpty
+                                ? lastWorkout.workoutName
+                                : lastWorkout.customName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            lastWorkout.date.toString().split(' ')[0],
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(
+                        150,
+                        50,
+                        146,
+                        255,
+                      ).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color.fromARGB(150, 50, 146, 255),
+                      ),
+                    ),
+                    child: Text(
+                      "#$currentWorkoutNum",
+                      style: const TextStyle(
+                        color: Color.fromARGB(150, 50, 146, 255),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(color: Colors.white24),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatItem(
+                    Icons.fitness_center,
+                    "${lastWorkout.exercises.length}",
+                    lang.getText("exercises"),
+                  ),
+                  _buildStatItem(
+                    Icons.bar_chart,
+                    calculatedDistance > 0
+                        ? "${calculatedDistance.toStringAsFixed(1)} km"
+                        : "${calculatedVolume.toInt()} kg",
+                    calculatedDistance > 0
+                        ? lang.getText("duration")
+                        : lang.getText("volume"),
+                  ),
+                  _buildStatItem(
+                    Icons.timer,
+                    formattedDuration,
+                    lang.getText("duration"),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                lang.getText("exercises"),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Center(child: Text("Set", style: _headerStyle)),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Center(child: Text("Rep", style: _headerStyle)),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Center(child: Text("kg", style: _headerStyle)),
+                  ),
+                  Expanded(flex: 7, child: Container()),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
+            Expanded(
+              child: GridView.builder(
+                padding: EdgeInsets.zero,
+                physics: const BouncingScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: lastWorkout.exercises.length,
+                itemBuilder: (context, index) {
+                  final exercise = lastWorkout.exercises[index];
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 40, 40, 40),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
                       children: [
-                        Text(
-                          lastWorkout.workoutName.isNotEmpty
-                              ? lastWorkout.workoutName
-                              : lastWorkout.customName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white10,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            exercise.exercise?.getName(langCode) ?? "Unknown",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 61, 145, 239),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        Text(
-                          lastWorkout.date.toString().split(' ')[0],
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 14,
+
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: exercise.sets.asMap().entries.map((
+                                entry,
+                              ) {
+                                int setIndex = entry.key + 1;
+                                var s = entry.value;
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 1,
+                                        child: Center(
+                                          child: Text(
+                                            "$setIndex.",
+                                            style: const TextStyle(
+                                              color: Colors.white54,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Center(
+                                          child: Text(
+                                            "${s.reps}",
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Center(
+                                          child: Text(
+                                            "${s.weight}",
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(
-                      150,
-                      50,
-                      146,
-                      255,
-                    ).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color.fromARGB(150, 50, 146, 255),
-                    ),
-                  ),
-                  child: Text(
-                    "#$currentWorkoutNum",
-                    style: const TextStyle(
-                      color: Color.fromARGB(150, 50, 146, 255),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(color: Colors.white24),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  Icons.fitness_center,
-                  "${lastWorkout.exercises.length}",
-                  lang.getText("exercises"),
-                ),
-                _buildStatItem(
-                  Icons.bar_chart,
-                  calculatedDistance > 0
-                      ? "${calculatedDistance.toStringAsFixed(1)} km"
-                      : "${calculatedVolume.toInt()} kg",
-                  calculatedDistance > 0
-                      ? lang.getText("duration")
-                      : lang.getText("volume"),
-                ),
-                _buildStatItem(
-                  Icons.timer,
-                  formattedDuration,
-                  lang.getText("duration"),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              lang.getText("exercises"),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                  );
+                },
               ),
             ),
-          ),
 
-          const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.white10,
-              borderRadius: BorderRadius.circular(8),
+            CustomButton(
+              onPressed: () => Navigator.pop(context),
+              title: lang.getText("close"),
+              iconData: Icons.close_rounded,
+              variant: CustomButtonVariant.secondary,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Center(child: Text("Set", style: _headerStyle)),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Center(child: Text("Rep", style: _headerStyle)),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Center(child: Text("kg", style: _headerStyle)),
-                ),
-                Expanded(flex: 7, child: Container()),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Expanded(
-            child: GridView.builder(
-              padding: EdgeInsets.zero,
-              physics: const BouncingScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.75,
-              ),
-              itemCount: lastWorkout.exercises.length,
-              itemBuilder: (context, index) {
-                final exercise = lastWorkout.exercises[index];
-                return Container(
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 40, 40, 40),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          exercise.exercise?.getName(langCode) ?? "Unknown",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 61, 145, 239),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      Expanded(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: exercise.sets.asMap().entries.map((
-                              entry,
-                            ) {
-                              int setIndex = entry.key + 1;
-                              var s = entry.value;
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 1,
-                                      child: Center(
-                                        child: Text(
-                                          "$setIndex.",
-                                          style: const TextStyle(
-                                            color: Colors.white54,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 1,
-                                      child: Center(
-                                        child: Text(
-                                          "${s.reps}",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 1,
-                                      child: Center(
-                                        child: Text(
-                                          "${s.weight}",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          CustomButton(
-            onPressed: () => Navigator.pop(context),
-            title: lang.getText("close"),
-            iconData: Icons.close_rounded,
-            variant: CustomButtonVariant.secondary,
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
