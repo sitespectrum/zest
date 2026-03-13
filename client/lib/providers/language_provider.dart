@@ -296,6 +296,8 @@ class LanguageProvider with ChangeNotifier {
       'official_templates': 'Hivatalos',
       'no_official_template_yet': 'Még nincs hivatalos sablon.',
       'show_password': 'Jelszó mutatása',
+      'featured_templates': 'Hivatalos',
+      'no_featured_template_yet': 'Még nincs hivatalos sablon.',
     },
     'en': {
       'register_button_main': "Register",
@@ -551,6 +553,8 @@ class LanguageProvider with ChangeNotifier {
       'official_templates': 'Official',
       'no_official_template_yet': 'No official template yet.',
       'show_password': 'Show password',
+      'featured_templates': 'Featured',
+      'no_featured_template_yet': 'No featured template yet.',
     },
   };
 }
