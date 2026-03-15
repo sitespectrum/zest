@@ -42,5 +42,6 @@ public class User
     public double CarbsGoal { get; set; }
     public double FatGoal { get; set; }
     public string? ProfilePicture { get; set; }
+    public bool HasLogged { get; set; }
     public ICollection<UserMeal> UserMeals { get; set; } = new List<UserMeal>();
 }

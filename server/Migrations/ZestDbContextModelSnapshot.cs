@@ -450,6 +450,9 @@ namespace server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasLogged")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Height")
                         .HasColumnType("INTEGER");
 
