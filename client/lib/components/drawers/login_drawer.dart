@@ -64,47 +64,109 @@ class _LoginDrawerState extends State<LoginDrawer> {
               final email = _emailController.text;
               final password = _passwordController.text;
 
-              final response = await http.post(
-                Uri.parse('$apiUrl/api/auth/login'),
-                headers: <String, String>{
-                  'Content-Type': 'application/json; charset=UTF-8',
-                },
-                body: jsonEncode(<String, String>{
-                  'username': username,
-                  'email': email,
-                  'password': password,
-                }),
-              );
-              if (response.statusCode == 200) {
-                final json = jsonDecode(response.body);
-                print(json);
-                final token = json['token'];
-                final refreshToken = json['refreshToken'];
-                final userId = json['userId'];
-                String username = json['username'];
+              try {
+                final response = await http.post(
+                  Uri.parse('$apiUrl/api/auth/login'),
+                  headers: <String, String>{
+                    'Content-Type': 'application/json; charset=UTF-8',
+                  },
+                  body: jsonEncode(<String, String>{
+                    'username': username,
+                    'email': email,
+                    'password': password,
+                  }),
+                );
 
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('jwt_token', token);
-                await prefs.setString('refresh_token', refreshToken);
-                await prefs.setString('username', username);
-                await prefs.setInt('userId', userId);
-                OneSignal.login(userId.toString());
+                if (response.statusCode == 200) {
+                  final json = jsonDecode(response.body);
+                  print(json);
+                  final token = json['token'];
+                  final refreshToken = json['refreshToken'];
+                  final userId = json['userId'];
 
-                print('Token mentve: $token');
+                  String responseUsername = json['username'];
+
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('jwt_token', token);
+                  await prefs.setString('refresh_token', refreshToken);
+                  await prefs.setString('username', responseUsername);
+                  await prefs.setInt('userId', userId);
+                  OneSignal.login(userId.toString());
+
+                  print('Token mentve: $token');
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Pages()),
+                    );
+                  }
+                } else {
+                  String errorMessage = "Ismeretlen hiba történt.";
+
+                  if (response.body.isNotEmpty) {
+                    try {
+                      final errorData = jsonDecode(response.body);
+                      errorMessage =
+                          errorData['message'] ??
+                          errorData['title'] ??
+                          response.body;
+                    } catch (_) {
+                      errorMessage = response.body;
+                    }
+                  }
+
+                  if (context.mounted) {
+                    showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+                        title: const Text(
+                          "Sikertelen bejelentkezés",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        content: Text(
+                          errorMessage,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text(
+                              "OK",
+                              style: TextStyle(color: Colors.green),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
                 if (context.mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Pages()),
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+                      title: const Text(
+                        "Hálózati hiba",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      content: Text(
+                        "Nem sikerült kapcsolódni a szerverhez: $e",
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "OK",
+                            style: TextStyle(color: Colors.green),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
-              } else {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text("Hiba"),
-                    content: const Text("Hibás felhasználónév vagy jelszó!"),
-                  ),
-                );
               }
             },
             title: lang.getText("login"),

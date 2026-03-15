@@ -179,11 +179,23 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName || u.Email == dto.UserName);
+
+        string userLang = Request.Headers["Accept-Language"].ToString().Split(',').FirstOrDefault() ?? "en";
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName);
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user?.PasswordHash))
-            return Unauthorized("Invalid credentials");
+        {
+            if (userLang.StartsWith("hu"))
+                return BadRequest(new { message = "Érvénytelen felhasználónév vagy jelszó!" });
+            else
+                return BadRequest(new { message = "Invalid username or password!" });
+        }
 
         if (user.HasLogged == true)
-            return Unauthorized("Már be van jelentkezve egy másik eszközön!");
+            if (userLang.StartsWith("hu"))
+                return Unauthorized("Már be van jelentkezve egy másik eszközön!");
+            else
+                return Unauthorized("You have already logged in on another device!");
 
         var accessToken = GenerateJwtToken(user!);
         var refreshToken = GenerateRefreshToken();
