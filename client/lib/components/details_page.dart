@@ -53,7 +53,7 @@ class _DetailsPageState extends State<DetailsPage>
       initialDate: DateTime.now(),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
-      initialEntryMode: DatePickerEntryMode.calendar,
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: Theme.of(context).copyWith(

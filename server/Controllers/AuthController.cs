@@ -191,15 +191,8 @@ public class AuthController : ControllerBase
                 return BadRequest(new { message = "Invalid username or password!" });
         }
 
-        if (user.HasLogged == true)
-            if (userLang.StartsWith("hu"))
-                return Unauthorized("Már be van jelentkezve egy másik eszközön!");
-            else
-                return Unauthorized("You have already logged in on another device!");
-
         var accessToken = GenerateJwtToken(user!);
         var refreshToken = GenerateRefreshToken();
-        user.HasLogged = true;
 
         _dbContext.RefreshTokens.Add(new RefreshToken
         {
@@ -220,7 +213,6 @@ public class AuthController : ControllerBase
             refreshToken = refreshToken,
             username = user.UserName,
             userId = user.Id,
-            hasLogged = user.HasLogged
         });
     }
 
@@ -233,12 +225,6 @@ public class AuthController : ControllerBase
         var existing = await _dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
         if (existing == null)
             return NotFound("Ez a token már nem létezik");
-
-        var user = await _dbContext.Users.FindAsync(existing.UserId);
-        if (user != null)
-        {
-            user.HasLogged = false;
-        }
 
         _dbContext.RefreshTokens.Remove(existing);
         await _dbContext.SaveChangesAsync();
