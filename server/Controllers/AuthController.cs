@@ -180,9 +180,8 @@ public class AuthController : ControllerBase
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName || u.Email == dto.UserName);
 
-        string userLang = Request.Headers["Accept-Language"].ToString().Split(',').FirstOrDefault() ?? "en";
+        string userLang = Request.Headers["Accept-Language"].ToString().Split(',').FirstOrDefault() ?? "hu";
 
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName);
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user?.PasswordHash))
         {
             if (userLang.StartsWith("hu"))
