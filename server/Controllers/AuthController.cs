@@ -182,8 +182,12 @@ public class AuthController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user?.PasswordHash))
             return Unauthorized("Invalid credentials");
 
+        if (user.HasLogged == true)
+            return Unauthorized("Már be van jelentkezve egy másik eszközön!");
+
         var accessToken = GenerateJwtToken(user!);
         var refreshToken = GenerateRefreshToken();
+        user.HasLogged = true;
 
         _dbContext.RefreshTokens.Add(new RefreshToken
         {
@@ -193,6 +197,9 @@ public class AuthController : ControllerBase
                 _config.GetValue<int>("Jwt:RefreshTokenExpirationDays"))
         });
 
+        var existingTokens = _dbContext.RefreshTokens.Where(rt => rt.UserId == user.Id);
+        _dbContext.RefreshTokens.RemoveRange(existingTokens);
+
         await _dbContext.SaveChangesAsync();
 
         return Ok(new
@@ -200,7 +207,8 @@ public class AuthController : ControllerBase
             token = accessToken,
             refreshToken = refreshToken,
             username = user.UserName,
-            userId = user.Id
+            userId = user.Id,
+            hasLogged = user.HasLogged
         });
     }
 
@@ -213,6 +221,12 @@ public class AuthController : ControllerBase
         var existing = await _dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
         if (existing == null)
             return NotFound("Ez a token már nem létezik");
+
+        var user = await _dbContext.Users.FindAsync(existing.UserId);
+        if (user != null)
+        {
+            user.HasLogged = false;
+        }
 
         _dbContext.RefreshTokens.Remove(existing);
         await _dbContext.SaveChangesAsync();
