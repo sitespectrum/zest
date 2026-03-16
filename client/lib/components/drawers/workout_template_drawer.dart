@@ -17,6 +17,7 @@ Widget workoutTemplateDrawer(
   BuildContext context,
   CustomUserWorkoutDto template,
   List<ExerciseDto> userWorkouts,
+  VoidCallback onDraftChanged,
 ) {
   final lang = Provider.of<LanguageProvider>(context, listen: false);
   final langCode = Provider.of<LanguageProvider>(context).languageCode;
@@ -86,7 +87,7 @@ Widget workoutTemplateDrawer(
             children: [
               Expanded(
                 child: Container(
-                  margin: EdgeInsets.fromLTRB(5, 5, 2, 5),
+                  margin: EdgeInsets.fromLTRB(5, 5, 10, 5),
                   child: CustomButton(
                     onPressed: () => Navigator.pop(context),
                     title: lang.getText("close"),
@@ -97,7 +98,7 @@ Widget workoutTemplateDrawer(
               ),
               Expanded(
                 child: Container(
-                  margin: EdgeInsets.fromLTRB(2, 5, 5, 5),
+                  margin: EdgeInsets.fromLTRB(10, 5, 5, 5),
                   child: CustomButton(
                     onPressed: () {
                       template.exercises
@@ -110,6 +111,7 @@ Widget workoutTemplateDrawer(
                             userWorkouts.add(exerciseCopy);
                           });
                       Navigator.pop(context, true);
+                      onDraftChanged();
                       CustomSnackbar.show(
                         context,
                         lang.getText("template_loaded"),

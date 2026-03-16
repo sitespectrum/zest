@@ -1685,6 +1685,10 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                                 return WorkoutTemplateDrawer(
                                                   template,
                                                   userWorkouts,
+                                                  () {
+                                                    _saveDraft();
+                                                    setState(() {});
+                                                  },
                                                 );
                                               },
                                             );
@@ -1971,6 +1975,10 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                                                   WorkoutTemplateDrawer(
                                                     template,
                                                     userWorkouts,
+                                                    () {
+                                                      _saveDraft();
+                                                      setState(() {});
+                                                    },
                                                   ),
                                             );
                                         if (result == true) setState(() {});

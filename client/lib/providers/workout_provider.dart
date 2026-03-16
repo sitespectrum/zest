@@ -4,14 +4,18 @@ import 'package:client/models/workout.dart';
 
 class WorkoutProvider with ChangeNotifier {
   Timer? _timer;
-  final Stopwatch _stopwatch = Stopwatch();
+
+  DateTime? _startTime;
 
   int _initialOffsetSeconds = 0;
-
   List<ExerciseDto> _userWorkouts = [];
   bool _isWorkoutActive = false;
 
-  int get totalSeconds => _initialOffsetSeconds + _stopwatch.elapsed.inSeconds;
+  int get totalSeconds {
+    if (!_isWorkoutActive || _startTime == null) return _initialOffsetSeconds;
+    return _initialOffsetSeconds +
+        DateTime.now().difference(_startTime!).inSeconds;
+  }
 
   int get seconds => totalSeconds % 60;
   int get minutes => (totalSeconds ~/ 60) % 60;
@@ -39,18 +43,17 @@ class WorkoutProvider with ChangeNotifier {
     _isWorkoutActive = true;
     _initialOffsetSeconds = initialSeconds;
 
+    _startTime = DateTime.now();
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       notifyListeners();
     });
-
-    _stopwatch.reset();
-    _stopwatch.start();
   }
 
   void stopWorkout() {
     _timer?.cancel();
     _isWorkoutActive = false;
-    _stopwatch.stop();
+    _startTime = null;
     _initialOffsetSeconds = 0;
     notifyListeners();
   }
@@ -62,7 +65,6 @@ class WorkoutProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _stopwatch.stop();
     _timer?.cancel();
     super.dispose();
   }
