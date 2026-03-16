@@ -50,7 +50,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAdminSite",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins("http://localhost:5173", "https://zest-admin.sitespectrum.dev")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
