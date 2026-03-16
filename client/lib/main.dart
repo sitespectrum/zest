@@ -273,6 +273,7 @@ class MainPage extends HookWidget {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,
       body: Stack(
         children: [
