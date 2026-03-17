@@ -441,10 +441,15 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                             side: const BorderSide(
                               color: Color.fromARGB(100, 255, 69, 69),
                             ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                           ),
                           icon: const Icon(
                             Icons.delete_outline,
                             color: Colors.redAccent,
+                            size: 25,
                           ),
                           onPressed: _showCancelConfirmDialog,
                         ),
