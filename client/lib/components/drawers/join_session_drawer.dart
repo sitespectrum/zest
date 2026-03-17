@@ -25,7 +25,10 @@ import 'dart:convert';
 part 'join_session_drawer.g.dart';
 
 @hwidget
-Widget joinSessionDrawer(BuildContext context) {
+Widget joinSessionDrawer(
+  BuildContext context, {
+  bool isFromWorkoutPage = false,
+}) {
   final lang = Provider.of<LanguageProvider>(context);
   final controller = useTextEditingController(text: "");
   final nearbySessions = useState<List<dynamic>>([]);
@@ -108,12 +111,15 @@ Widget joinSessionDrawer(BuildContext context) {
             "Sikeres csatlakozás!",
             backgroundColor: Colors.green,
           );
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CWorkoutPage(selectedDay: DateTime.now()),
-            ),
-          );
+
+          if (!isFromWorkoutPage) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CWorkoutPage(selectedDay: DateTime.now()),
+              ),
+            );
+          }
         }
       } else {
         CustomSnackbar.show(
@@ -158,14 +164,11 @@ Widget joinSessionDrawer(BuildContext context) {
     if (scannedCodeRaw != null &&
         scannedCodeRaw.isNotEmpty &&
         context.mounted) {
-      // --- NUKLEÁRIS TISZTÍTÁS ---
-      // 1. Csak a betűket, számokat és kötőjelet hagyjuk meg (Eltünteti a láthatatlan karaktereket!)
       String cleanCode = scannedCodeRaw.replaceAll(
         RegExp(r'[^a-zA-Z0-9\-]'),
         '',
       );
 
-      // 2. Levágjuk a "ZJ-" előtagot, hogy a TextField ne duplázza meg
       cleanCode = cleanCode.replaceFirst('ZJ-', '');
 
       controller.text = cleanCode;
@@ -183,7 +186,6 @@ Widget joinSessionDrawer(BuildContext context) {
   }
 
   Future<void> startNfcScanning() async {
-    // 1. Engedélyek ellenőrzése
     Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
@@ -223,7 +225,11 @@ Widget joinSessionDrawer(BuildContext context) {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.nfc, size: 80, color: Colors.green),
+                const Icon(
+                  Icons.contactless,
+                  size: 80,
+                  color: Colors.blueAccent,
+                ),
                 const SizedBox(height: 20),
                 Text(
                   lang.getText("touch_the_other_phone"),
@@ -248,7 +254,6 @@ Widget joinSessionDrawer(BuildContext context) {
         );
       }
 
-      // 2. NFC csak a fizikai koccintás érzékelésére (Nincs adatátvitel, így nincs "kapcsolódás sikertelen" hiba!)
       await FlutterNfcKit.poll(
         timeout: const Duration(seconds: 15),
         iosMultipleTagMessage: "Több NFC kártya észlelve.",
@@ -257,7 +262,7 @@ Widget joinSessionDrawer(BuildContext context) {
       await FlutterNfcKit.finish();
 
       if (context.mounted) {
-        Navigator.pop(context); // Első ablak bezárul
+        Navigator.pop(context);
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -278,7 +283,6 @@ Widget joinSessionDrawer(BuildContext context) {
         );
       }
 
-      // 3. BLUETOOTH KERESÉS INDÍTÁSA
       bool found = false;
 
       await FlutterBluePlus.startScan(
@@ -298,10 +302,8 @@ Widget joinSessionDrawer(BuildContext context) {
                 found = true;
                 FlutterBluePlus.stopScan();
 
-                if (context.mounted)
-                  Navigator.pop(context); // Töltőablak bezárása
+                if (context.mounted) Navigator.pop(context);
 
-                // Nukleáris tisztítás (Biztonsági okokból)
                 String cleanCode = id.replaceAll(RegExp(r'[^a-zA-Z0-9\-]'), '');
                 cleanCode = cleanCode.replaceFirst('ZJ-', '');
 
@@ -311,9 +313,7 @@ Widget joinSessionDrawer(BuildContext context) {
                 }
               }
               return;
-            } catch (e) {
-              // Dekódolási hiba ignorálása, keres tovább
-            }
+            } catch (e) {}
           }
         }
       });
@@ -339,7 +339,6 @@ Widget joinSessionDrawer(BuildContext context) {
       await FlutterNfcKit.finish();
       if (context.mounted) {
         Navigator.pop(context);
-        // Ha túl hamar vette el a telefont (Tag lost), azt most már a Bluetooth úgyis kompenzálja!
       }
     }
   }

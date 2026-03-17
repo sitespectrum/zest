@@ -95,9 +95,10 @@ class _LoginDrawerState extends State<LoginDrawer> {
 
                   print('Token mentve: $token');
                   if (context.mounted) {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => Pages()),
+                      (Route<dynamic> route) => false,
                     );
                   }
                 } else {

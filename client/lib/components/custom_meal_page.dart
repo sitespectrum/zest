@@ -442,7 +442,7 @@ class _CMealPageState extends State<CMealPage> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.nfc, size: 80, color: Colors.green),
+                const Icon(Icons.contactless, size: 80, color: Colors.green),
                 const SizedBox(height: 20),
                 Text(
                   lang.getText("nfc_&_bt_active"),
@@ -553,7 +553,7 @@ class _CMealPageState extends State<CMealPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.nfc, size: 80, color: Colors.green),
+            const Icon(Icons.contactless, size: 80, color: Colors.green),
             SizedBox(height: 20),
             Text(
               lang.getText("touch_the_other_phone"),
