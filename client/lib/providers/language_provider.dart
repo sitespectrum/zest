@@ -298,6 +298,9 @@ class LanguageProvider with ChangeNotifier {
       'show_password': 'Jelszó mutatása',
       'featured_templates': 'Hivatalos',
       'no_featured_template_yet': 'Még nincs hivatalos sablon.',
+      'finish_exercise_title': 'Gyakorlat befejezése?',
+      'finish_exercise_warning':
+          'Biztosan befejezed az egész gyakorlatot? Később már nem tudsz visszatérni hozzá!\n\nHa még akarsz szettet csinálni belőle, csak a "Szett befejezése" gombra nyomj!',
     },
     'en': {
       'register_button_main': "Register",
@@ -555,6 +558,9 @@ class LanguageProvider with ChangeNotifier {
       'show_password': 'Show password',
       'featured_templates': 'Featured',
       'no_featured_template_yet': 'No featured template yet.',
+      'finish_exercise_title': 'Finish Exercise?',
+      'finish_exercise_warning':
+          'Are you sure you want to finish the whole exercise? You won\'t be able to return to it later!\n\nIf you still want to do more sets, click the "Finish set" button instead!',
     },
   };
 }

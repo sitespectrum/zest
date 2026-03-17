@@ -250,6 +250,45 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
     );
   }
 
+  Future<void> _confirmFinishExercise(ExerciseDto currentExercise) async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+        title: Text(
+          lang.getText('finish_exercise_title'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          lang.getText('finish_exercise_warning'),
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              lang.getText("cancel"),
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () {
+              Navigator.pop(context);
+              _endTurn(currentExercise, true);
+            },
+            child: Text(lang.getText("finish_exercise")),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     int currentExIndex = gameState['currentExerciseIndex'] ?? 0;
@@ -438,7 +477,7 @@ class _SharedRunningWorkoutPageState extends State<SharedRunningWorkoutPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: CustomButton(
-                    onPressed: () => _endTurn(currentExercise, true),
+                    onPressed: () => _confirmFinishExercise(currentExercise),
                     variant: CustomButtonVariant.primaryWorkout,
                     title: lang.getText('finish_exercise'),
                     iconData: Icons.done_all,

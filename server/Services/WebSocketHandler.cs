@@ -130,14 +130,7 @@ public class WebSocketHandler
                     return;
                 }
 
-                if (state.Players[state.CurrentPlayerIndex].UserId == userId)
-                {
-                    await AdvanceTurn(sessionId, state);
-                }
-                else
-                {
-                    await BroadcastGameState(sessionId, "sync-workout-state", state);
-                }
+                await BroadcastGameState(sessionId, "sync-workout-state", state);
             }
         }
 
@@ -297,7 +290,7 @@ public class WebSocketHandler
 
     private async Task AdvanceTurn(string sessionId, WorkoutGameState state)
     {
-        bool allDoneWithExercise = state.Players.All(p => p.IsDisconnected || p.IsDoneWithExercise);
+        bool allDoneWithExercise = state.Players.All(p => p.IsDoneWithExercise);
         bool isWorkoutFinished = false;
 
         if (allDoneWithExercise)
@@ -317,7 +310,7 @@ public class WebSocketHandler
             }
             else
             {
-                while (state.CurrentPlayerIndex < state.Players.Count && state.Players[state.CurrentPlayerIndex].IsDisconnected)
+                while (state.CurrentPlayerIndex < state.Players.Count && state.Players[state.CurrentPlayerIndex].IsDoneWithExercise)
                 {
                     state.CurrentPlayerIndex++;
                 }
@@ -342,7 +335,7 @@ public class WebSocketHandler
                 loopGuard++;
                 if (loopGuard > state.Players.Count) break;
 
-            } while (state.Players[state.CurrentPlayerIndex].IsDisconnected || state.Players[state.CurrentPlayerIndex].IsDoneWithExercise);
+            } while (state.Players[state.CurrentPlayerIndex].IsDoneWithExercise);
         }
 
         if (isWorkoutFinished)
