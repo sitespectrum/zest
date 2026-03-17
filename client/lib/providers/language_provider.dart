@@ -301,6 +301,9 @@ class LanguageProvider with ChangeNotifier {
       'finish_exercise_title': 'Gyakorlat befejezése?',
       'finish_exercise_warning':
           'Biztosan befejezed az egész gyakorlatot? Később már nem tudsz visszatérni hozzá!\n\nHa még akarsz szettet csinálni belőle, csak a "Szett befejezése" gombra nyomj!',
+      'cancel_workout_title': 'Edzés megszakítása',
+      'cancel_workout_desc':
+          'Biztosan meg akarod szakítani az edzést? Az eddigi eredményeid elvesznek és nem kerülnek mentésre.',
     },
     'en': {
       'register_button_main': "Register",
@@ -561,6 +564,9 @@ class LanguageProvider with ChangeNotifier {
       'finish_exercise_title': 'Finish Exercise?',
       'finish_exercise_warning':
           'Are you sure you want to finish the whole exercise? You won\'t be able to return to it later!\n\nIf you still want to do more sets, click the "Finish set" button instead!',
+      'cancel_workout_title': 'Cancel workout',
+      'cancel_workout_desc':
+          'Are you sure you want to cancel the workout? Your progress will be lost and won\'t be saved.',
     },
   };
 }

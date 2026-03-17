@@ -424,6 +424,32 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                         ),
                       ],
                     ),
+                    actions: [
+                      Container(
+                        margin: const EdgeInsets.only(right: 10),
+                        child: IconButton(
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(
+                              40,
+                              255,
+                              122,
+                              122,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: const BorderSide(
+                              color: Color.fromARGB(100, 255, 69, 69),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: _showCancelConfirmDialog,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1046,6 +1072,60 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _showCancelConfirmDialog() async {
+    final lang = Provider.of<LanguageProvider>(context, listen: false);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color.fromARGB(255, 30, 30, 30),
+        title: Text(
+          lang.getText('cancel_workout_title'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          lang.getText('cancel_workout_desc'),
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              lang.getText("cancel"),
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () async {
+              final workoutProvider = Provider.of<WorkoutProvider>(
+                context,
+                listen: false,
+              );
+              workoutProvider.stopWorkout();
+
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('offline_workout');
+              offlineSessionNotifier.value = null;
+
+              if (mounted) {
+                setState(() {
+                  _isPopping = true;
+                });
+                Navigator.pop(context);
+                Navigator.pop(context);
+              }
+            },
+            child: Text(lang.getText("delete")),
+          ),
+        ],
+      ),
     );
   }
 }
