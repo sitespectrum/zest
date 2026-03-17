@@ -272,110 +272,113 @@ class MainPage extends HookWidget {
     final lang = Provider.of<LanguageProvider>(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          Container(
-            width: double.infinity,
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  const Color(0xFF7af970).withOpacity(0.1),
-                ],
-                transform: GradientRotation(-0.5 * pi),
-              ),
-            ),
-            child: ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.white24, Colors.transparent],
-              ).createShader(bounds),
-              child: TopoBackground(
-                foreground: const Color(0xFF7af970),
-                scale: 2,
-              ),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(height: screenHeight * 0.1),
-
-                    Center(
-                      child: Image.asset(
-                        'assets/icon/Zest_logo.png',
-                        width: 200,
-                        height: 200,
-                      ),
-                    ),
-
-                    SizedBox(height: screenHeight * 0.005),
-
-                    Text.rich(
-                      const TextSpan(
-                        text: "Zest",
-                        style: TextStyle(
-                          fontSize: 50,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2.0,
-                          fontFamily: 'Roboto',
-                        ),
-                        children: [
-                          TextSpan(
-                            text: ".",
-                            style: TextStyle(
-                              color: Color.fromARGB(255, 64, 255, 50),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: screenHeight * 0.3),
-
-                    CustomButton(
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (builder) => RegisterDrawer(),
-                        );
-                      },
-                      title: lang.getText('register_button_main'),
-                      iconData: Icons.app_registration,
-                      variant: CustomButtonVariant.primary,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    CustomButton(
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (builder) => LoginDrawer(),
-                        );
-                      },
-                      title: lang.getText('login_button_main'),
-                      iconData: Icons.login,
-                      variant: CustomButtonVariant.secondary,
-                    ),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              height: MediaQuery.of(context).size.height,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    const Color(0xFF7af970).withOpacity(0.1),
                   ],
+                  transform: GradientRotation(-0.5 * pi),
+                ),
+              ),
+              child: ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.white24, Colors.transparent],
+                ).createShader(bounds),
+                child: TopoBackground(
+                  foreground: const Color(0xFF7af970),
+                  scale: 2,
                 ),
               ),
             ),
-          ),
-        ],
+            SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(height: screenHeight * 0.1),
+
+                      Center(
+                        child: Image.asset(
+                          'assets/icon/Zest_logo.png',
+                          width: 200,
+                          height: 200,
+                        ),
+                      ),
+
+                      SizedBox(height: screenHeight * 0.005),
+
+                      Text.rich(
+                        const TextSpan(
+                          text: "Zest",
+                          style: TextStyle(
+                            fontSize: 50,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2.0,
+                            fontFamily: 'Roboto',
+                          ),
+                          children: [
+                            TextSpan(
+                              text: ".",
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 64, 255, 50),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: screenHeight * 0.3),
+
+                      CustomButton(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (builder) => RegisterDrawer(),
+                          );
+                        },
+                        title: lang.getText('register_button_main'),
+                        iconData: Icons.app_registration,
+                        variant: CustomButtonVariant.primary,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      CustomButton(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (builder) => LoginDrawer(),
+                          );
+                        },
+                        title: lang.getText('login_button_main'),
+                        iconData: Icons.login,
+                        variant: CustomButtonVariant.secondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

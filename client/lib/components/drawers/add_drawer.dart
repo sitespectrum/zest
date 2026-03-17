@@ -29,6 +29,7 @@ Widget addDrawer(BuildContext context) {
                 aspectRatio: 1,
                 child: GestureDetector(
                   onTap: () {
+                    Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -76,6 +77,7 @@ Widget addDrawer(BuildContext context) {
                 aspectRatio: 1,
                 child: GestureDetector(
                   onTap: () {
+                    Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(

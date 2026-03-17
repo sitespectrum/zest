@@ -14,7 +14,7 @@ import 'package:client/components/ui/custom_snackbar.dart';
 part "host_guest_drawer.g.dart";
 
 @hwidget
-Widget hostGuestDrawer(BuildContext context) {
+Widget hostGuestDrawer(BuildContext context, {bool isFromWorkoutPage = false}) {
   final lang = Provider.of<LanguageProvider>(context, listen: false);
 
   final hasActiveSession = useState<bool>(false);
@@ -135,7 +135,7 @@ Widget hostGuestDrawer(BuildContext context) {
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (context) => const JoinSessionDrawer(),
+                        builder: (context) => JoinSessionDrawer(isFromWorkoutPage: isFromWorkoutPage),
                       );
                     }
                   },
