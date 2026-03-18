@@ -153,9 +153,6 @@ Widget joinSessionDrawer(
                 Navigator.of(context).pop(scannedValue);
               }
             },
-            controller: MobileScannerController(
-              detectionSpeed: DetectionSpeed.noDuplicates,
-            ),
           );
         },
       ),
