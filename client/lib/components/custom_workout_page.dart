@@ -761,73 +761,80 @@ class _CWorkoutPageState extends State<CWorkoutPage>
   void startScanning(BuildContext context) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
-    await Navigator.of(context).push(
+    final String? scannedValue = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (context) => AiBarcodeScanner(
-          onDetect: (BarcodeCapture capture) async {
-            String scannedValue = capture.barcodes.first.rawValue ?? "";
+        builder: (context) {
+          bool hasScanned = false;
 
-            if (scannedValue.isEmpty) return;
+          return AiBarcodeScanner(
+            onDetect: (BarcodeCapture capture) {
+              if (hasScanned) return;
 
-            Navigator.of(context).pop();
-
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (c) => const Center(child: CircularProgressIndicator()),
-            );
-
-            try {
-              List<ExerciseDto> newWorkouts = [];
-
-              if (scannedValue.startsWith("[")) {
-                List<dynamic> decodedData = jsonDecode(scannedValue);
-                newWorkouts = decodedData
-                    .map((item) => ExerciseDto.fromJson(item))
-                    .toList();
-              } else {
-                final response = await http.get(
-                  Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
-                );
-
-                if (response.statusCode == 200) {
-                  List<dynamic> decodedData = jsonDecode(response.body);
-                  newWorkouts = decodedData
-                      .map((item) => ExerciseDto.fromJson(item))
-                      .toList();
-                } else {
-                  throw Exception(lang.getText("missing_error"));
-                }
+              String value = capture.barcodes.first.rawValue ?? "";
+              if (value.isNotEmpty) {
+                hasScanned = true;
+                Navigator.of(context).pop(value);
               }
-
-              Navigator.pop(context);
-
-              setState(() {
-                userWorkouts.addAll(newWorkouts);
-              });
-              _saveDraft();
-
-              CustomSnackbar.show(
-                context,
-                "${newWorkouts.length} ${lang.getText("meal_added_to_list")}",
-                backgroundColor: workoutColorCode,
-              );
-            } catch (e) {
-              Navigator.pop(context);
-              debugPrint("$e");
-              CustomSnackbar.show(
-                context,
-                "${lang.getText("error")}: ${e.toString()}",
-                backgroundColor: Colors.red,
-              );
-            }
-          },
-          controller: MobileScannerController(
-            detectionSpeed: DetectionSpeed.noDuplicates,
-          ),
-        ),
+            },
+          );
+        },
       ),
     );
+
+    if (scannedValue == null || scannedValue.isEmpty) return;
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      List<ExerciseDto> newWorkouts = [];
+
+      if (scannedValue.startsWith("[")) {
+        List<dynamic> decodedData = jsonDecode(scannedValue);
+        newWorkouts = decodedData
+            .map((item) => ExerciseDto.fromJson(item))
+            .toList();
+      } else {
+        final response = await http.get(
+          Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
+        );
+
+        if (response.statusCode == 200) {
+          List<dynamic> decodedData = jsonDecode(response.body);
+          newWorkouts = decodedData
+              .map((item) => ExerciseDto.fromJson(item))
+              .toList();
+        } else {
+          throw Exception(lang.getText("missing_error"));
+        }
+      }
+
+      Navigator.pop(context);
+
+      setState(() {
+        userWorkouts.addAll(newWorkouts);
+      });
+      _saveDraft();
+
+      CustomSnackbar.show(
+        context,
+        "${newWorkouts.length} ${lang.getText("meal_added_to_list")}",
+        backgroundColor: workoutColorCode,
+      );
+    } catch (e) {
+      Navigator.pop(context);
+      debugPrint("$e");
+      CustomSnackbar.show(
+        context,
+        "${lang.getText("error")}: ${e.toString()}",
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   @override
@@ -1608,14 +1615,28 @@ class _CWorkoutPageState extends State<CWorkoutPage>
                   child: Column(
                     children: [
                       Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: Colors.white24, width: 1),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(50, 50, 146, 255),
+                          border: Border.all(
+                            color: const Color.fromARGB(150, 50, 146, 255),
+                            width: 1,
                           ),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: TabBar(
-                          indicatorColor: workoutColorCode,
-                          labelColor: workoutColorCode,
+                          labelStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          splashFactory: NoSplash.splashFactory,
+                          indicator: BoxDecoration(
+                            color: const Color.fromARGB(100, 50, 146, 255),
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicatorPadding: const EdgeInsets.all(4),
+                          dividerHeight: 0,
+                          labelColor: Colors.white,
                           unselectedLabelColor: Colors.grey,
                           tabs: [
                             Tab(text: lang.getText("my_templates")),

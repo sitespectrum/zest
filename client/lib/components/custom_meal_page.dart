@@ -33,7 +33,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 class CMealPage extends StatefulWidget {
   final DateTime selectedDay;
-  const CMealPage({super.key, required this.selectedDay});
+  final List<MealDto>? restoredMeals;
+  const CMealPage({super.key, required this.selectedDay, this.restoredMeals});
 
   @override
   State<CMealPage> createState() => _CMealPageState();
@@ -163,6 +164,31 @@ class _CMealPageState extends State<CMealPage> {
       }
 
       debugPrint("Offline mentés: Étkezés a sorba ÉS a Cache-be is bekerült.");
+    }
+  }
+
+  Future<void> _loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final draftString = prefs.getString('draft_meal');
+
+    if (draftString != null) {
+      final decoded = jsonDecode(draftString) as List;
+      if (mounted) {
+        setState(() {
+          userMeals = decoded.map((e) => MealDto.fromJson(e)).toList();
+        });
+      }
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (userMeals.isEmpty) {
+      await prefs.remove('draft_meal');
+    } else {
+      final jsonString = jsonEncode(userMeals.map((e) => e.toJson()).toList());
+      await prefs.setString('draft_meal', jsonString);
     }
   }
 
@@ -352,6 +378,11 @@ class _CMealPageState extends State<CMealPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.restoredMeals != null) {
+      userMeals = widget.restoredMeals!;
+    } else {
+      _loadDraft();
+    }
     futureCustomMeals = fetchCustomUserMeals().catchError((e) {
       return <CustomUserMealDto>[];
     });
@@ -737,7 +768,7 @@ class _CMealPageState extends State<CMealPage> {
   void startScanning(BuildContext context) async {
     final lang = Provider.of<LanguageProvider>(context, listen: false);
 
-    final String? scannedCode = await Navigator.of(context).push<String>(
+    final String? scannedValue = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (context) {
           bool hasScanned = false;
@@ -746,22 +777,18 @@ class _CMealPageState extends State<CMealPage> {
             onDetect: (BarcodeCapture capture) {
               if (hasScanned) return;
 
-              String scannedValue = capture.barcodes.first.rawValue ?? "";
-              if (scannedValue.isNotEmpty) {
+              String value = capture.barcodes.first.rawValue ?? "";
+              if (value.isNotEmpty) {
                 hasScanned = true;
-
-                Navigator.of(context).pop(scannedValue);
+                Navigator.of(context).pop(value);
               }
             },
-            controller: MobileScannerController(
-              detectionSpeed: DetectionSpeed.noDuplicates,
-            ),
           );
         },
       ),
     );
 
-    if (scannedCode == null || scannedCode.isEmpty) return;
+    if (scannedValue == null || scannedValue.isEmpty) return;
 
     if (!context.mounted) return;
 
@@ -774,12 +801,12 @@ class _CMealPageState extends State<CMealPage> {
     try {
       List<MealDto> newMeals = [];
 
-      if (scannedCode.startsWith("[")) {
-        List<dynamic> decodedData = jsonDecode(scannedCode);
+      if (scannedValue.startsWith("[")) {
+        List<dynamic> decodedData = jsonDecode(scannedValue);
         newMeals = decodedData.map((item) => MealDto.fromJson(item)).toList();
       } else {
         final response = await http.get(
-          Uri.parse("$apiUrl/api/Share/meal-$scannedCode"),
+          Uri.parse("$apiUrl/api/Share/workout-$scannedValue"),
         );
 
         if (response.statusCode == 200) {
@@ -790,30 +817,26 @@ class _CMealPageState extends State<CMealPage> {
         }
       }
 
-      if (context.mounted) Navigator.pop(context);
+      Navigator.pop(context);
 
       setState(() {
         userMeals.addAll(newMeals);
       });
+      _saveDraft();
 
-      if (context.mounted) {
-        CustomSnackbar.show(
-          context,
-          "${newMeals.length} ${lang.getText("meal_added_to_list")}",
-          backgroundColor: mealColorCode,
-        );
-      }
+      CustomSnackbar.show(
+        context,
+        "${newMeals.length} ${lang.getText("meal_added_to_list")}",
+        backgroundColor: mealColorCode,
+      );
     } catch (e) {
-      if (context.mounted) Navigator.pop(context);
+      Navigator.pop(context);
       debugPrint("$e");
-
-      if (context.mounted) {
-        CustomSnackbar.show(
-          context,
-          "${lang.getText("error")}: ${e.toString()}",
-          backgroundColor: Colors.red,
-        );
-      }
+      CustomSnackbar.show(
+        context,
+        "${lang.getText("error")}: ${e.toString()}",
+        backgroundColor: Colors.red,
+      );
     }
   }
 
@@ -828,6 +851,7 @@ class _CMealPageState extends State<CMealPage> {
     // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
+        await _saveDraft();
         Navigator.pop(context, userMeals);
         return false;
       },
@@ -874,8 +898,11 @@ class _CMealPageState extends State<CMealPage> {
                                         tapTargetSize:
                                             MaterialTapTargetSize.shrinkWrap,
                                       ),
-                                      onPressed: () =>
-                                          Navigator.maybePop(context),
+                                      onPressed: () async {
+                                        await _saveDraft();
+                                        if (context.mounted)
+                                          Navigator.maybePop(context);
+                                      },
                                     ),
                                     Text(
                                       lang.getText("new_meal"),
@@ -1548,6 +1575,7 @@ class _CMealPageState extends State<CMealPage> {
                                               setState(() {
                                                 userMeals.remove(meal);
                                               }),
+                                              _saveDraft(),
                                             },
                                             child: Text(
                                               lang.getText("delete"),
@@ -1947,6 +1975,7 @@ class _CMealPageState extends State<CMealPage> {
                         setState(() {
                           userMeals.addAll(result);
                         });
+                        _saveDraft();
                       }
                     },
                   ),
