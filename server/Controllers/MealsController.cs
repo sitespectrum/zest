@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Text.Json.Serialization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ZestApi.Controllers;
 
@@ -23,13 +24,15 @@ namespace ZestApi.Controllers;
 public class MealsController : ControllerBase
 {
     private readonly ZestDbContext _context;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     private static string? _huSessionCookie;
     private static string? _enSessionCookie;
 
-    public MealsController(ZestDbContext context)
+    public MealsController(ZestDbContext context, IServiceScopeFactory scopeFactory)
     {
         _context = context;
+        _scopeFactory = scopeFactory;
     }
 
     private async Task<string> GetFreshSessionCookie(string baseUrl)
@@ -114,52 +117,39 @@ public class MealsController : ControllerBase
     [HttpGet("husearch")]
     public async Task<IActionResult> HUSearch([FromQuery] string q)
     {
-        if (string.IsNullOrWhiteSpace(q)) return Ok(new List<object>());
-
-        try
-        {
-            var cookie = await GetValidCookieForLang("hu");
-
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-            client.DefaultRequestHeaders.Add("Accept-Language", "hu-HU,hu;q=0.9");
-
-            var uri = new UriBuilder("https://kaloriabazis.hu/getfood.php");
-            var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
-            query["q"] = q;
-            query["p"] = "1";
-            query["s"] = "8";
-            uri.Query = query.ToString();
-
-            var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", $"{cookie}; kb_lang=hu");
-            request.Headers.Add("X-Requested-With", "XMLHttpRequest");
-
-            var response = await client.SendAsync(request);
-            var content = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode) return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
-
-            try { return Ok(JsonSerializer.Deserialize<object>(content)); }
-            catch { return Ok(new List<object>()); }
-        }
-        catch (Exception ex) { return StatusCode(500, $"Szerver hiba: {ex.Message}"); }
+        return await SearchFood(q, "hu", "https://kaloriabazis.hu/getfood.php");
     }
 
     [HttpGet("ensearch")]
     public async Task<IActionResult> ENSearch([FromQuery] string q)
     {
+        return await SearchFood(q, "en", "https://caloriebase.com/getfood.php");
+    }
+
+    private async Task<IActionResult> SearchFood(string q, string lang, string externalApiUrl)
+    {
         if (string.IsNullOrWhiteSpace(q)) return Ok(new List<object>());
+
+        var qLower = q.ToLower().Trim();
+
+        var localResults = await _context.FoodItems
+            .Where(f => f.Name.ToLower().Contains(qLower) && f.Language == lang)
+            .Take(15)
+            .ToListAsync();
+
+        if (localResults.Count > 2)
+        {
+            return Ok(MapToFrontendDto(localResults));
+        }
 
         try
         {
-            var cookie = await GetValidCookieForLang("en");
-
+            var cookie = await GetValidCookieForLang(lang);
             using var client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+            client.DefaultRequestHeaders.Add("Accept-Language", lang == "hu" ? "hu-HU,hu;q=0.9" : "en-US,en;q=0.9");
 
-            var uri = new UriBuilder("https://caloriebase.com/getfood.php");
+            var uri = new UriBuilder(externalApiUrl);
             var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
             query["q"] = q;
             query["p"] = "1";
@@ -167,18 +157,196 @@ public class MealsController : ControllerBase
             uri.Query = query.ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
-            request.Headers.Add("Cookie", $"{cookie}; kb_lang=en");
+            request.Headers.Add("Cookie", $"{cookie}; kb_lang={lang}");
             request.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
 
-            if (!response.IsSuccessStatusCode) return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
+            if (!response.IsSuccessStatusCode)
+                return Ok(MapToFrontendDto(localResults));
 
-            try { return Ok(JsonSerializer.Deserialize<object>(content)); }
-            catch { return Ok(new List<object>()); }
+            var newItems = await ParseAndSaveExternalData(content, lang);
+
+            localResults.AddRange(newItems);
+
+            var distinctResults = localResults.GroupBy(x => x.ExternalId).Select(g => g.First()).ToList();
+            return Ok(MapToFrontendDto(distinctResults));
         }
-        catch (Exception ex) { return StatusCode(500, $"Szerver hiba: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba az adathalászat során: {ex.Message}");
+            return Ok(MapToFrontendDto(localResults));
+        }
+    }
+
+    private async Task<List<FoodItem>> ParseAndSaveExternalData(string jsonContent, string lang)
+    {
+        var newItems = new List<FoodItem>();
+        try
+        {
+            using var jsonDoc = JsonDocument.Parse(jsonContent);
+            var root = jsonDoc.RootElement;
+
+            JsonElement itemsArray = root;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (root.TryGetProperty("results2", out var r2)) itemsArray = r2;
+                else if (root.TryGetProperty("results", out var r)) itemsArray = r;
+                else if (root.TryGetProperty("data", out var d)) itemsArray = d;
+                else if (root.TryGetProperty("food_list", out var fl)) itemsArray = fl;
+            }
+
+            if (itemsArray.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in itemsArray.EnumerateArray())
+                {
+                    string extId = GetStringValue(item, "foodId", "food_id", "id", "obj_id");
+                    string rawName = GetStringValue(item, "name", "title");
+                    string name = StripHtmlTags(rawName);
+
+                    if (!string.IsNullOrEmpty(extId) && !string.IsNullOrEmpty(name))
+                    {
+                        bool exists = await _context.FoodItems.AnyAsync(f => f.ExternalId == extId && f.Language == lang);
+                        if (!exists)
+                        {
+                            var food = new FoodItem
+                            {
+                                ExternalId = extId,
+                                Name = name,
+                                Calories = GetDoubleValue(item, "calories", "cal", "kcal_and_unit"),
+                                Protein = GetDoubleValue(item, "protein", "proteins"),
+                                Carbs = GetDoubleValue(item, "carbo", "carbs", "carbohydrate"),
+                                Fat = GetDoubleValue(item, "fat", "fats"),
+                                Unit = GetStringValue(item, "unit", "piece"),
+                                Language = lang
+                            };
+
+                            _context.FoodItems.Add(food);
+                            newItems.Add(food);
+
+                            var defaultUnit = new FoodUnit
+                            {
+                                FoodExternalId = extId,
+                                Name = "UNIT_g",
+                                Weight = 1,
+                                Language = lang
+                            };
+                            _context.FoodUnits.Add(defaultUnit);
+                        }
+                    }
+                }
+
+                if (newItems.Count > 0)
+                {
+                    await _context.SaveChangesAsync();
+
+                    _ = Task.Run(async () => await FetchAndSaveUnitsForFoodsInBackground(newItems, lang));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba a feldolgozáskor: {ex.Message}");
+        }
+
+        return newItems;
+    }
+
+    private async Task FetchAndSaveUnitsForFoodsInBackground(List<FoodItem> foods, string lang)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ZestDbContext>();
+
+            string cookie = await GetValidCookieForLang(lang);
+            string baseUrl = lang == "hu" ? "https://kaloriabazis.hu" : "https://caloriebase.com";
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            client.DefaultRequestHeaders.Add("Accept-Language", lang == "hu" ? "hu-HU,hu;q=0.9" : "en-US,en;q=0.9");
+
+            foreach (var food in foods)
+            {
+                await Task.Delay(500);
+
+                var uri = new UriBuilder($"{baseUrl}/food.php");
+                var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+                query["show"] = "getmenew";
+                query["id"] = food.ExternalId;
+                query["food_id_directly"] = "1";
+                uri.Query = query.ToString();
+
+                var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
+                request.Headers.Add("Cookie", $"{cookie}; kb_lang={lang}");
+
+                var response = await client.SendAsync(request);
+                if (!response.IsSuccessStatusCode) continue;
+
+                var content = await response.Content.ReadAsStringAsync();
+                if (content.TrimStart().StartsWith("<")) continue;
+
+                using var jsonDoc = JsonDocument.Parse(content);
+                var root = jsonDoc.RootElement;
+                JsonElement itemsArray = root;
+
+                if (root.TryGetProperty("getme", out var getmeElement)) itemsArray = getmeElement;
+
+                if (itemsArray.ValueKind == JsonValueKind.Array)
+                {
+                    var newUnits = new List<FoodUnit>();
+                    foreach (var item in itemsArray.EnumerateArray())
+                    {
+                        string unitName = GetStringValue(item, "Name");
+                        double weight = GetDoubleValue(item, "nWeight");
+
+                        if (!string.IsNullOrEmpty(unitName))
+                        {
+                            bool exists = await dbContext.FoodUnits.AnyAsync(u =>
+                                u.FoodExternalId == food.ExternalId &&
+                                u.Name == unitName &&
+                                u.Language == lang);
+
+                            if (!exists)
+                            {
+                                newUnits.Add(new FoodUnit
+                                {
+                                    FoodExternalId = food.ExternalId,
+                                    Name = unitName,
+                                    Weight = weight,
+                                    Language = lang
+                                });
+                            }
+                        }
+                    }
+
+                    if (newUnits.Any())
+                    {
+                        dbContext.FoodUnits.AddRange(newUnits);
+                        await dbContext.SaveChangesAsync();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Háttérfolyamat hiba a mértékegységek letöltésekor: {ex.Message}");
+        }
+    }
+
+    private List<object> MapToFrontendDto(List<FoodItem> items)
+    {
+        return items.Select(i => new
+        {
+            foodId = i.ExternalId,
+            name = i.Name,
+            calories = i.Calories,
+            protein = i.Protein,
+            carbs = i.Carbs,
+            fat = i.Fat,
+            unit = i.Unit
+        }).Cast<object>().ToList();
     }
 
     [HttpGet("hu-get-units")]
@@ -198,8 +366,21 @@ public class MealsController : ControllerBase
     private async Task<IActionResult> GetUnitsInternal(string baseUrl, string foodId, string cookie, string lang)
     {
         if (string.IsNullOrWhiteSpace(foodId)) return BadRequest(new { error = "foodId kötelező." });
+
         try
         {
+            var localUnits = await _context.FoodUnits.Where(u => u.FoodExternalId == foodId && u.Language == lang).ToListAsync();
+            if (localUnits.Any())
+            {
+                var result = localUnits.Select(u => new Dictionary<string, string>
+            {
+                { "Name", u.Name },
+                { "nWeight", u.Weight.ToString(System.Globalization.CultureInfo.InvariantCulture) }
+            }).ToList();
+
+                return Ok(result);
+            }
+
             using var client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
             client.DefaultRequestHeaders.Add("Accept-Language", lang == "hu" ? "hu-HU,hu;q=0.9" : "en-US,en;q=0.9");
@@ -222,12 +403,38 @@ public class MealsController : ControllerBase
 
             using var jsonDoc = JsonDocument.Parse(content);
             var root = jsonDoc.RootElement;
+            JsonElement itemsArray = root;
 
-            if (root.TryGetProperty("getme", out var getmeElement))
-                return Ok(JsonSerializer.Deserialize<List<object>>(getmeElement.GetRawText()));
+            if (root.TryGetProperty("getme", out var getmeElement)) itemsArray = getmeElement;
 
-            if (root.ValueKind == JsonValueKind.Array)
-                return Ok(JsonSerializer.Deserialize<List<object>>(root.GetRawText()));
+            if (itemsArray.ValueKind == JsonValueKind.Array)
+            {
+                var newUnits = new List<FoodUnit>();
+                foreach (var item in itemsArray.EnumerateArray())
+                {
+                    string unitName = GetStringValue(item, "Name");
+                    double weight = GetDoubleValue(item, "nWeight");
+
+                    if (!string.IsNullOrEmpty(unitName))
+                    {
+                        newUnits.Add(new FoodUnit
+                        {
+                            FoodExternalId = foodId,
+                            Name = unitName,
+                            Weight = weight,
+                            Language = lang
+                        });
+                    }
+                }
+
+                if (newUnits.Any())
+                {
+                    _context.FoodUnits.AddRange(newUnits);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(JsonSerializer.Deserialize<List<object>>(itemsArray.GetRawText()));
+            }
 
             return Ok(new { raw = root });
         }
@@ -252,6 +459,25 @@ public class MealsController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(code)) return BadRequest("code kötelező.");
 
+        var localFood = await _context.FoodItems.FirstOrDefaultAsync(f => f.Barcode == code && f.Language == lang);
+        if (localFood != null)
+        {
+            var foodDataDict = new Dictionary<string, string>
+        {
+            { "nID", localFood.ExternalId },
+            { "cDisplayName", localFood.Name },
+            { "nCalorie", localFood.Calories.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+            { "nProtein", localFood.Protein.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+            { "nCarbo", localFood.Carbs.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+            { "nFat", localFood.Fat.ToString(System.Globalization.CultureInfo.InvariantCulture) }
+        };
+
+            return Ok(new Dictionary<string, object>
+        {
+            { "food_data", foodDataDict }
+        });
+        }
+
         try
         {
             using var client = new HttpClient();
@@ -268,6 +494,39 @@ public class MealsController : ControllerBase
             var content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode) return StatusCode((int)response.StatusCode, "Hiba a külső API-nál.");
+
+            using var jsonDoc = JsonDocument.Parse(content);
+            var root = jsonDoc.RootElement;
+
+            if (root.TryGetProperty("food_data", out var foodData) && foodData.ValueKind != JsonValueKind.Null)
+            {
+                string extId = GetStringValue(foodData, "nID");
+                if (!string.IsNullOrEmpty(extId))
+                {
+                    var existingFood = await _context.FoodItems.FirstOrDefaultAsync(f => f.ExternalId == extId && f.Language == lang);
+
+                    if (existingFood != null)
+                    {
+                        existingFood.Barcode = code;
+                    }
+                    else
+                    {
+                        var newFood = new FoodItem
+                        {
+                            ExternalId = extId,
+                            Barcode = code,
+                            Name = StripHtmlTags(GetStringValue(foodData, "cDisplayName")),
+                            Calories = GetDoubleValue(foodData, "nCalorie"),
+                            Protein = GetDoubleValue(foodData, "nProtein"),
+                            Carbs = GetDoubleValue(foodData, "nCarbo"),
+                            Fat = GetDoubleValue(foodData, "nFat"),
+                            Language = lang
+                        };
+                        _context.FoodItems.Add(newFood);
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             var parsed = JsonSerializer.Deserialize<object>(content);
             return Ok(parsed);
@@ -639,6 +898,37 @@ public class MealsController : ControllerBase
             .ToListAsync();
 
         return Ok(meals);
+    }
+
+    private string GetStringValue(JsonElement element, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (element.TryGetProperty(key, out var prop) && prop.ValueKind != JsonValueKind.Null)
+            {
+                return prop.ToString();
+            }
+        }
+        return string.Empty;
+    }
+
+    private double GetDoubleValue(JsonElement element, params string[] keys)
+    {
+        string strVal = GetStringValue(element, keys);
+        if (string.IsNullOrWhiteSpace(strVal)) return 0;
+
+        var match = Regex.Match(strVal, @"[-+]?\d+[.,]?\d*");
+        if (match.Success && double.TryParse(match.Value.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double result))
+        {
+            return result;
+        }
+        return 0;
+    }
+
+    private string StripHtmlTags(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        return Regex.Replace(input, "<.*?>", string.Empty).Trim();
     }
 }
 
