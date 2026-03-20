@@ -41,7 +41,6 @@ class _AddMealPageState extends State<AddMealPage> {
   Timer? _debounce;
   bool _isInit = true;
 
-  // Narancssárga szín definíciója az ételekhez (CustomMealPage alapján)
   final Color primaryOrange = const Color.fromARGB(255, 255, 115, 69);
 
   List<MealDto> userMeals = [];

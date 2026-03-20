@@ -79,7 +79,7 @@ class LanguageProvider with ChangeNotifier {
       'previous_workouts': 'Korábbi edzések',
       'previous_meals': 'Korábbi étkezések',
       'my_templates': 'Saját sablonjaim',
-      'health_page': 'Egészség',
+      'health_page': 'Étkezés',
       'nutrients_consumed': 'Bevitt tápanyagok',
       'protein': 'Fehérje',
       'carbs': 'Szénhidrát',
