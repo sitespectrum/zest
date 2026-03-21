@@ -37,6 +37,7 @@ class _ProfilePageState extends State<ProfilePage>
   Map<String, dynamic>? userData;
   bool isLoading = true;
   String currentLanguage = "hu";
+  bool isChecked = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -305,9 +306,17 @@ class _ProfilePageState extends State<ProfilePage>
                           CustomTextField(
                             passwordController,
                             lang.getText("password_hint"),
-                            isNumber: false,
-                            isPassword: true,
-                            isSuffix: false,
+                            isPassword: isChecked ? false : true,
+                            iconButton: IconButton(
+                              onPressed: () => isChecked
+                                  ? setPopupState(() {
+                                      isChecked = false;
+                                    })
+                                  : setPopupState(() {
+                                      isChecked = true;
+                                    }),
+                              icon: Icon(Icons.remove_red_eye),
+                            ),
                           ),
                           SizedBox(height: 20),
                           Row(
