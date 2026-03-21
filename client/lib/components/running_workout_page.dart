@@ -405,14 +405,19 @@ class _RunningWorkoutPageState extends State<RunningWorkoutPage> {
                                         onPressed: () =>
                                             Navigator.maybePop(context),
                                       ),
-                                      Text(
-                                        lang.getText(
-                                          "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}",
-                                        ),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
+                                      Expanded(
+                                        child: Text(
+                                          lang.getText(
+                                            "${DateFormat.MMMd(locale).format(DateTime.now())} ${dependOnHour()}",
+                                          ),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
                                         ),
                                       ),
                                     ],

@@ -505,6 +505,9 @@ class _HomePageState extends State<HomePage>
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                           ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
@@ -611,6 +614,9 @@ class _HomePageState extends State<HomePage>
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                           ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
                                         ),
                                         const SizedBox(height: 8),
                                         Text(

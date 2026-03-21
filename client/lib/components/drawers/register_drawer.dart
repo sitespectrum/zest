@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:client/components/ui/custom_textfield.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -21,6 +22,7 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
   final TextEditingController userNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool isChecked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -33,101 +35,26 @@ class _RegisterDrawerState extends State<RegisterDrawer> {
           Column(
             spacing: 12,
             children: [
-              TextField(
-                cursorColor: Colors.white,
-                style: TextStyle(color: Colors.white, fontSize: 15),
-                controller: userNameController,
-                decoration: InputDecoration(
-                  labelText: lang.getText('username_hint'),
-                  labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: const Color.fromARGB(100, 64, 255, 50),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.white.withAlpha(20),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
+              CustomTextField(
+                userNameController,
+                lang.getText("username_hint"),
               ),
 
-              TextField(
-                cursorColor: Colors.white,
-                style: TextStyle(color: Colors.white, fontSize: 15),
-                controller: emailController,
-                decoration: InputDecoration(
-                  fillColor: const Color(0xFF272727),
-                  filled: true,
-                  labelText: lang.getText('email_hint'),
-                  labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: const Color.fromARGB(100, 64, 255, 50),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.white.withAlpha(20),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
+              CustomTextField(emailController, lang.getText("email_hint")),
 
-              TextField(
-                cursorColor: Colors.white,
-                style: TextStyle(color: Colors.white),
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  fillColor: const Color(0xFF272727),
-                  filled: true,
-                  labelText: lang.getText('password_hint'),
-                  labelStyle: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Color.fromARGB(100, 64, 255, 50),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.white.withAlpha(20),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+              CustomTextField(
+                passwordController,
+                lang.getText("password_hint"),
+                isPassword: isChecked ? false : true,
+                iconButton: IconButton(
+                  onPressed: () => isChecked
+                      ? setState(() {
+                          isChecked = false;
+                        })
+                      : setState(() {
+                          isChecked = true;
+                        }),
+                  icon: Icon(Icons.remove_red_eye),
                 ),
               ),
             ],
