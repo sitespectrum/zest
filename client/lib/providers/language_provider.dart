@@ -302,8 +302,12 @@ class LanguageProvider with ChangeNotifier {
       'finish_exercise_warning':
           'Biztosan befejezed az egész gyakorlatot? Később már nem tudsz visszatérni hozzá!\n\nHa még akarsz szettet csinálni belőle, csak a "Szett befejezése" gombra nyomj!',
       'cancel_workout_title': 'Edzés megszakítása',
+      'added': 'hozzáadva',
       'cancel_workout_desc':
           'Biztosan meg akarod szakítani az edzést? Az eddigi eredményeid elvesznek és nem kerülnek mentésre.',
+      'pfp_updated': 'Profilkép frissítve!',
+      'offline_pfp_updated': 'Profilkép elmentve offline!',
+      'date_placeholder': 'ÉÉÉÉ-HH-NN',
     },
     'en': {
       'register_button_main': "Register",
@@ -383,6 +387,7 @@ class LanguageProvider with ChangeNotifier {
       'new_workout': 'New workout',
       'no_added_exercise_yet': 'No added exercise yet',
       'no_added_template_yet': 'No added template yet',
+      'no_added_workout_yet': 'No added workout yet',
       'start': 'Start',
       'delete': 'Delete',
       'unknown_template': 'Unknown template',
@@ -565,8 +570,12 @@ class LanguageProvider with ChangeNotifier {
       'finish_exercise_warning':
           'Are you sure you want to finish the whole exercise? You won\'t be able to return to it later!\n\nIf you still want to do more sets, click the "Finish set" button instead!',
       'cancel_workout_title': 'Cancel workout',
+      'added': 'added',
       'cancel_workout_desc':
           'Are you sure you want to cancel the workout? Your progress will be lost and won\'t be saved.',
+      'pfp_updated': 'Profile picture updated!',
+      'offline_pfp_updated': 'Profile picture updated offline!',
+      'date_placeholder': 'YYYY-MM-DD',
     },
   };
 }

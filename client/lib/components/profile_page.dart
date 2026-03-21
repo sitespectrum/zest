@@ -119,6 +119,7 @@ class _ProfilePageState extends State<ProfilePage>
 
       var connectivityResult = await Connectivity().checkConnectivity();
       bool hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+      final lang = Provider.of<LanguageProvider>(context, listen: false);
 
       if (hasInternet) {
         final response = await http.post(
@@ -132,7 +133,7 @@ class _ProfilePageState extends State<ProfilePage>
           if (mounted) {
             CustomSnackbar.show(
               context,
-              "Profilkép frissítve!",
+              lang.getText("pfp_updated"),
               backgroundColor: Colors.green,
             );
           }
@@ -149,7 +150,7 @@ class _ProfilePageState extends State<ProfilePage>
         if (mounted) {
           CustomSnackbar.show(
             context,
-            "Profilkép elmentve offline!",
+            lang.getText("offline_pfp_updated"),
             backgroundColor: Colors.green,
           );
         }
@@ -387,7 +388,7 @@ class _ProfilePageState extends State<ProfilePage>
                                     ),
                                     child: Text(
                                       birthController.text.isEmpty
-                                          ? "ÉÉÉÉ-HH-NN"
+                                          ? lang.getText("date_placeholder")
                                           : birthController.text,
                                       style: const TextStyle(
                                         color: Colors.white,
