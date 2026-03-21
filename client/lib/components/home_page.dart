@@ -489,42 +489,44 @@ class _HomePageState extends State<HomePage>
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          lastWorkout.workoutName.isEmpty
-                                              ? lastWorkout.customName
-                                              : getTranslatedName(
-                                                  lastWorkout.workoutName,
-                                                  lang,
-                                                ),
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            lastWorkout.workoutName.isEmpty
+                                                ? lastWorkout.customName
+                                                : getTranslatedName(
+                                                    lastWorkout.workoutName,
+                                                    lang,
+                                                  ),
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: false,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          softWrap: false,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "${lang.getText("duration")}: ${lastWorkout.durationMinutes} ${lang.getText("min")}",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            "${lang.getText("duration")}: ${lastWorkout.durationMinutes} ${lang.getText("min")}",
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 16,
+                                            ),
                                           ),
-                                        ),
-                                        Text(
-                                          "${lang.getText("burnt_calories")}: ${lastWorkout.totalBurntCalories} kcal",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
+                                          Text(
+                                            "${lang.getText("burnt_calories")}: ${lastWorkout.totalBurntCalories} kcal",
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 16,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                     Container(
                                       decoration: const BoxDecoration(
@@ -603,37 +605,39 @@ class _HomePageState extends State<HomePage>
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "${getTranslatedName(lastMeal.mealName, lang)} ($formattedDate)",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "${getTranslatedName(lastMeal.mealName, lang)} ($formattedDate)",
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: false,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          softWrap: false,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            "${lang.getText("calories")}: ${lastMeal.totalCalories.toStringAsFixed(0)} kcal",
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 16,
+                                            ),
                                           ),
-                                        ),
-                                        Text(
-                                          "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 16,
+                                          Text(
+                                            "${lang.getText("protein")}: ${lastMeal.totalProtein.toStringAsFixed(1)} g",
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 16,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                     Container(
                                       decoration: const BoxDecoration(

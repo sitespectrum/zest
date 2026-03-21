@@ -435,63 +435,77 @@ class _AddMealPageState extends State<AddMealPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.3,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 72, 72, 72),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: TextField(
-                        cursorColor: Colors.white,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                        ),
-                        controller: quantitycontroller,
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: units.map((unit) {
-                        final name = unit["Name"].replaceFirst("UNIT_", "");
-                        final weight = double.tryParse(unit["nWeight"]) ?? 1.0;
-                        final isSelected = name == selectedUnit;
-
-                        return ChoiceChip(
-                          label: Text(
-                            "$name (${weight.toStringAsFixed(0)}g | ml)",
-                            style: TextStyle(
-                              color: isSelected ? Colors.black : Colors.white,
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 72, 72, 72),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: TextField(
+                                cursorColor: Colors.white,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                ),
+                                controller: quantitycontroller,
+                                textAlign: TextAlign.center,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
                             ),
-                          ),
-                          selected: isSelected,
-                          selectedColor: Colors.white,
-                          backgroundColor: const Color.fromARGB(
-                            255,
-                            60,
-                            60,
-                            60,
-                          ),
-                          onSelected: (selected) {
-                            if (selected) {
-                              setStateDialog(() {
-                                selectedUnit = name;
-                                baseWeight = weight;
-                                multiplier = baseWeight / 100;
-                              });
-                            }
-                          },
-                        );
-                      }).toList(),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: units.map((unit) {
+                                final name = unit["Name"].replaceFirst(
+                                  "UNIT_",
+                                  "",
+                                );
+                                final weight =
+                                    double.tryParse(unit["nWeight"]) ?? 1.0;
+                                final isSelected = name == selectedUnit;
+
+                                return ChoiceChip(
+                                  label: Text(
+                                    "$name (${weight.toStringAsFixed(0)}g | ml)",
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.black
+                                          : Colors.white,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  selectedColor: Colors.white,
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    60,
+                                    60,
+                                    60,
+                                  ),
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      setStateDialog(() {
+                                        selectedUnit = name;
+                                        baseWeight = weight;
+                                        multiplier = baseWeight / 100;
+                                      });
+                                    }
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Row(
