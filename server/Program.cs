@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DotNetEnv;
+using Scalar.AspNetCore;
 
 Env.Load();
 
@@ -39,7 +40,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient<IMealService, MealService>();
 
@@ -66,8 +67,14 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options
+            .WithTitle("Zest API Reference")
+            .WithTheme(ScalarTheme.Kepler)
+            .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch);
+    });
 }
 
 app.UseCors("AllowAdminSite");

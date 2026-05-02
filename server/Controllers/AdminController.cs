@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Net.Http;
 using System.Text.Json;
 using Zest.Api.Data;
 using Zest.Api.Models;
@@ -10,24 +8,22 @@ namespace ZestApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AdminController : ControllerBase
+public class AdminController(ZestDbContext context, IConfiguration configuration) : ControllerBase
 {
-    private readonly ZestDbContext _context;
-    private readonly IConfiguration _configuration;
+    private readonly ZestDbContext _context = context;
+    private readonly IConfiguration _configuration = configuration;
 
-    public AdminController(ZestDbContext context, IConfiguration configuration)
-    {
-        _context = context;
-        _configuration = configuration;
-    }
+    // MODELS
 
-    public class AdminLoginRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
+    public record AdminLoginRequest(string Username, string Password);
+    public record LoginSuccessResponse(string Token, string Username);
+    public record ErrorResponse(string Message);
+
 
     [HttpPost("login")]
+    [ProducesResponseType(typeof(LoginSuccessResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public IActionResult Login([FromBody] AdminLoginRequest request)
     {
         var adminUser = Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? _configuration["ADMIN_USERNAME"];
@@ -35,7 +31,7 @@ public class AdminController : ControllerBase
 
         if (string.IsNullOrEmpty(adminUser) || string.IsNullOrEmpty(adminPass))
         {
-            return StatusCode(500, new { message = "Szerver hiba: Admin adatok nincsenek beállítva a .env fájlban!" });
+            return StatusCode(500, new ErrorResponse("Szerver hiba: Admin adatok nincsenek beállítva a .env fájlban!"));
         }
 
         if (request.Username == adminUser && request.Password == adminPass)
@@ -43,12 +39,13 @@ public class AdminController : ControllerBase
             var tokenString = $"{adminUser}-ZestAdminToken-{DateTime.UtcNow.Day}";
             var adminToken = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(tokenString));
 
-            return Ok(new { token = adminToken, username = adminUser });
+            return Ok(new LoginSuccessResponse(adminToken, adminUser));
         }
 
-        return Unauthorized(new { message = "Hibás felhasználónév vagy jelszó!" });
+        return Unauthorized(new ErrorResponse("Hibás felhasználónév vagy jelszó!"));
     }
 
+    //TODO: make this more secure
     private bool IsAdminAuthorized()
     {
         var authHeader = Request.Headers["Authorization"].ToString();
