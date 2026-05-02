@@ -1,32 +1,31 @@
 using Microsoft.AspNetCore.Mvc;
 using ZestAPI.Data;
-using ZestAPI.Models;
-using ZestAPI.Filters;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using ZestAPI.Extensions;
+using ZestAPI.DTOs;
 
 namespace ZestAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController : ControllerBase
+[Authorize]
+public class UsersController(ZestDbContext dbContext) : ControllerBase
 {
-    private readonly ZestDbContext _dbContext;
-
-    public UsersController(ZestDbContext dbContext, IConfiguration config)
-    {
-        _dbContext = dbContext;
-    }
+    private readonly ZestDbContext _dbContext = dbContext;
 
     [HttpGet("me")]
-    [ValidateToken]
+    [ProducesResponseType(typeof(UserReadDto), StatusCodes.Status200OK)]
     public IActionResult Me()
     {
-        var user = (User)HttpContext.Items["User"]!;
-        return Ok(new
-        {
-            id = user.Id,
-            username = user.UserName,
-            email = user.Email,
-        });
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = Convert.ToInt32(userIdString);
+
+        var user = _dbContext.Users.Find(userId);
+
+        if (user is null) return NotFound();
+
+        return Ok(user.ToReadDto());
     }
 
 }
