@@ -6,9 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DotNetEnv;
 
-var builder = WebApplication.CreateBuilder(args);
-
 Env.Load();
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
