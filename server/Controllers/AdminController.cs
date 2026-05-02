@@ -1,5 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Zest.Api.Data;
 using Zest.Api.Models;
@@ -8,6 +14,7 @@ namespace ZestApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
 public class AdminController(ZestDbContext context, IConfiguration configuration) : ControllerBase
 {
     private readonly ZestDbContext _context = context;
@@ -19,8 +26,30 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     public record LoginSuccessResponse(string Token, string Username);
     public record ErrorResponse(string Message);
 
+    private string GenerateAdminJwtToken(string username)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Name, username),
+            new(ClaimTypes.Role, "Admin")
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? ""));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.Now.AddDays(7),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(LoginSuccessResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -34,27 +63,14 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
             return StatusCode(500, new ErrorResponse("Szerver hiba: Admin adatok nincsenek beállítva a .env fájlban!"));
         }
 
-        if (request.Username == adminUser && request.Password == adminPass)
-        {
-            var tokenString = $"{adminUser}-ZestAdminToken-{DateTime.UtcNow.Day}";
-            var adminToken = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(tokenString));
+        var userMatch = CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(request.Username), Encoding.UTF8.GetBytes(adminUser));
+        var passMatch = CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(request.Password), Encoding.UTF8.GetBytes(adminPass));
 
-            return Ok(new LoginSuccessResponse(adminToken, adminUser));
-        }
+        if (!userMatch || !passMatch) return Unauthorized(new ErrorResponse("Hibás felhasználónév vagy jelszó!"));
 
-        return Unauthorized(new ErrorResponse("Hibás felhasználónév vagy jelszó!"));
-    }
+        var adminToken = GenerateAdminJwtToken(adminUser);
 
-    //TODO: make this more secure
-    private bool IsAdminAuthorized()
-    {
-        var authHeader = Request.Headers["Authorization"].ToString();
-        var adminUser = Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? _configuration["ADMIN_USERNAME"];
-
-        var expectedTokenString = $"{adminUser}-ZestAdminToken-{DateTime.UtcNow.Day}";
-        var expectedToken = "Bearer " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(expectedTokenString));
-
-        return authHeader == expectedToken;
+        return Ok(new LoginSuccessResponse(adminToken, adminUser));
     }
 
     // ==========================================
@@ -64,8 +80,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers()
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
-
         var users = await _context.Users
             .Select(u => new
             {
@@ -89,8 +103,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("users/{id}/details")]
     public async Task<IActionResult> GetUserDetails(int id)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
-
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound(new { message = "Felhasználó nem található." });
 
@@ -170,8 +182,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpPut("users/{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] AdminUserUpdateRequest request)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
-
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound(new { message = "Felhasználó nem található." });
 
@@ -197,8 +207,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpDelete("users/{id}/profile-picture")]
     public async Task<IActionResult> RemoveProfilePicture(int id)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
-
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound(new { message = "Felhasználó nem található." });
 
@@ -211,8 +219,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpDelete("users/{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod! Jelentkezz be újra." });
-
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound(new { message = "Felhasználó nem található." });
 
@@ -247,8 +253,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("exercises")]
     public async Task<IActionResult> GetExercises()
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var exercises = await _context.Exercises.ToListAsync();
         return Ok(exercises);
     }
@@ -256,8 +260,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpPost("exercises")]
     public async Task<IActionResult> CreateExercise([FromBody] Exercise request)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         _context.Exercises.Add(request);
         await _context.SaveChangesAsync();
 
@@ -267,8 +269,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpPut("exercises/{id}")]
     public async Task<IActionResult> UpdateExercise(int id, [FromBody] Exercise request)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var exercise = await _context.Exercises.FindAsync(id);
         if (exercise == null) return NotFound(new { message = "Gyakorlat nem található." });
 
@@ -301,8 +301,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpDelete("exercises/{id}")]
     public async Task<IActionResult> DeleteExercise(int id)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var exercise = await _context.Exercises.FindAsync(id);
         if (exercise == null) return NotFound(new { message = "Gyakorlat nem található." });
 
@@ -325,8 +323,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("workouts")]
     public async Task<IActionResult> GetUserWorkouts()
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var workouts = await _context.UserWorkouts
             .Include(w => w.User)
             .Select(w => new
@@ -350,8 +346,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpDelete("workouts/{id}")]
     public async Task<IActionResult> DeleteUserWorkout(int id)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var workout = await _context.UserWorkouts.FindAsync(id);
         if (workout == null) return NotFound(new { message = "Edzés nem található." });
 
@@ -371,8 +365,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("meals")]
     public async Task<IActionResult> GetUserMeals()
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var meals = await _context.UserMeals
             .Include(m => m.User)
             .Select(m => new
@@ -395,8 +387,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpDelete("meals/{id}")]
     public async Task<IActionResult> DeleteUserMeal(int id)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var meal = await _context.UserMeals.FindAsync(id);
         if (meal == null) return NotFound(new { message = "Étkezés nem található." });
 
@@ -413,8 +403,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("sessions")]
     public async Task<IActionResult> GetSessions()
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var sessions = await _context.SharedWorkoutSessions
             .Include(s => s.Host)
             .Include(s => s.Participants)
@@ -437,8 +425,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpDelete("sessions/{sessionId}")]
     public async Task<IActionResult> DeleteSession(string sessionId)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var session = await _context.SharedWorkoutSessions.FindAsync(sessionId);
         if (session == null) return NotFound(new { message = "Session nem található." });
 
@@ -461,8 +447,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("stats")]
     public async Task<IActionResult> GetDashboardStats()
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         var today = DateTime.UtcNow.Date;
 
         var stats = new
@@ -496,8 +480,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpPost("notifications/broadcast")]
     public async Task<IActionResult> BroadcastNotification([FromBody] BroadcastNotificationRequest request)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(new { message = "Cím és üzenet megadása kötelező!" });
 
@@ -575,8 +557,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpGet("templates")]
     public async Task<IActionResult> GetGlobalTemplates()
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         int officialId = await GetOrCreateZestOfficialUserId();
 
         var templates = await _context.UserWorkouts
@@ -628,8 +608,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpPost("templates")]
     public async Task<IActionResult> CreateGlobalTemplate([FromBody] CreateTemplateRequest request)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         int officialId = await GetOrCreateZestOfficialUserId();
 
         var userWorkout = new UserWorkouts
@@ -664,8 +642,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
     [HttpDelete("templates/{id}")]
     public async Task<IActionResult> DeleteGlobalTemplate(int id)
     {
-        if (!IsAdminAuthorized()) return Unauthorized(new { message = "Nincs jogosultságod!" });
-
         int officialId = await GetOrCreateZestOfficialUserId();
 
         var workout = await _context.UserWorkouts

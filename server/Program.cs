@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DotNetEnv;
 using Scalar.AspNetCore;
+using Microsoft.OpenApi.Models;
 
 Env.Load();
 
@@ -40,9 +41,26 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient<IMealService, MealService>();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        var requirements = new Dictionary<string, OpenApiSecurityScheme>
+        {
+            ["Bearer"] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Enter your JWT token"
+            }
+        };
+        document.Components = new OpenApiComponents { SecuritySchemes = requirements };
+        return Task.CompletedTask;
+    });
+});
 
 builder.Services.AddSingleton<WebSocketHandler>();
 
@@ -51,7 +69,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAdminSite",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173", "https://zest-admin.sitespectrum.dev")
+            policy.WithOrigins("http://localhost:5031", "http://localhost:5173", "https://zest-admin.sitespectrum.dev")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
