@@ -11,8 +11,8 @@ using ZestAPI.Data;
 namespace ZestAPI.Migrations
 {
     [DbContext(typeof(ZestDbContext))]
-    [Migration("20260315134201_HasLogged")]
-    partial class HasLogged
+    [Migration("20260226105051_WebSocket")]
+    partial class WebSocket
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -452,9 +452,6 @@ namespace ZestAPI.Migrations
                     b.Property<string>("Goal")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("HasLogged")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Height")
                         .HasColumnType("INTEGER");

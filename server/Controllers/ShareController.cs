@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Zest.Api.Data;
-using Zest.Api.Models;
+using ZestAPI.Data;
+using ZestAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
-namespace ZestApi.Controllers;
+namespace ZestAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

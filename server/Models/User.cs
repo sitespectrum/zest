@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 
-namespace Zest.Api.Models;
+namespace ZestAPI.Models;
 
 public enum Gender
 {

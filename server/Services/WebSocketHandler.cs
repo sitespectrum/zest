@@ -3,12 +3,11 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Collections.Concurrent;
-using Zest.Api.Data;
-using Zest.Api.Models;
+using ZestAPI.Data;
+using ZestAPI.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace ZestApi.Services;
+namespace ZestAPI.Services;
 
 public class WebSocketMessage
 {
@@ -225,8 +224,8 @@ public class WebSocketHandler
             Players = participants.Select(p => new WorkoutPlayer
             {
                 UserId = p.UserId,
-                UserName = p.User.UserName,
-                ProfilePicture = p.User.ProfilePicture,
+                UserName = p.User?.UserName ?? "",
+                ProfilePicture = p.User?.ProfilePicture,
                 IsDisconnected = false
             }).ToList()
         };

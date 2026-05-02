@@ -7,10 +7,10 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Zest.Api.Data;
-using Zest.Api.Models;
+using ZestAPI.Data;
+using ZestAPI.Models;
 
-namespace ZestApi.Controllers;
+namespace ZestAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

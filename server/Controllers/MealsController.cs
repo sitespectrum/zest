@@ -1,41 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
-using Zest.Api.Models;
-using Zest.Api.Data;
-using BCrypt.Net;
+using ZestAPI.Models;
+using ZestAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using Zest.Api.DTOs;
-using Zest.Api.Helpers;
 using Microsoft.AspNetCore.Authorization;
-using System.Text.Json.Serialization;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace ZestApi.Controllers;
+namespace ZestAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MealsController : ControllerBase
+public class MealsController(ZestDbContext context, IServiceScopeFactory scopeFactory) : ControllerBase
 {
-    private readonly ZestDbContext _context;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ZestDbContext _context = context;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
 
     private static string? _huSessionCookie;
     private static string? _enSessionCookie;
 
-    public MealsController(ZestDbContext context, IServiceScopeFactory scopeFactory)
-    {
-        _context = context;
-        _scopeFactory = scopeFactory;
-    }
-
-    private async Task<string> GetFreshSessionCookie(string baseUrl)
+    private static async Task<string> GetFreshSessionCookie(string baseUrl)
     {
         try
         {
@@ -68,7 +52,7 @@ public class MealsController : ControllerBase
         }
     }
 
-    private async Task ForceLanguage(string baseUrl, string lang, string cookie)
+    private static async Task ForceLanguage(string baseUrl, string lang, string cookie)
     {
         if (string.IsNullOrEmpty(cookie)) return;
 
@@ -92,7 +76,7 @@ public class MealsController : ControllerBase
         }
     }
 
-    private async Task<string> GetValidCookieForLang(string lang)
+    private static async Task<string> GetValidCookieForLang(string lang)
     {
         if (lang == "hu")
         {
@@ -546,7 +530,7 @@ public class MealsController : ControllerBase
 
         var userMeal = new UserMeal
         {
-            MealName = Enum.Parse<MealName>(request.MealName),
+            MealName = Enum.Parse<MealName>(request.MealName ?? ""),
             UserId = userId,
             EatenAt = request.EatenAt ?? DateTime.MinValue,
             TotalCalories = request.Meals.Sum(m => m.Calories * m.Quantity),
@@ -556,8 +540,8 @@ public class MealsController : ControllerBase
             IsCustom = request.IsCustom,
             Meals = request.Meals.Select(m => new Meals
             {
-                FoodId = m.FoodId,
-                Name = m.Name,
+                FoodId = m.FoodId ?? "",
+                Name = m.Name ?? "",
                 Piece = m.Piece,
                 Calories = m.Calories,
                 Proteins = m.Protein,
@@ -598,8 +582,8 @@ public class MealsController : ControllerBase
             IsCustom = request.IsCustom,
             Meals = request.Meals.Select(m => new Meals
             {
-                FoodId = m.FoodId,
-                Name = m.Name,
+                FoodId = m.FoodId ?? "",
+                Name = m.Name ?? "",
                 Piece = m.Piece,
                 Calories = m.Calories,
                 Proteins = m.Protein,
@@ -836,8 +820,8 @@ public class MealsController : ControllerBase
         var newMeal = new Meals
         {
             UserMealId = template.Id,
-            FoodId = dto.FoodId,
-            Name = dto.Name,
+            FoodId = dto.FoodId ?? "",
+            Name = dto.Name ?? "",
             Quantity = dto.Quantity,
             Calories = dto.Calories,
             Proteins = dto.Protein,

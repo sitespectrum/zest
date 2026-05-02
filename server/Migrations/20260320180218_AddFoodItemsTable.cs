@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace server.Migrations
+namespace ZestAPI.Migrations
 {
     /// <inheritdoc />
     public partial class AddFoodItemsTable : Migration

@@ -1,36 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
-using Zest.Api.Models;
-using Zest.Api.Data;
-using BCrypt.Net;
+using ZestAPI.Models;
+using ZestAPI.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using Zest.Api.DTOs;
-using Zest.Api.Helpers;
 using Microsoft.AspNetCore.Authorization;
-using System.Text.Json.Serialization;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 
-namespace ZestApi.Controllers;
+namespace ZestAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 
-public class WorkoutController : ControllerBase
+public class WorkoutController(ZestDbContext context) : ControllerBase
 {
-    private readonly ZestDbContext _context;
-    private readonly HttpClient _httpClient;
+    private readonly ZestDbContext _context = context;
+    private readonly HttpClient _httpClient = new();
 
-    public WorkoutController(ZestDbContext context)
+    private readonly JsonSerializerOptions caseInsensitiveSerializerOptions = new()
     {
-        _context = context;
-        _httpClient = new HttpClient();
-    }
+        PropertyNameCaseInsensitive = true
+    };
 
     [HttpPost("sync")]
     public async Task<IActionResult> SyncFromGithub()
@@ -46,12 +35,8 @@ public class WorkoutController : ControllerBase
                 return StatusCode((int)response.StatusCode, $"A GitHub nem elérhető: {response.ReasonPhrase}");
             }
             var JsonString = await _httpClient.GetStringAsync(url);
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
 
-            var exercises = JsonSerializer.Deserialize<List<Exercise>>(JsonString, options);
+            var exercises = JsonSerializer.Deserialize<List<Exercise>>(JsonString, caseInsensitiveSerializerOptions);
 
             if (exercises == null || exercises.Count == 0)
             {
@@ -421,7 +406,7 @@ public class WorkoutController : ControllerBase
         var userWorkout = new UserWorkouts
         {
             UserId = userId,
-            WorkoutName = request.WorkoutName,
+            WorkoutName = request.WorkoutName ?? "",
             Date = request.Date ?? DateTime.MinValue,
             DurationMinutes = request.DurationMinutes,
             TotalBurntCalories = request.CaloriesBurnt,
@@ -458,9 +443,9 @@ public class WorkoutController : ControllerBase
         {
             Id = nextId,
             Name = request.Name,
-            NameHu = request.Lang == "hu" ? request.Name : null,
-            Instructions = new List<string> { "Custom exercise created by user." },
-            InstructionsHu = new List<string> { "Felhasználó által létrehozott gyakorlat." },
+            NameHu = request.Lang == "hu" ? request.Name : "",
+            Instructions = ["Custom exercise created by user."],
+            InstructionsHu = ["Felhasználó által létrehozott gyakorlat."],
         };
 
         var equipPair = await ResolveTerm(request.Equipment, "Equipment", request.Lang);
@@ -756,7 +741,7 @@ public class WorkoutController : ControllerBase
         return Ok(history);
     }
 
-    private async Task<List<string>> GetDistinctValues(Func<Zest.Api.Models.Exercise, string> selectorEn, Func<Zest.Api.Models.Exercise, string> selectorHu, string lang)
+    private async Task<List<string>> GetDistinctValues(Func<ZestAPI.Models.Exercise, string> selectorEn, Func<ZestAPI.Models.Exercise, string> selectorHu, string lang)
     {
         var exercises = await _context.Exercises.ToListAsync();
 
@@ -781,14 +766,14 @@ public class WorkoutController : ControllerBase
     [HttpGet("equipment")]
     public async Task<IActionResult> GetEquipment([FromQuery] string lang = "hu")
     {
-        var values = await GetDistinctValues(e => e.Equipment, e => e.EquipmentHu, lang);
+        var values = await GetDistinctValues(e => e.Equipment ?? "", e => e.EquipmentHu ?? "", lang);
         return Ok(values);
     }
 
     [HttpGet("forces")]
     public async Task<IActionResult> GetForces([FromQuery] string lang = "hu")
     {
-        var values = await GetDistinctValues(e => e.Force, e => e.ForceHu ?? e.Force, lang);
+        var values = await GetDistinctValues(e => e.Force ?? "", e => e.ForceHu ?? e.Force ?? "", lang);
         return Ok(values);
     }
 
@@ -802,7 +787,7 @@ public class WorkoutController : ControllerBase
     [HttpGet("mechanics")]
     public async Task<IActionResult> GetMechanics([FromQuery] string lang = "hu")
     {
-        var values = await GetDistinctValues(e => e.Mechanic, e => e.MechanicHu, lang);
+        var values = await GetDistinctValues(e => e.Mechanic ?? "", e => e.MechanicHu ?? "", lang);
         return Ok(values);
     }
 }
@@ -816,13 +801,13 @@ public class AddUserWorkoutRequest
     public int DurationMinutes { get; set; }
     public int CaloriesBurnt { get; set; }
     public int TotalVolume { get; set; }
-    public List<WorkoutExerciseDto> Exercises { get; set; }
+    public List<WorkoutExerciseDto> Exercises { get; set; } = [];
     public bool IsCustom { get; set; }
 }
 
 public class AddExerciseRequest
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = "";
     public string? Force { get; set; }
     public string? Equipment { get; set; } = string.Empty;
     public List<string> PrimaryMuscles { get; set; } = new();
@@ -833,8 +818,8 @@ public class AddExerciseRequest
 public class WorkoutExerciseDto
 {
     public int ExerciseId { get; set; }
-    public string Name { get; set; }
-    public List<WorkoutSetDto> Sets { get; set; }
+    public string Name { get; set; } = "";
+    public List<WorkoutSetDto> Sets { get; set; } = [];
 }
 
 public class WorkoutSetDto

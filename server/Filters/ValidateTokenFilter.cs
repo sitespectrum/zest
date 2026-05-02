@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Zest.Api.Data;
+using ZestAPI.Data;
 
-namespace ZestApi.Filters;
+namespace ZestAPI.Filters;
+
+//TODO: remove this
 
 public class ValidateTokenAttribute : TypeFilterAttribute<ValidateTokenFilter>
 {
@@ -59,7 +61,7 @@ public class ValidateTokenFilter : IAsyncActionFilter
         string? token,
         ICollection<SecurityKey> signingKeys,
         out JwtSecurityToken? jwt,
-        string issuer = "ZestApi",
+        string issuer = "ZestAPI",
         string audience = "ZestClient"
     )
     {

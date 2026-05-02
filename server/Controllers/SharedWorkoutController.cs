@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using System.Text.Json;
-using Zest.Api.Data;
-using Zest.Api.Models;
-using ZestApi.Services;
+using ZestAPI.Data;
+using ZestAPI.Models;
+using ZestAPI.Services;
 
-namespace ZestApi.Controllers;
+namespace ZestAPI.Controllers;
 
 
 [ApiController]

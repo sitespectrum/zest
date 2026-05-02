@@ -1,4 +1,4 @@
-namespace Zest.Api.DTOs
+namespace ZestAPI.DTOs
 {
     public class LoginDto
     {

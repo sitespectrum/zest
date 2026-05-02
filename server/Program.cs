@@ -1,5 +1,5 @@
-using Zest.Api.Data;
-using ZestApi.Services;
+using ZestAPI.Data;
+using ZestAPI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -42,7 +42,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient<IMealService, MealService>();
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, cancellationToken) =>

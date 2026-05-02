@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY *.csproj .
-RUN dotnet restore server.csproj
+RUN dotnet restore ZestAPI.csproj
 
 COPY . .
 RUN dotnet publish -c Release -o /app
@@ -20,4 +20,4 @@ ENV ASPNETCORE_URLS=http://0.0.0.0:10000
 
 EXPOSE 10000
 
-ENTRYPOINT ["dotnet", "server.dll"] 
+ENTRYPOINT ["dotnet", "ZestAPI.dll"] 

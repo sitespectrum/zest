@@ -1,14 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Zest.Api.Models;
+using ZestAPI.Models;
 using System.Text.Json;
 
-namespace Zest.Api.Data;
+namespace ZestAPI.Data;
 
-public class ZestDbContext : DbContext
+public class ZestDbContext(DbContextOptions<ZestDbContext> options) : DbContext(options)
 {
-    public ZestDbContext(DbContextOptions<ZestDbContext> options) : base(options) { }
-
     public DbSet<User> Users { get; set; }
     public DbSet<Exercise> Exercises { get; set; }
     public DbSet<UserWorkouts> UserWorkouts { get; set; }
@@ -29,7 +27,7 @@ public class ZestDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var listComparer = new ValueComparer<List<string>>(
-                    (c1, c2) => c1.SequenceEqual(c2),
+                    (c1, c2) => (c1 ?? new()).SequenceEqual(c2 ?? new()),
                     c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                     c => c.ToList());
 
@@ -38,14 +36,14 @@ public class ZestDbContext : DbContext
         {
             entity.Property(propertyExpression)
                 .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>())
+                    v => JsonSerializer.Serialize(v),
+                    v => JsonSerializer.Deserialize<List<string>>(v) ?? new List<string>())
                 .Metadata.SetValueComparer(listComparer);
         }
 
         // Minden listás mezőre beállítjuk a konverziót
-        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.Instructions);
-        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.InstructionsHu);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.Instructions!);
+        ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.InstructionsHu!);
         ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.PrimaryMuscles);
         ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.PrimaryMusclesHu);
         ConfigureStringList(modelBuilder.Entity<Exercise>(), e => e.SecondaryMuscles);

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Zest.Api.Models;
+namespace ZestAPI.Models;
 
 public class RefreshToken
 {

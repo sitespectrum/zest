@@ -1,12 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Zest.Api.Models;
+namespace ZestAPI.Models;
 
 public class SharedWorkoutSession
 {
     [Key]
-    public string SessionId { get; set; }
+    public string SessionId { get; set; } = "";
     public string Name { get; set; } = string.Empty;
     public int HostId { get; set; }
     [ForeignKey("HostId")]

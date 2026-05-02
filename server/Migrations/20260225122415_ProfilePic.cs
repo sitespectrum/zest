@@ -5,24 +5,23 @@
 namespace ZestAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class HasLogged : Migration
+    public partial class ProfilePic : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "HasLogged",
+            migrationBuilder.AddColumn<string>(
+                name: "ProfilePicture",
                 table: "Users",
-                type: "INTEGER",
-                nullable: false,
-                defaultValue: false);
+                type: "TEXT",
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "HasLogged",
+                name: "ProfilePicture",
                 table: "Users");
         }
     }

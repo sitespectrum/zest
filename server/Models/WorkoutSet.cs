@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace Zest.Api.Models
+namespace ZestAPI.Models
 {
     public class WorkoutSet
     {
@@ -10,7 +10,7 @@ namespace Zest.Api.Models
         public int Id { get; set; }
 
         public int WorkoutId { get; set; }
-        
+
         [ForeignKey("WorkoutId")]
         [JsonIgnore]
         public WorkoutExercise? WorkoutExercise { get; set; }

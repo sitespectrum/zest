@@ -1,34 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
-using Zest.Api.Models;
-using Zest.Api.Data;
-using BCrypt.Net;
+using ZestAPI.Models;
+using ZestAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Zest.Api.DTOs;
-using Zest.Api.Helpers;
+using ZestAPI.DTOs;
 using Microsoft.AspNetCore.Authorization;
 
-namespace ZestApi.Controllers;
+namespace ZestAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(ZestDbContext dbContext, IConfiguration config) : ControllerBase
 {
-    private readonly ZestDbContext _dbContext;
-    private readonly IConfiguration _config;
-    private readonly IMealService _mealService;
-
-    public AuthController(ZestDbContext dbContext, IConfiguration config, IMealService mealService)
-    {
-        _dbContext = dbContext;
-        _config = config;
-        _mealService = mealService;
-    }
+    private readonly ZestDbContext _dbContext = dbContext;
+    private readonly IConfiguration _config = config;
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)

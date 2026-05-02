@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Zest.Api.Models;
+namespace ZestAPI.Models;
 
 public class Meals
 {
