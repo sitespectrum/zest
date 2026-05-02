@@ -1,37 +1,23 @@
-# Use the official .NET SDK image to build the project
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore dependencies
 COPY *.csproj .
 RUN dotnet restore server.csproj
 
-# Copy the rest of the source code
 COPY . .
 RUN dotnet publish -c Release -o /app
-
-
-RUN dotnet tool install --global dotnet-ef --version 9.0.0-preview.3.24172.4
-ENV PATH="$PATH:/root/.dotnet/tools"
 
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 RUN mkdir -p /app/db
 RUN touch /app/db/zest.db
 
-RUN dotnet ef database update
-
-# Build the runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app .
-# COPY --from=build /src/db /app/db
 
-# Configure the container to listen on all interfaces
 ENV ASPNETCORE_URLS=http://0.0.0.0:10000
 
-# Expose the port the app runs on
 EXPOSE 10000
 
-# Start the application
 ENTRYPOINT ["dotnet", "server.dll"] 

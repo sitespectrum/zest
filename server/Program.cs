@@ -6,7 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DotNetEnv;
 using Scalar.AspNetCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 Env.Load();
 
@@ -47,7 +47,7 @@ builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
-        var requirements = new Dictionary<string, OpenApiSecurityScheme>
+        var requirements = new Dictionary<string, IOpenApiSecurityScheme>
         {
             ["Bearer"] = new OpenApiSecurityScheme
             {
