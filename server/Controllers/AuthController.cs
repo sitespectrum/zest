@@ -2,37 +2,42 @@ using Microsoft.AspNetCore.Mvc;
 using ZestAPI.Models;
 using ZestAPI.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ZestAPI.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using ZestAPI.Extensions;
 
 namespace ZestAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "User")]
 public class AuthController(ZestDbContext dbContext, IConfiguration config) : ControllerBase
 {
     private readonly ZestDbContext _dbContext = dbContext;
     private readonly IConfiguration _config = config;
 
     [HttpPost("register")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            return BadRequest("Email és Jelszó megadása kötelező!");
+            return BadRequest(new ErrorResponse("Email és Jelszó megadása kötelező!"));
 
         if (!IsValidEmail(request.Email))
-            return BadRequest("Érvénytelen email!");
+            return BadRequest(new ErrorResponse("Érvénytelen email!"));
 
         if (await _dbContext.Users.AnyAsync(u => u.UserName == request.UserName))
-            return BadRequest("Ezzel a felhasználónévvel már van regisztrált felhasználó!");
+            return Conflict(new ErrorResponse("Ezzel a felhasználónévvel már van regisztrált felhasználó!"));
 
         if (await _dbContext.Users.AnyAsync(u => u.Email == request.Email))
-            return BadRequest("Ezzel az emaillel már van regisztrált felhasználó!");
+            return Conflict(new ErrorResponse("Ezzel az emaillel már van regisztrált felhasználó!"));
 
         var user = new User
         {
@@ -41,257 +46,137 @@ public class AuthController(ZestDbContext dbContext, IConfiguration config) : Co
             UserName = request.UserName
         };
 
-        _dbContext.Users.Add(user);
+        await _dbContext.Users.AddAsync(user);
         await _dbContext.SaveChangesAsync();
-        Console.WriteLine($"New user ID: {user.Id}");
 
-        return Ok(new { Message = "Sikeres regisztráció!", UserId = user.Id });
-    }
-
-    [HttpGet("getUser")]
-    public async Task<IActionResult> GetUser()
-    {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (userIdClaim == null) return Unauthorized("Nincs token.");
-
-        var userId = int.Parse(userIdClaim);
-        var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null) return NotFound("Felhasználó nem található.");
-
-        return Ok(new
+        var expirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
+        var refreshToken = new RefreshToken
         {
-            user.Id,
-            user.UserName,
-            user.Height,
-            user.Weight,
-            user.Birth,
-            user.Gender,
-            user.Goal,
-            user.Activity,
-            user.CalorieGoal,
-            user.ProteinGoal,
-            user.FatGoal,
-            user.CarbsGoal,
-            user.ProfilePicture
-        });
-    }
-
-    [HttpPut("updateCalorieGoal")]
-    public async Task<IActionResult> UpdateCalorieGoal([FromBody] UpdateCalorieGoalRequest request)
-    {
-        if (request.CalorieGoal <= 0)
-            return BadRequest("A cél kalóriának pozitív számnak kell lennie!");
-
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (userIdClaim == null) return Unauthorized("Nincs token.");
-
-        var userId = int.Parse(userIdClaim);
-        var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null) return NotFound("Felhasználó nem található.");
-
-        if (user == null)
-            return NotFound("Felhasználó nem található.");
-
-        user.CalorieGoal = request.CalorieGoal;
-        _dbContext.Users.Update(user);
+            Token = GenerateRefreshToken(),
+            UserId = user.Id,
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(expirationDays)
+        };
+        _dbContext.RefreshTokens.Add(refreshToken);
         await _dbContext.SaveChangesAsync();
 
-        return Ok(new { message = "Kalóriacél frissítve!", newGoal = user.CalorieGoal });
+        var accessToken = GenerateJwtToken(user, refreshToken);
+
+        return Ok(new LoginResponse(
+            accessToken,
+            refreshToken.Token
+        ));
+    }
+
+    [HttpPost("login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Login([FromBody] LoginDto dto)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName || u.Email == dto.UserName);
+        var passwordMatches = BCrypt.Net.BCrypt.Verify(dto.Password, user?.PasswordHash);
+
+        if (user == null || !passwordMatches) return Unauthorized(new ErrorResponse("Invalid username or password!"));
+
+        var expirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
+        var refreshToken = new RefreshToken
+        {
+            Token = GenerateRefreshToken(),
+            UserId = user.Id,
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(expirationDays)
+        };
+        _dbContext.RefreshTokens.Add(refreshToken);
+        await _dbContext.SaveChangesAsync();
+
+        var accessToken = GenerateJwtToken(user, refreshToken);
+
+        return Ok(new LoginResponse(
+            accessToken,
+            refreshToken.Token
+        ));
+    }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(typeof(SimpleMessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Logout()
+    {
+        var rtIdString = User.FindFirstValue("rtid");
+        var rtId = int.Parse(rtIdString ?? "0");
+        var existing = await _dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.Id == rtId);
+        if (existing is null)
+            return NotFound(new ErrorResponse("Ez a token már nem létezik"));
+
+        _dbContext.RefreshTokens.Remove(existing);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new SimpleMessageResponse("Sikeres kijelentkezés."));
+    }
+
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+    {
+        var token = _dbContext.RefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
+        var user = (await User.ToZestUser(_dbContext))!;
+
+        if (token == null || user == null || token?.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            return Unauthorized(new ErrorResponse("Invalid or expired refresh token"));
+
+        _dbContext.Remove(token!);
+
+        var expirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
+        var refreshToken = new RefreshToken
+        {
+            Token = GenerateRefreshToken(),
+            UserId = user.Id,
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(expirationDays)
+        };
+        _dbContext.RefreshTokens.Add(refreshToken);
+        await _dbContext.SaveChangesAsync();
+
+        var accessToken = GenerateJwtToken(user, refreshToken);
+
+        return Ok(new LoginResponse(
+            accessToken,
+            refreshToken.Token
+        ));
     }
 
     [HttpPut("updatePassword")]
-    [Authorize]
+    [ProducesResponseType(typeof(SimpleMessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequest request)
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (userIdClaim == null) return Unauthorized("Nincs token.");
-
-        var userId = int.Parse(userIdClaim);
-        var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null) return NotFound("Felhasználó nem található.");
+        var user = (await User.ToZestUser(_dbContext))!;
 
         if (string.IsNullOrWhiteSpace(request.NewPassword))
-            return BadRequest("Az új jelszó nem lehet üres!");
+            return BadRequest(new ErrorResponse("Az új jelszó nem lehet üres!"));
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
 
-        return Ok(new { Message = "Jelszó sikeresen megváltoztatva!" });
+        return Ok(new SimpleMessageResponse("Jelszó sikeresen megváltoztatva!"));
     }
 
-    [HttpPost("details")]
-    public async Task<IActionResult> Details([FromBody] DetailsRequest request)
-    {
-        if (!request.Height.HasValue || !request.Weight.HasValue || !request.Birth.HasValue || string.IsNullOrWhiteSpace(request.Gender) || string.IsNullOrWhiteSpace(request.Goal) || string.IsNullOrWhiteSpace(request.Activity))
-            return BadRequest("Az adatok kitöltése kötelező!");
-
-        var user = await _dbContext.Users.FindAsync(request.UserId);
-        if (user == null)
-            return NotFound("Felhasználó nem található.");
-
-        if (!Enum.TryParse<Gender>(request.Gender, out var genderEnum))
-            return BadRequest("Érvénytelen nem!");
-
-        if (!Enum.TryParse<Goal>(request.Goal, out var goalEnum))
-            return BadRequest("Érvénytelen nem!");
-
-        if (!Enum.TryParse<Activity>(request.Activity, out var activityEnum))
-            return BadRequest("Érvénytelen aktivitás!");
-
-        if (!string.IsNullOrWhiteSpace(request.UserName))
-        {
-            if (user.UserName != request.UserName && await _dbContext.Users.AnyAsync(u => u.UserName == request.UserName))
-                return BadRequest("Ez a felhasználónév már foglalt!");
-
-            user.UserName = request.UserName;
-        }
-
-        user.Height = request.Height.Value;
-        user.Weight = request.Weight.Value;
-        user.Birth = request.Birth.Value;
-        user.Gender = genderEnum;
-        user.Goal = goalEnum;
-        user.Activity = activityEnum;
-        user.CalorieGoal = request.CalorieGoal;
-        user.ProteinGoal = request.ProteinGoal;
-        user.FatGoal = request.FatGoal;
-        user.CarbsGoal = request.CarbsGoal;
-
-        _dbContext.Users.Update(user);
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(new { Message = "Sikeres regisztráció!" });
-    }
-
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto)
-    {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == dto.UserName || u.Email == dto.UserName);
-
-        string userLang = Request.Headers["Accept-Language"].ToString().Split(',').FirstOrDefault() ?? "hu";
-
-        if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user?.PasswordHash))
-        {
-            if (userLang.StartsWith("hu"))
-                return BadRequest(new { message = "Érvénytelen felhasználónév vagy jelszó!" });
-            else
-                return BadRequest(new { message = "Invalid username or password!" });
-        }
-
-        var accessToken = GenerateJwtToken(user!);
-        var refreshToken = GenerateRefreshToken();
-
-        _dbContext.RefreshTokens.Add(new RefreshToken
-        {
-            Token = refreshToken,
-            UserId = user!.Id,
-            RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
-                _config.GetValue<int>("Jwt:RefreshTokenExpirationDays"))
-        });
-
-        var existingTokens = _dbContext.RefreshTokens.Where(rt => rt.UserId == user.Id);
-        _dbContext.RefreshTokens.RemoveRange(existingTokens);
-
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(new
-        {
-            token = accessToken,
-            refreshToken = refreshToken,
-            username = user.UserName,
-            userId = user.Id,
-        });
-    }
-
-    [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] string refreshToken)
-    {
-        if (string.IsNullOrEmpty(refreshToken))
-            return BadRequest("Nem található refreshtoken");
-
-        var existing = await _dbContext.RefreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
-        if (existing == null)
-            return NotFound("Ez a token már nem létezik");
-
-        _dbContext.RefreshTokens.Remove(existing);
-        await _dbContext.SaveChangesAsync();
-
-        return Ok("Sikeres kijelentkezés.");
-    }
-
-    [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
-    {
-        var token = _dbContext.RefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
-
-        var user = await _dbContext.Users.FindAsync(token?.UserId);
-
-        if (token == null || user == null || token?.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            return Unauthorized("Invalid or expired refresh token");
-
-        var newAccessToken = GenerateJwtToken(user);
-        var newRefreshToken = GenerateRefreshToken();
-
-        _dbContext.RefreshTokens.Add(new RefreshToken
-        {
-            Token = newRefreshToken,
-            UserId = user.Id,
-            RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
-                _config.GetValue<int>("Jwt:RefreshTokenExpirationDays"))
-        });
-
-        _dbContext.RefreshTokens.Remove(token!);
-
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(new
-        {
-            token = newAccessToken,
-            refreshToken = newRefreshToken
-        });
-    }
-
-    [HttpPost("uploadImage")]
-    [Authorize]
-    public async Task<IActionResult> UploadImage([FromBody] string base64Image)
-    {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (userIdClaim == null) return Unauthorized("Nincs token.");
-
-        var userId = int.Parse(userIdClaim);
-
-        var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null) return NotFound("Felhasználó nem található.");
-
-        user.ProfilePicture = base64Image;
-
-        _dbContext.Users.Update(user);
-        await _dbContext.SaveChangesAsync();
-
-        return Ok(new { message = "Profilkép sikeresen frissítve!" });
-    }
-
-    private string GenerateRefreshToken()
+    private static string GenerateRefreshToken()
     {
         var randomNumber = new byte[32];
-        using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-        {
-            rng.GetBytes(randomNumber);
-            return Convert.ToBase64String(randomNumber);
-        }
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
     }
-
-    private string GenerateJwtToken(User user)
+    private string GenerateJwtToken(User user, RefreshToken refreshToken)
     {
-        var claims = new List<Claim>
-        {
-            new Claim("id", user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Role, "User"),
-        };
+        List<Claim> claims = [
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.UserName),
+            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Role, "User"),
+            new("rtid", refreshToken.Id.ToString()),
+        ];
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? ""));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -300,21 +185,26 @@ public class AuthController(ZestDbContext dbContext, IConfiguration config) : Co
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.Now.AddDays(7),
+            expires: DateTime.UtcNow.AddHours(8),
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-
-    private bool IsValidEmail(string email)
+    private static bool IsValidEmail(string email)
     {
-        var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-        return emailRegex.IsMatch(email);
-    }
+        var atIdx = email.IndexOf('@');
+        if (atIdx == -1) return false;
+        if (atIdx == email.Length - 1) return false;
+        if (atIdx == 0) return false;
+        if (atIdx != email.LastIndexOf('@')) return false;
 
+        return true;
+    }
 }
+
+public record LoginResponse(string Token, string RefreshToken);
 
 public class RegisterRequest
 {

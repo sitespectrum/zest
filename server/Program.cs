@@ -7,6 +7,7 @@ using System.Text;
 using DotNetEnv;
 using Scalar.AspNetCore;
 using Microsoft.OpenApi;
+using System.Text.Json.Serialization;
 
 Env.Load();
 
@@ -40,6 +41,11 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.Configure<RouteOptions>(options =>
+{
+    options.LowercaseUrls = true;
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMemoryCache();
 builder.Services.AddOpenApi(options =>
@@ -59,6 +65,11 @@ builder.Services.AddOpenApi(options =>
 
             return Task.CompletedTask;
         });
+});
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
 });
 
 builder.Services.AddSingleton<WebSocketHandler>();
@@ -95,7 +106,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAdminSite");
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

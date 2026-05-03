@@ -24,7 +24,6 @@ public class AdminController(ZestDbContext context, IConfiguration configuration
 
     public record AdminLoginRequest(string Username, string Password);
     public record LoginSuccessResponse(string Token, string Username);
-    public record ErrorResponse(string Message);
 
     private string GenerateAdminJwtToken(string username)
     {
